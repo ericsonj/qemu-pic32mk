@@ -1,0 +1,616 @@
+
+Discarded input sections
+
+ .text          0x00000000        0x0 build/main.o
+ .data          0x00000000        0x0 build/main.o
+ .bss           0x00000000        0x0 build/main.o
+ .reginfo       0x00000000       0x18 build/main.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/main.o
+ .pdr           0x00000000      0x160 build/main.o
+ .comment       0x00000000       0x26 build/main.o
+ .note.GNU-stack
+                0x00000000        0x0 build/main.o
+ .text          0x00000000        0x0 build/plib_uart1.o
+ .data          0x00000000        0x0 build/plib_uart1.o
+ .bss           0x00000000        0x0 build/plib_uart1.o
+ .reginfo       0x00000000       0x18 build/plib_uart1.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/plib_uart1.o
+ .pdr           0x00000000      0x300 build/plib_uart1.o
+ .text.UART1_SerialSetup
+                0x00000000      0x16c build/plib_uart1.o
+ .text.UART1_Read
+                0x00000000       0xb0 build/plib_uart1.o
+ .text.UART1_ReadFreeBufferCountGet
+                0x00000000       0x34 build/plib_uart1.o
+ .text.UART1_ReadBufferSizeGet
+                0x00000000       0x14 build/plib_uart1.o
+ .text.UART1_ReadNotificationEnable
+                0x00000000       0x1c build/plib_uart1.o
+ .text.UART1_ReadThresholdSet
+                0x00000000       0x18 build/plib_uart1.o
+ .text.UART1_ReadCallbackRegister
+                0x00000000       0x18 build/plib_uart1.o
+ .text.UART1_WriteCountGet
+                0x00000000       0x1c build/plib_uart1.o
+ .text.UART1_WriteBufferSizeGet
+                0x00000000       0x14 build/plib_uart1.o
+ .text.UART1_TransmitComplete
+                0x00000000       0x14 build/plib_uart1.o
+ .text.UART1_WriteNotificationEnable
+                0x00000000       0x1c build/plib_uart1.o
+ .text.UART1_WriteThresholdSet
+                0x00000000       0x18 build/plib_uart1.o
+ .text.UART1_WriteCallbackRegister
+                0x00000000       0x18 build/plib_uart1.o
+ .text.UART1_ErrorGet
+                0x00000000       0x18 build/plib_uart1.o
+ .text.UART1_AutoBaudQuery
+                0x00000000       0x14 build/plib_uart1.o
+ .text.UART1_AutoBaudSet
+                0x00000000       0x1c build/plib_uart1.o
+ .comment       0x00000000       0x26 build/plib_uart1.o
+ .note.GNU-stack
+                0x00000000        0x0 build/plib_uart1.o
+ .text          0x00000000        0x0 build/FreeRTOS_tasks.o
+ .data          0x00000000        0x0 build/FreeRTOS_tasks.o
+ .bss           0x00000000        0x0 build/FreeRTOS_tasks.o
+ .reginfo       0x00000000       0x18 build/FreeRTOS_tasks.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/FreeRTOS_tasks.o
+ .pdr           0x00000000      0x4a0 build/FreeRTOS_tasks.o
+ .text.vTaskEndScheduler
+                0x00000000       0x34 build/FreeRTOS_tasks.o
+ .text.xTaskGetTickCountFromISR
+                0x00000000       0x10 build/FreeRTOS_tasks.o
+ .text.uxTaskGetNumberOfTasks
+                0x00000000       0x10 build/FreeRTOS_tasks.o
+ .text.pcTaskGetName
+                0x00000000       0x20 build/FreeRTOS_tasks.o
+ .text.vTaskPlaceOnEventList
+                0x00000000       0x3c build/FreeRTOS_tasks.o
+ .text.vTaskPlaceOnUnorderedEventList
+                0x00000000       0x7c build/FreeRTOS_tasks.o
+ .text.xTaskRemoveFromEventList
+                0x00000000      0x180 build/FreeRTOS_tasks.o
+ .text.vTaskRemoveFromUnorderedEventList
+                0x00000000      0x13c build/FreeRTOS_tasks.o
+ .text.vTaskInternalSetTimeOutState
+                0x00000000       0x1c build/FreeRTOS_tasks.o
+ .text.vTaskMissedYield
+                0x00000000       0x14 build/FreeRTOS_tasks.o
+ .text.vTaskSuspend
+                0x00000000      0x168 build/FreeRTOS_tasks.o
+ .text.vTaskResume
+                0x00000000      0x148 build/FreeRTOS_tasks.o
+ .text.xTaskCatchUpTicks
+                0x00000000       0x4c build/FreeRTOS_tasks.o
+ .text.vTaskSetTimeOutState
+                0x00000000       0x40 build/FreeRTOS_tasks.o
+ .text.xTaskCheckForTimeOut
+                0x00000000       0xb4 build/FreeRTOS_tasks.o
+ .text.uxTaskResetEventItemValue
+                0x00000000       0x28 build/FreeRTOS_tasks.o
+ .text.ulTaskGenericNotifyTake
+                0x00000000      0x160 build/FreeRTOS_tasks.o
+ .text.xTaskGenericNotifyWait
+                0x00000000      0x19c build/FreeRTOS_tasks.o
+ .text.xTaskGenericNotify
+                0x00000000      0x22c build/FreeRTOS_tasks.o
+ .text.xTaskGenericNotifyFromISR
+                0x00000000      0x27c build/FreeRTOS_tasks.o
+ .text.vTaskGenericNotifyGiveFromISR
+                0x00000000      0x1b4 build/FreeRTOS_tasks.o
+ .text.xTaskGenericNotifyStateClear
+                0x00000000       0x7c build/FreeRTOS_tasks.o
+ .text.ulTaskGenericNotifyValueClear
+                0x00000000       0x78 build/FreeRTOS_tasks.o
+ .text.vTaskResetState
+                0x00000000       0x60 build/FreeRTOS_tasks.o
+ .comment       0x00000000       0x26 build/FreeRTOS_tasks.o
+ .note.GNU-stack
+                0x00000000        0x0 build/FreeRTOS_tasks.o
+ .text          0x00000000        0x0 build/queue.o
+ .data          0x00000000        0x0 build/queue.o
+ .bss           0x00000000        0x0 build/queue.o
+ .reginfo       0x00000000       0x18 build/queue.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/queue.o
+ .pdr           0x00000000      0x2c0 build/queue.o
+ .mdebug.abi32  0x00000000        0x0 build/queue.o
+ .text.prvIsQueueEmpty
+                0x00000000       0x34 build/queue.o
+ .text.prvCopyDataToQueue
+                0x00000000       0xe0 build/queue.o
+ .text.prvCopyDataFromQueue
+                0x00000000       0x58 build/queue.o
+ .text.prvUnlockQueue
+                0x00000000      0x104 build/queue.o
+ .text.xQueueGenericReset
+                0x00000000       0xfc build/queue.o
+ .text.xQueueGenericCreate
+                0x00000000       0xa8 build/queue.o
+ .text.xQueueGenericSend
+                0x00000000      0x224 build/queue.o
+ .text.xQueueGenericSendFromISR
+                0x00000000      0x12c build/queue.o
+ .text.xQueueGiveFromISR
+                0x00000000      0x100 build/queue.o
+ .text.xQueueReceive
+                0x00000000      0x204 build/queue.o
+ .text.xQueueSemaphoreTake
+                0x00000000      0x1e4 build/queue.o
+ .text.xQueuePeek
+                0x00000000      0x1fc build/queue.o
+ .text.xQueueReceiveFromISR
+                0x00000000      0x118 build/queue.o
+ .text.xQueuePeekFromISR
+                0x00000000       0x78 build/queue.o
+ .text.uxQueueMessagesWaiting
+                0x00000000       0x34 build/queue.o
+ .text.uxQueueSpacesAvailable
+                0x00000000       0x38 build/queue.o
+ .text.uxQueueMessagesWaitingFromISR
+                0x00000000        0xc build/queue.o
+ .text.vQueueDelete
+                0x00000000       0x1c build/queue.o
+ .text.uxQueueGetQueueItemSize
+                0x00000000        0x8 build/queue.o
+ .text.uxQueueGetQueueLength
+                0x00000000        0x8 build/queue.o
+ .text.xQueueIsQueueEmptyFromISR
+                0x00000000        0xc build/queue.o
+ .text.xQueueIsQueueFullFromISR
+                0x00000000       0x14 build/queue.o
+ .debug_info    0x00000000     0x1ab6 build/queue.o
+ .debug_abbrev  0x00000000      0x377 build/queue.o
+ .debug_loclists
+                0x00000000     0x11c5 build/queue.o
+ .debug_aranges
+                0x00000000       0xc8 build/queue.o
+ .debug_rnglists
+                0x00000000      0x13b build/queue.o
+ .debug_line    0x00000000     0x10a9 build/queue.o
+ .debug_str     0x00000000      0x8fa build/queue.o
+ .comment       0x00000000       0x26 build/queue.o
+ .note.GNU-stack
+                0x00000000        0x0 build/queue.o
+ .debug_frame   0x00000000      0x338 build/queue.o
+ .gnu.attributes
+                0x00000000       0x10 build/queue.o
+ .text          0x00000000        0x0 build/list.o
+ .data          0x00000000        0x0 build/list.o
+ .bss           0x00000000        0x0 build/list.o
+ .reginfo       0x00000000       0x18 build/list.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/list.o
+ .pdr           0x00000000       0xa0 build/list.o
+ .text.vListInsertEnd
+                0x00000000       0x2c build/list.o
+ .comment       0x00000000       0x26 build/list.o
+ .note.GNU-stack
+                0x00000000        0x0 build/list.o
+ .text          0x00000000        0x0 build/heap_1.o
+ .data          0x00000000        0x0 build/heap_1.o
+ .bss           0x00000000        0x0 build/heap_1.o
+ .reginfo       0x00000000       0x18 build/heap_1.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/heap_1.o
+ .pdr           0x00000000       0xa0 build/heap_1.o
+ .text.vPortInitialiseBlocks
+                0x00000000        0xc build/heap_1.o
+ .text.xPortGetFreeHeapSize
+                0x00000000       0x14 build/heap_1.o
+ .text.vPortHeapResetState
+                0x00000000        0xc build/heap_1.o
+ .comment       0x00000000       0x26 build/heap_1.o
+ .note.GNU-stack
+                0x00000000        0x0 build/heap_1.o
+ .text          0x00000000        0x0 build/port.o
+ .data          0x00000000        0x0 build/port.o
+ .bss           0x00000000        0x0 build/port.o
+ .reginfo       0x00000000       0x18 build/port.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/port.o
+ .pdr           0x00000000      0x100 build/port.o
+ .text.vApplicationSetupTickTimerInterrupt
+                0x00000000       0x5c build/port.o
+ .text.vPortEndScheduler
+                0x00000000        0x8 build/port.o
+ .text.vPortClearInterruptMaskFromISR
+                0x00000000        0xc build/port.o
+ .comment       0x00000000       0x26 build/port.o
+ .note.GNU-stack
+                0x00000000        0x0 build/port.o
+ .text          0x00000000        0x0 build/crt0.o
+ .data          0x00000000        0x0 build/crt0.o
+ .bss           0x00000000        0x0 build/crt0.o
+ .reginfo       0x00000000       0x18 build/crt0.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/crt0.o
+ .pdr           0x00000000       0x80 build/crt0.o
+ .data          0x00000000        0x0 build/port_asm_patched.o
+ .bss           0x00000000        0x0 build/port_asm_patched.o
+ .reginfo       0x00000000       0x18 build/port_asm_patched.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/port_asm_patched.o
+ .pdr           0x00000000       0xc0 build/port_asm_patched.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+flash            0xbfc40000         0x00040000         xr
+ram              0xa0000000         0x00040000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.vectors        0xbfc40000     0x2c94
+ *(.vectors)
+ .vectors       0xbfc40000      0x480 build/crt0.o
+                0xbfc40000                _start
+                0xbfc40180                _gen_exception
+                0xbfc40200                _int_handler
+                0xbfc40400                _crt_init
+ *(.vector*)
+ .vector_4      0xbfc40480      0x22c build/port_asm_patched.o
+                0xbfc40480                __vector_dispatch_4
+                0xbfc40480                vPortTickInterruptHandler
+ .vector_1      0xbfc406ac      0x258 build/port_asm_patched.o
+                0xbfc406ac                __vector_dispatch_1
+                0xbfc406ac                vPortYieldISR
+ *(.text .text.*)
+ .text.uart1_puts
+                0xbfc40904       0x6c build/main.o
+ .text.vPingTask
+                0xbfc40970       0x2c build/main.o
+ .text.uart1_putc
+                0xbfc4099c       0x30 build/main.o
+ .text.uart1_putu
+                0xbfc409cc       0xc8 build/main.o
+ .text.vHelloTask
+                0xbfc40a94      0x128 build/main.o
+ .text.memset   0xbfc40bbc       0x24 build/main.o
+                0xbfc40bbc                memset
+ .text.vApplicationSetupTickTimerInterrupt
+                0xbfc40be0       0x44 build/main.o
+                0xbfc40be0                vApplicationSetupTickTimerInterrupt
+ .text.vApplicationMallocFailedHook
+                0xbfc40c24       0x1c build/main.o
+                0xbfc40c24                vApplicationMallocFailedHook
+ .text.vApplicationStackOverflowHook
+                0xbfc40c40       0x1c build/main.o
+                0xbfc40c40                vApplicationStackOverflowHook
+ .text.vApplicationIdleHook
+                0xbfc40c5c        0xc build/main.o
+                0xbfc40c5c                vApplicationIdleHook
+ .text.main     0xbfc40c68       0x84 build/main.o
+                0xbfc40c68                main
+ .text.UART1_WritePendingBytesGet
+                0xbfc40cec       0x38 build/plib_uart1.o
+ .text.UART1_Initialize
+                0xbfc40d24       0xd0 build/plib_uart1.o
+                0xbfc40d24                UART1_Initialize
+ .text.UART1_ReadCountGet
+                0xbfc40df4       0x38 build/plib_uart1.o
+                0xbfc40df4                UART1_ReadCountGet
+ .text.UART1_Write
+                0xbfc40e2c      0x178 build/plib_uart1.o
+                0xbfc40e2c                UART1_Write
+ .text.UART1_WriteFreeBufferCountGet
+                0xbfc40fa4       0x34 build/plib_uart1.o
+                0xbfc40fa4                UART1_WriteFreeBufferCountGet
+ .text.UART1_FAULT_InterruptHandler
+                0xbfc40fd8       0xd8 build/plib_uart1.o
+                0xbfc40fd8                UART1_FAULT_InterruptHandler
+ .text.UART1_RX_InterruptHandler
+                0xbfc410b0      0x1d4 build/plib_uart1.o
+                0xbfc410b0                UART1_RX_InterruptHandler
+ .text.UART1_TX_InterruptHandler
+                0xbfc41284      0x190 build/plib_uart1.o
+                0xbfc41284                UART1_TX_InterruptHandler
+ .text.prvResetNextTaskUnblockTime
+                0xbfc41414       0x44 build/FreeRTOS_tasks.o
+ .text.prvAddCurrentTaskToDelayedList
+                0xbfc41458      0x194 build/FreeRTOS_tasks.o
+ .text.prvIdleTask
+                0xbfc415ec       0x44 build/FreeRTOS_tasks.o
+ .text.vTaskSuspendAll
+                0xbfc41630       0x18 build/FreeRTOS_tasks.o
+                0xbfc41630                vTaskSuspendAll
+ .text.xTaskGetTickCount
+                0xbfc41648       0x10 build/FreeRTOS_tasks.o
+                0xbfc41648                xTaskGetTickCount
+ .text.xTaskIncrementTick
+                0xbfc41658      0x26c build/FreeRTOS_tasks.o
+                0xbfc41658                xTaskIncrementTick
+ .text.vTaskSwitchContext
+                0xbfc418c4      0x148 build/FreeRTOS_tasks.o
+                0xbfc418c4                vTaskSwitchContext
+ .text.vTaskEnterCritical
+                0xbfc41a0c       0x44 build/FreeRTOS_tasks.o
+                0xbfc41a0c                vTaskEnterCritical
+ .text.vTaskExitCritical
+                0xbfc41a50       0x60 build/FreeRTOS_tasks.o
+                0xbfc41a50                vTaskExitCritical
+ .text.xTaskCreate
+                0xbfc41ab0      0x304 build/FreeRTOS_tasks.o
+                0xbfc41ab0                xTaskCreate
+ .text.vTaskStartScheduler
+                0xbfc41db4       0xd4 build/FreeRTOS_tasks.o
+                0xbfc41db4                vTaskStartScheduler
+ .text.xTaskResumeAll
+                0xbfc41e88      0x240 build/FreeRTOS_tasks.o
+                0xbfc41e88                xTaskResumeAll
+ .text.vTaskDelay
+                0xbfc420c8       0x70 build/FreeRTOS_tasks.o
+                0xbfc420c8                vTaskDelay
+ .text.vListInitialise
+                0xbfc42138       0x20 build/list.o
+                0xbfc42138                vListInitialise
+ .text.vListInitialiseItem
+                0xbfc42158        0x8 build/list.o
+                0xbfc42158                vListInitialiseItem
+ .text.vListInsert
+                0xbfc42160       0x58 build/list.o
+                0xbfc42160                vListInsert
+ .text.uxListRemove
+                0xbfc421b8       0x44 build/list.o
+                0xbfc421b8                uxListRemove
+ .text.pvPortMalloc
+                0xbfc421fc      0x10c build/heap_1.o
+                0xbfc421fc                pvPortMalloc
+ .text.vPortFree
+                0xbfc42308        0x8 build/heap_1.o
+                0xbfc42308                vPortFree
+ .text.prvTaskExitError
+                0xbfc42310       0x1c build/port.o
+ .text.pxPortInitialiseStack
+                0xbfc4232c       0x50 build/port.o
+                0xbfc4232c                pxPortInitialiseStack
+ .text.xPortStartScheduler
+                0xbfc4237c       0x54 build/port.o
+                0xbfc4237c                xPortStartScheduler
+ .text.uxPortSetInterruptMaskFromISR
+                0xbfc423d0       0x28 build/port.o
+                0xbfc423d0                uxPortSetInterruptMaskFromISR
+ .text.vPortIncrementTick
+                0xbfc423f8       0x54 build/port.o
+                0xbfc423f8                vPortIncrementTick
+ *fill*         0xbfc4244c        0x4 
+ .text          0xbfc42450      0x790 build/port_asm_patched.o
+                0xbfc42450                vPortStartFirstTask
+                0xbfc42554                vUART1TXInterruptWrapper
+                0xbfc42780                vUART1RXInterruptWrapper
+                0xbfc429ac                vUART1FaultInterruptWrapper
+ *(.gnu.linkonce.t.*)
+ *(.rodata .rodata.*)
+ .rodata.vPingTask.str1.4
+                0xbfc42be0       0xac build/main.o
+                                  0x8 (size before relaxing)
+ .rodata.vHelloTask.str1.4
+                0xbfc42c8c       0x1c build/main.o
+ .rodata.vApplicationMallocFailedHook.str1.4
+                0xbfc42c8c       0x18 build/main.o
+ .rodata.vApplicationStackOverflowHook.str1.4
+                0xbfc42c8c       0x18 build/main.o
+ .rodata.main.str1.4
+                0xbfc42c8c       0x50 build/main.o
+ .rodata.vTaskStartScheduler.str1.4
+                0xbfc42c8c        0x8 build/FreeRTOS_tasks.o
+ .rodata.uxTopUsedPriority
+                0xbfc42c8c        0x4 build/FreeRTOS_tasks.o
+ .rodata.xISRStackTop
+                0xbfc42c90        0x4 build/port.o
+                0xbfc42c90                xISRStackTop
+ *(.gnu.linkonce.r.*)
+                0xbfc42cdc                        . = ALIGN (0x4)
+                0xbfc42c94                        _etext = .
+                0xbfc42c94                        _data_lma = LOADADDR (.data)
+
+.data           0xa0000000        0x4 load address 0xbfc42c94
+                0xa0000000                        _data_start = .
+ *(.data .data.*)
+ .data.uxInterruptNesting
+                0xa0000000        0x4 build/port.o
+                0xa0000000                uxInterruptNesting
+ *(.gnu.linkonce.d.*)
+                0xa0000004                        . = ALIGN (0x4)
+                0xa0000004                        _data_end = .
+
+.bss            0xa0000008     0x67fc load address 0xbfc42c98
+                0xa0000008                        _bss_start = .
+ *(.bss .bss.*)
+ .bss.UART1_WriteBuffer
+                0xa0000008       0x80 build/plib_uart1.o
+ .bss.UART1_ReadBuffer
+                0xa0000088       0x80 build/plib_uart1.o
+ .bss.uart1Obj  0xa0000108       0x40 build/plib_uart1.o
+ .bss.uxSchedulerSuspended
+                0xa0000148        0x4 build/FreeRTOS_tasks.o
+ .bss.xIdleTaskHandles
+                0xa000014c        0x4 build/FreeRTOS_tasks.o
+ .bss.xNextTaskUnblockTime
+                0xa0000150        0x4 build/FreeRTOS_tasks.o
+ .bss.uxTaskNumber
+                0xa0000154        0x4 build/FreeRTOS_tasks.o
+ .bss.xNumOfOverflows
+                0xa0000158        0x4 build/FreeRTOS_tasks.o
+ .bss.xYieldPendings
+                0xa000015c        0x4 build/FreeRTOS_tasks.o
+ .bss.xPendedTicks
+                0xa0000160        0x4 build/FreeRTOS_tasks.o
+ .bss.xSchedulerRunning
+                0xa0000164        0x4 build/FreeRTOS_tasks.o
+ .bss.uxTopReadyPriority
+                0xa0000168        0x4 build/FreeRTOS_tasks.o
+ .bss.xTickCount
+                0xa000016c        0x4 build/FreeRTOS_tasks.o
+ .bss.uxCurrentNumberOfTasks
+                0xa0000170        0x4 build/FreeRTOS_tasks.o
+ .bss.xSuspendedTaskList
+                0xa0000174       0x14 build/FreeRTOS_tasks.o
+ .bss.xPendingReadyList
+                0xa0000188       0x14 build/FreeRTOS_tasks.o
+ .bss.pxOverflowDelayedTaskList
+                0xa000019c        0x4 build/FreeRTOS_tasks.o
+ .bss.pxDelayedTaskList
+                0xa00001a0        0x4 build/FreeRTOS_tasks.o
+ .bss.xDelayedTaskList2
+                0xa00001a4       0x14 build/FreeRTOS_tasks.o
+ .bss.xDelayedTaskList1
+                0xa00001b8       0x14 build/FreeRTOS_tasks.o
+ .bss.pxReadyTasksLists
+                0xa00001cc       0x64 build/FreeRTOS_tasks.o
+ .bss.pxCurrentTCB
+                0xa0000230        0x4 build/FreeRTOS_tasks.o
+                0xa0000230                pxCurrentTCB
+ .bss.pucAlignedHeap.0
+                0xa0000234        0x4 build/heap_1.o
+ .bss.xNextFreeByte
+                0xa0000238        0x4 build/heap_1.o
+ .bss.ucHeap    0xa000023c     0x5dc0 build/heap_1.o
+ *fill*         0xa0005ffc        0x4 
+ .bss.xISRStack
+                0xa0006000      0x800 build/port.o
+                0xa0006000                xISRStack
+ .bss.uxSavedTaskStackPointer
+                0xa0006800        0x4 build/port.o
+                0xa0006800                uxSavedTaskStackPointer
+ *(.gnu.linkonce.b.*)
+ *(COMMON)
+                0xa0006804                        . = ALIGN (0x4)
+                0xa0006804                        _bss_end = .
+                0xa0006810                        _gp = ALIGN (0x10)
+                0xa003fff8                        _stack_top = ((ORIGIN (ram) + LENGTH (ram)) - 0x8)
+
+/DISCARD/
+ *(.MIPS.abiflags)
+ *(.reginfo)
+ *(.note*)
+ *(.comment)
+ *(.pdr)
+LOAD build/main.o
+LOAD build/plib_uart1.o
+LOAD build/FreeRTOS_tasks.o
+LOAD build/queue.o
+LOAD build/list.o
+LOAD build/heap_1.o
+LOAD build/port.o
+LOAD build/crt0.o
+LOAD build/port_asm_patched.o
+OUTPUT(hello_freertos.elf elf32-tradlittlemips)
+
+.mdebug.abi32   0x00000000        0x0
+ .mdebug.abi32  0x00000000        0x0 build/main.o
+ .mdebug.abi32  0x00000000        0x0 build/plib_uart1.o
+ .mdebug.abi32  0x00000000        0x0 build/FreeRTOS_tasks.o
+ .mdebug.abi32  0x00000000        0x0 build/list.o
+ .mdebug.abi32  0x00000000        0x0 build/heap_1.o
+ .mdebug.abi32  0x00000000        0x0 build/port.o
+
+.gnu.attributes
+                0x00000000       0x10
+ .gnu.attributes
+                0x00000000       0x10 build/main.o
+ .gnu.attributes
+                0x00000010       0x10 build/plib_uart1.o
+ .gnu.attributes
+                0x00000020       0x10 build/FreeRTOS_tasks.o
+ .gnu.attributes
+                0x00000030       0x10 build/list.o
+ .gnu.attributes
+                0x00000040       0x10 build/heap_1.o
+ .gnu.attributes
+                0x00000050       0x10 build/port.o
+ .gnu.attributes
+                0x00000060       0x10 build/crt0.o
+ .gnu.attributes
+                0x00000070       0x10 build/port_asm_patched.o
+
+.debug_info     0x00000000     0x415a
+ .debug_info    0x00000000      0x751 build/main.o
+ .debug_info    0x00000751      0xcb9 build/plib_uart1.o
+ .debug_info    0x0000140a     0x234f build/FreeRTOS_tasks.o
+ .debug_info    0x00003759      0x2a7 build/list.o
+ .debug_info    0x00003a00      0x20d build/heap_1.o
+ .debug_info    0x00003c0d      0x54d build/port.o
+
+.debug_abbrev   0x00000000     0x1036
+ .debug_abbrev  0x00000000      0x294 build/main.o
+ .debug_abbrev  0x00000294      0x348 build/plib_uart1.o
+ .debug_abbrev  0x000005dc      0x4c8 build/FreeRTOS_tasks.o
+ .debug_abbrev  0x00000aa4       0xef build/list.o
+ .debug_abbrev  0x00000b93      0x162 build/heap_1.o
+ .debug_abbrev  0x00000cf5      0x341 build/port.o
+
+.debug_loclists
+                0x00000000     0x23d6
+ .debug_loclists
+                0x00000000      0x2d0 build/main.o
+ .debug_loclists
+                0x000002d0      0x796 build/plib_uart1.o
+ .debug_loclists
+                0x00000a66     0x17a4 build/FreeRTOS_tasks.o
+ .debug_loclists
+                0x0000220a       0x48 build/list.o
+ .debug_loclists
+                0x00002252       0x79 build/heap_1.o
+ .debug_loclists
+                0x000022cb      0x10b build/port.o
+
+.debug_aranges  0x00000000      0x360
+ .debug_aranges
+                0x00000000       0x70 build/main.o
+ .debug_aranges
+                0x00000070       0xd8 build/plib_uart1.o
+ .debug_aranges
+                0x00000148      0x140 build/FreeRTOS_tasks.o
+ .debug_aranges
+                0x00000288       0x40 build/list.o
+ .debug_aranges
+                0x000002c8       0x40 build/heap_1.o
+ .debug_aranges
+                0x00000308       0x58 build/port.o
+
+.debug_rnglists
+                0x00000000      0x4cc
+ .debug_rnglists
+                0x00000000       0x6e build/main.o
+ .debug_rnglists
+                0x0000006e      0x132 build/plib_uart1.o
+ .debug_rnglists
+                0x000001a0      0x298 build/FreeRTOS_tasks.o
+ .debug_rnglists
+                0x00000438       0x2b build/list.o
+ .debug_rnglists
+                0x00000463       0x2c build/heap_1.o
+ .debug_rnglists
+                0x0000048f       0x3d build/port.o
+
+.debug_line     0x00000000     0x34bb
+ .debug_line    0x00000000      0x511 build/main.o
+ .debug_line    0x00000511      0xb82 build/plib_uart1.o
+ .debug_line    0x00001093     0x19d1 build/FreeRTOS_tasks.o
+ .debug_line    0x00002a64      0x396 build/list.o
+ .debug_line    0x00002dfa      0x34b build/heap_1.o
+ .debug_line    0x00003145      0x376 build/port.o
+
+.debug_str      0x00000000     0x1873
+ .debug_str     0x00000000     0x1873 build/main.o
+                                0x393 (size before relaxing)
+ .debug_str     0x00001873      0x803 build/plib_uart1.o
+ .debug_str     0x00001873      0xe58 build/FreeRTOS_tasks.o
+ .debug_str     0x00001873      0x35d build/list.o
+ .debug_str     0x00001873      0x32e build/heap_1.o
+ .debug_str     0x00001873      0x4a6 build/port.o
+
+.debug_frame    0x00000000      0x8f8
+ .debug_frame   0x00000000      0x12c build/main.o
+ .debug_frame   0x0000012c      0x214 build/plib_uart1.o
+ .debug_frame   0x00000340      0x43c build/FreeRTOS_tasks.o
+ .debug_frame   0x0000077c       0x60 build/list.o
+ .debug_frame   0x000007dc       0x74 build/heap_1.o
+ .debug_frame   0x00000850       0xa8 build/port.o

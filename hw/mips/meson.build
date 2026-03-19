@@ -12,4 +12,15 @@ mips_ss.add(when: 'CONFIG_FULOONG', if_true: files('fuloong2e.c'))
 mips_ss.add(when: 'CONFIG_MIPS_BOSTON', if_true: files('boston.c'))
 endif
 
+mips_ss.add(when: 'CONFIG_PIC32MK', if_true: files(
+  'pic32mk.c',
+  'pic32mk_evic.c',
+  'pic32mk_uart.c',
+  'pic32mk_timer.c',
+  'pic32mk_gpio.c',
+  'pic32mk_spi.c',
+  'pic32mk_i2c.c',
+  'pic32mk_dma.c',
+))
+
 hw_arch += {'mips': mips_ss}
