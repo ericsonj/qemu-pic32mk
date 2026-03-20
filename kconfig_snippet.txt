@@ -1,0 +1,5 @@
+# ---------------------------------------------------------------
+# configs/targets/mipsel-softmmu.mak addition
+# Add this line to enable the PIC32MK board
+# ---------------------------------------------------------------
+CONFIG_PIC32MK=y

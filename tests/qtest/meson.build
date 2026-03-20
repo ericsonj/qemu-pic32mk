@@ -165,7 +165,8 @@ qtests_mips = \
   (config_all_devices.has_key('CONFIG_VGA') ? ['display-vga-test'] : [])
 
 qtests_mipsel = qtests_mips + \
-  (config_all_devices.has_key('CONFIG_PIC32MK') ? ['pic32mk-test'] : [])
+  (config_all_devices.has_key('CONFIG_PIC32MK') ? ['pic32mk-test',
+                                                    'pic32mk-canfd-test'] : [])
 qtests_mips64 = qtests_mips
 qtests_mips64el = qtests_mips
 

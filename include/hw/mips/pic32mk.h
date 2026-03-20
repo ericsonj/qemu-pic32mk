@@ -64,6 +64,25 @@
 /* CAN1-4 / ADC                                 0xBF880000 */
 #define PIC32MK_CAN_OFFSET      0x080000u
 
+/* CAN1–4 SFR offsets from SFR base (0xBF880000–0xBF883FFF) */
+#define PIC32MK_CAN1_OFFSET     0x080000u   /* physical 0x1F880000 */
+#define PIC32MK_CAN2_OFFSET     0x081000u
+#define PIC32MK_CAN3_OFFSET     0x082000u
+#define PIC32MK_CAN4_OFFSET     0x083000u
+#define PIC32MK_CAN_SFR_SIZE    0x1000u     /* 4 KB SFR block per instance */
+
+/*
+ * Message RAM physical base per instance.
+ * Allocated just above the SFR window, beyond the ADC / USB blocks.
+ * ⚠  Verify exact addresses from DS60001519E §4 before final integration.
+ * Each instance gets 76 KB (75 KB data + alignment).
+ */
+#define PIC32MK_CAN1_MSGRAM_BASE 0x1F900000u
+#define PIC32MK_CAN2_MSGRAM_BASE 0x1F913000u
+#define PIC32MK_CAN3_MSGRAM_BASE 0x1F926000u
+#define PIC32MK_CAN4_MSGRAM_BASE 0x1F939000u
+#define PIC32MK_CAN_MSGRAM_SIZE  (75u * 1024u)  /* max 74 KB, rounded up */
+
 /* USB OTG 1-2                                  0xBF889000 */
 #define PIC32MK_USB_OFFSET      0x089000u
 
@@ -162,6 +181,12 @@
 #define PIC32MK_IRQ_U6E         127
 #define PIC32MK_IRQ_U6RX        128
 #define PIC32MK_IRQ_U6TX        129
+/* CAN FD — single IRQ per instance (§8, Table 8-1, DS60001519E) */
+#define PIC32MK_IRQ_CAN1        167
+#define PIC32MK_IRQ_CAN2        168
+#define PIC32MK_IRQ_CAN3        187
+#define PIC32MK_IRQ_CAN4        188
+
 /* DMA channels 0-7 */
 #define PIC32MK_IRQ_DMA0        134
 #define PIC32MK_IRQ_DMA1        135
@@ -211,10 +236,10 @@
  * ----------------------------------------------------------------------- */
 
 #define PIC32MK_UART2_OFFSET    0x028200u   /* UART2 (PER1 block) */
-#define PIC32MK_UART3_OFFSET    0x040200u   /* UART3 (PER2 block) */
-#define PIC32MK_UART4_OFFSET    0x040400u   /* UART4 */
-#define PIC32MK_UART5_OFFSET    0x040600u   /* UART5 */
-#define PIC32MK_UART6_OFFSET    0x040800u   /* UART6 */
+#define PIC32MK_UART3_OFFSET    0x048400u   /* UART3 (PER2 block, 0xBF848400) */
+#define PIC32MK_UART4_OFFSET    0x048600u   /* UART4 (0xBF848600) */
+#define PIC32MK_UART5_OFFSET    0x048800u   /* UART5 (0xBF848800) */
+#define PIC32MK_UART6_OFFSET    0x048A00u   /* UART6 (0xBF848A00) */
 
 #define PIC32MK_UART_BLOCK_SIZE 0x200u      /* per-UART SFR block */
 

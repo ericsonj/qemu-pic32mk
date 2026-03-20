@@ -11,16 +11,12 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include "xc.h"
 #include "plib_uart1.h"
-
-/* Minimal memset — FreeRTOS_tasks.c calls this without libc */
-void *memset(void *dst, int c, __SIZE_TYPE__ n)
-{
-    unsigned char *p = dst;
-    while (n--) *p++ = (unsigned char)c;
-    return dst;
-}
+#include "plib_uart2.h"
+#include "plib_canfd1.h"
+#include "plib_canfd2.h"
 
 /* -----------------------------------------------------------------------
  * UART1 TX helpers — thin wrappers around plib UART1_Write()
@@ -161,19 +157,261 @@ static void vPingTask(void *pvParam)
 }
 
 /* -----------------------------------------------------------------------
+ * CAN TX task — sends a 5-byte "hello" frame on CAN1 TX Queue every 3s
+ * ----------------------------------------------------------------------- */
+
+static void vCanTxTask(void *pvParam)
+{
+    (void)pvParam;
+    static const uint8_t hello_payload[] = "hello";
+    uint32_t count = 0;
+    for (;;) {
+        vTaskDelay(pdMS_TO_TICKS(3000));
+        count++;
+        uart1_puts("[CAN] TX #");
+        uart1_putu(count);
+        uart1_puts(" id=0x100 data='hello'\r\n");
+        bool ok = CAN1_MessageTransmit(
+            0x100U, 5U, (uint8_t *)(uintptr_t)hello_payload,
+            0U,                       /* TX Queue (fifoQueueNum=0) */
+            CANFD_MODE_NORMAL,        /* classic CAN, no BRS */
+            CANFD_MSG_TX_DATA_FRAME
+        );
+        if (!ok) {
+            uart1_puts("[CAN] TX queue full\r\n");
+        }
+    }
+}
+
+static void uart1_puthex(uint8_t v);   /* defined below with UART2 consumer */
+
+/* -----------------------------------------------------------------------
+ * CAN2 RX task — interrupt-driven receive via FreeRTOS queue
+ *
+ * plib_canfd2 uses FIFO2 for RX.  can2_rx_callback() is called from
+ * CAN2_InterruptHandler (ISR context) after the plib fills the static
+ * receive buffer.  We copy the frame into the queue and re-arm the plib.
+ * ----------------------------------------------------------------------- */
+
+typedef struct {
+    uint32_t id;
+    uint8_t  length;
+    uint8_t  data[8];
+} CAN2Frame_t;
+
+/* -----------------------------------------------------------------------
+ * CAN1 RX task — interrupt-driven receive via FreeRTOS queue
+ *
+ * plib_canfd1 uses FIFO2 for RX.  can1_rx_callback() is called from
+ * CAN1_InterruptHandler (ISR context) after the plib fills the static
+ * receive buffer.  We copy the frame into the queue and re-arm the plib.
+ * ----------------------------------------------------------------------- */
+
+typedef struct {
+    uint32_t id;
+    uint8_t  length;
+    uint8_t  data[8];
+} CAN1Frame_t;
+
+static QueueHandle_t xCan1RxQueue;
+
+static uint32_t               can1_rx_id;
+static uint8_t                can1_rx_len;
+static uint8_t                can1_rx_data[8];
+static uint32_t               can1_rx_ts;
+static CANFD_MSG_RX_ATTRIBUTE can1_rx_attr;
+
+static void can1_rx_callback(uintptr_t context)
+{
+    (void)context;
+    CAN1Frame_t frame;
+    uint8_t i;
+    frame.id     = can1_rx_id;
+    frame.length = can1_rx_len;
+    for (i = 0; i < can1_rx_len && i < 8U; i++) {
+        frame.data[i] = can1_rx_data[i];
+    }
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xQueueSendToBackFromISR(xCan1RxQueue, &frame, &xHigherPriorityTaskWoken);
+    /* Re-arm: register buffer for the next incoming frame */
+    CAN1_MessageReceive(&can1_rx_id, &can1_rx_len, can1_rx_data,
+                        &can1_rx_ts, 2U, &can1_rx_attr);
+    /* Yield handled by portRESTORE_CONTEXT in vCAN1InterruptWrapper */
+}
+
+static void vCan1RxTask(void *pvParam)
+{
+    (void)pvParam;
+    CAN1Frame_t frame;
+    for (;;) {
+        if (xQueueReceive(xCan1RxQueue, &frame, portMAX_DELAY) == pdTRUE) {
+            uint8_t i;
+            uart1_puts("[CAN1 RX] id=0x");
+            uart1_puthex((uint8_t)(frame.id >> 24));
+            uart1_puthex((uint8_t)(frame.id >> 16));
+            uart1_puthex((uint8_t)(frame.id >> 8));
+            uart1_puthex((uint8_t)(frame.id));
+            uart1_puts(" len=");
+            uart1_putc('0' + frame.length);
+            uart1_puts(" data=");
+            for (i = 0; i < frame.length && i < 8U; i++) {
+                uart1_puthex(frame.data[i]);
+            }
+            uart1_puts("\r\n");
+        }
+    }
+}
+
+static QueueHandle_t xCan2RxQueue;
+
+static uint32_t               can2_rx_id;
+static uint8_t                can2_rx_len;
+static uint8_t                can2_rx_data[8];
+static uint32_t               can2_rx_ts;
+static CANFD_MSG_RX_ATTRIBUTE can2_rx_attr;
+
+static void can2_rx_callback(uintptr_t context)
+{
+    (void)context;
+    CAN2Frame_t frame;
+    uint8_t i;
+    frame.id     = can2_rx_id;
+    frame.length = can2_rx_len;
+    for (i = 0; i < can2_rx_len && i < 8U; i++) {
+        frame.data[i] = can2_rx_data[i];
+    }
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xQueueSendToBackFromISR(xCan2RxQueue, &frame, &xHigherPriorityTaskWoken);
+    /* Re-arm: register buffer for the next incoming frame */
+    CAN2_MessageReceive(&can2_rx_id, &can2_rx_len, can2_rx_data,
+                        &can2_rx_ts, 2U, &can2_rx_attr);
+    /* Yield handled by portRESTORE_CONTEXT in vCAN2InterruptWrapper */
+}
+
+static void vCan2RxTask(void *pvParam)
+{
+    (void)pvParam;
+    CAN2Frame_t frame;
+    for (;;) {
+        if (xQueueReceive(xCan2RxQueue, &frame, portMAX_DELAY) == pdTRUE) {
+            uint8_t i;
+            uart1_puts("[CAN2 RX] id=0x");
+            uart1_puthex((uint8_t)(frame.id >> 8));
+            uart1_puthex((uint8_t)(frame.id));
+            uart1_puts(" len=");
+            uart1_putc('0' + frame.length);
+            uart1_puts(" data='");
+            for (i = 0; i < frame.length && i < 8U; i++) {
+                uart1_putc((char)frame.data[i]);
+            }
+            uart1_puts("'\r\n");
+        }
+    }
+}
+
+/* -----------------------------------------------------------------------
+ * UART2 RX queue and callback
+ *
+ * xUart2RxQueue holds individual bytes received on UART2.
+ * uart2_rx_callback() is called from UART2_RX_InterruptHandler (ISR
+ * context) whenever the plib RX threshold (1 byte) is reached.
+ * portRESTORE_CONTEXT in the ISR wrapper always calls vTaskSwitchContext,
+ * so the consumer task is woken up on the next scheduler pass.
+ * ----------------------------------------------------------------------- */
+
+static QueueHandle_t xUart2RxQueue;
+
+static void uart2_rx_callback(UART_EVENT event, uintptr_t context)
+{
+    (void)context;
+    if (event != UART_EVENT_READ_THRESHOLD_REACHED) {
+        return;
+    }
+
+    uint8_t byte;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    while (UART2_Read(&byte, 1) == 1) {
+        xQueueSendToBackFromISR(xUart2RxQueue, &byte, &xHigherPriorityTaskWoken);
+    }
+    /* Yield is handled by portRESTORE_CONTEXT in vUART2RXInterruptWrapper */
+}
+
+/* -----------------------------------------------------------------------
+ * UART2 consumer task
+ *
+ * Blocks on the queue until a byte arrives, then echoes it on UART1
+ * as: "[U2] <hex> '<ch>'\r\n"
+ * ----------------------------------------------------------------------- */
+
+static void uart1_puthex(uint8_t v)
+{
+    const char hex[] = "0123456789ABCDEF";
+    uart1_putc(hex[v >> 4]);
+    uart1_putc(hex[v & 0xFu]);
+}
+
+static void vUart2ConsumerTask(void *pvParam)
+{
+    (void)pvParam;
+    for (;;) {
+        uint8_t byte;
+        if (xQueueReceive(xUart2RxQueue, &byte, portMAX_DELAY) == pdTRUE) {
+            uart1_puts("[U2] 0x");
+            uart1_puthex(byte);
+            uart1_puts(" '");
+            uart1_putc((char)byte);
+            uart1_puts("'\r\n");
+        }
+    }
+}
+
+/* -----------------------------------------------------------------------
  * main
  * ----------------------------------------------------------------------- */
 
 int main(void)
 {
     UART1_Initialize();
+    UART2_Initialize();
+    CAN1_Initialize();
+    CAN2_Initialize();
 
     uart1_puts("PIC32MK QEMU booting FreeRTOS...\r\n");
+    uart1_puts("UART2 RX -> FreeRTOS queue -> consumer task\r\n");
+
+    /* Queue for CAN1 RX frames (depth = 16) */
+    xCan1RxQueue = xQueueCreate(16, sizeof(CAN1Frame_t));
+    CAN1_CallbackRegister(can1_rx_callback, 0, 2U);   /* FIFO2 = RX */
+    CAN1_MessageReceive(&can1_rx_id, &can1_rx_len, can1_rx_data,
+                        &can1_rx_ts, 2U, &can1_rx_attr);
+
+    /* Queue for CAN2 RX frames (depth = 16) */
+    xCan2RxQueue = xQueueCreate(16, sizeof(CAN2Frame_t));
+    CAN2_CallbackRegister(can2_rx_callback, 0, 2U);   /* FIFO2 = RX */
+    CAN2_MessageReceive(&can2_rx_id, &can2_rx_len, can2_rx_data,
+                        &can2_rx_ts, 2U, &can2_rx_attr);
+
+    /* Queue for bytes received on UART2 (depth = 64 bytes) */
+    xUart2RxQueue = xQueueCreate(64, sizeof(uint8_t));
+
+    /* Register UART2 RX callback: notify per byte, non-persistent */
+    UART2_ReadCallbackRegister(uart2_rx_callback, 0);
+    UART2_ReadThresholdSet(10);
+    UART2_ReadNotificationEnable(true, false);
 
     xTaskCreate(vHelloTask, "Hello", configMINIMAL_STACK_SIZE,
                 NULL, tskIDLE_PRIORITY + 1, NULL);
     xTaskCreate(vPingTask, "Ping", configMINIMAL_STACK_SIZE,
                 NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(vUart2ConsumerTask, "U2Rx", configMINIMAL_STACK_SIZE,
+                NULL, tskIDLE_PRIORITY + 2, NULL);   /* higher priority so it runs immediately */
+    xTaskCreate(vCanTxTask, "CAN", configMINIMAL_STACK_SIZE * 2,
+                NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(vCan1RxTask, "C1Rx", configMINIMAL_STACK_SIZE,
+                NULL, tskIDLE_PRIORITY + 2, NULL);
+    xTaskCreate(vCan2RxTask, "C2Rx", configMINIMAL_STACK_SIZE,
+                NULL, tskIDLE_PRIORITY + 2, NULL);
 
     vTaskStartScheduler();
 

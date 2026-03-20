@@ -42,7 +42,11 @@ LDFLAGS = -m elf32ltsmip \
 # Source files
 C_SRCS = \
 	main.c \
+	libc_stubs.c \
 	plib_uart1.c \
+	plib_uart2.c \
+	plib_canfd1.c \
+	plib_canfd2.c \
 	$(FREERTOS)/FreeRTOS_tasks.c \
 	$(FREERTOS)/queue.c \
 	$(FREERTOS)/list.c \

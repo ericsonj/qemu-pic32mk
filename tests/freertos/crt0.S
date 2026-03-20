@@ -141,6 +141,52 @@ _int_handler:
     bnez    $27, _uart1_fault_int
     nop
 
+    /* --- Check UART2 interrupts in IFS3/IEC3 ---
+     * UART2: U2E=source 115 (IFS3 bit 19), U2RX=116 (bit 20), U2TX=117 (bit 21)
+     * IFS3 at EVIC+0x0070, IEC3 at EVIC+0x00F0 */
+    lui     $26, 0xBF81             /* reload EVIC base */
+    lw      $27, 0x0070($26)        /* $27 = IFS3 */
+    lw      $26, 0x00F0($26)        /* $26 = IEC3 */
+    and     $26, $27, $26           /* pending3 = IFS3 & IEC3 */
+
+    lui     $27, 0x0020             /* bit 21 = 0x00200000 (U2TXIF) */
+    and     $27, $26, $27
+    bnez    $27, _uart2_tx_int
+    nop
+
+    lui     $27, 0x0010             /* bit 20 = 0x00100000 (U2RXIF) */
+    and     $27, $26, $27
+    bnez    $27, _uart2_rx_int
+    nop
+
+    lui     $27, 0x0008             /* bit 19 = 0x00080000 (U2EIF) */
+    and     $27, $26, $27
+    bnez    $27, _uart2_fault_int
+    nop
+
+    /* --- Check CAN1 interrupt in IFS5/IEC5 ---
+     * CAN1 = EVIC source 167 = IFS5 bit 7
+     * IFS5 at EVIC+0x0090, IEC5 at EVIC+0x0110 */
+    lui     $26, 0xBF81             /* reload EVIC base */
+    lw      $27, 0x0090($26)        /* $27 = IFS5 */
+    lw      $26, 0x0110($26)        /* $26 = IEC5 */
+    and     $26, $27, $26           /* pending5 = IFS5 & IEC5 */
+
+    andi    $27, $26, 0x80          /* CAN1IF (bit 7) */
+    bnez    $27, _can1_int
+    nop
+
+    /* --- Check CAN2 interrupt in IFS5/IEC5 ---
+     * CAN2 = EVIC source 168 = IFS5 bit 8 */
+    lui     $26, 0xBF81             /* reload EVIC base */
+    lw      $27, 0x0090($26)        /* $27 = IFS5 */
+    lw      $26, 0x0110($26)        /* $26 = IEC5 */
+    and     $26, $27, $26           /* pending5 = IFS5 & IEC5 */
+
+    andi    $27, $26, 0x100         /* CAN2IF (bit 8) */
+    bnez    $27, _can2_int
+    nop
+
     /* --- Default: Timer1 tick or other hardware interrupt --- */
     .extern vPortTickInterruptHandler
     la      $26, vPortTickInterruptHandler
@@ -176,6 +222,36 @@ _uart1_rx_int:
 _uart1_fault_int:
     .extern vUART1FaultInterruptWrapper
     la      $26, vUART1FaultInterruptWrapper
+    jr      $26
+    nop
+
+_uart2_tx_int:
+    .extern vUART2TXInterruptWrapper
+    la      $26, vUART2TXInterruptWrapper
+    jr      $26
+    nop
+
+_uart2_rx_int:
+    .extern vUART2RXInterruptWrapper
+    la      $26, vUART2RXInterruptWrapper
+    jr      $26
+    nop
+
+_uart2_fault_int:
+    .extern vUART2FaultInterruptWrapper
+    la      $26, vUART2FaultInterruptWrapper
+    jr      $26
+    nop
+
+_can1_int:
+    .extern vCAN1InterruptWrapper
+    la      $26, vCAN1InterruptWrapper
+    jr      $26
+    nop
+
+_can2_int:
+    .extern vCAN2InterruptWrapper
+    la      $26, vCAN2InterruptWrapper
     jr      $26
     nop
     .end    _int_handler

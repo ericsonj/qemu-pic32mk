@@ -809,3 +809,56 @@ vUART1FaultInterruptWrapper:
     nop
     portRESTORE_CONTEXT
     .end    vUART1FaultInterruptWrapper
+
+    .extern UART2_TX_InterruptHandler
+    .extern UART2_RX_InterruptHandler
+    .extern UART2_FAULT_InterruptHandler
+
+    .global vUART2TXInterruptWrapper
+    .ent    vUART2TXInterruptWrapper
+vUART2TXInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     UART2_TX_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vUART2TXInterruptWrapper
+
+    .global vUART2RXInterruptWrapper
+    .ent    vUART2RXInterruptWrapper
+vUART2RXInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     UART2_RX_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vUART2RXInterruptWrapper
+
+    .global vUART2FaultInterruptWrapper
+    .ent    vUART2FaultInterruptWrapper
+vUART2FaultInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     UART2_FAULT_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vUART2FaultInterruptWrapper
+
+    .extern CAN1_InterruptHandler
+
+    .global vCAN1InterruptWrapper
+    .ent    vCAN1InterruptWrapper
+vCAN1InterruptWrapper:
+    portSAVE_CONTEXT
+    jal     CAN1_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vCAN1InterruptWrapper
+
+    .extern CAN2_InterruptHandler
+
+    .global vCAN2InterruptWrapper
+    .ent    vCAN2InterruptWrapper
+vCAN2InterruptWrapper:
+    portSAVE_CONTEXT
+    jal     CAN2_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vCAN2InterruptWrapper

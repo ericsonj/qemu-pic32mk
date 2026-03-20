@@ -23,6 +23,7 @@
 #include "hw/mips/pic32mk_evic.h"
 #include "system/address-spaces.h"
 #include "system/system.h"
+#include "net/can_emu.h"
 #include "cpu.h"
 
 /* Device type strings from our peripheral files */
@@ -32,6 +33,7 @@
 #define TYPE_PIC32MK_SPI    "pic32mk-spi"
 #define TYPE_PIC32MK_I2C    "pic32mk-i2c"
 #define TYPE_PIC32MK_DMA    "pic32mk-dma"
+#define TYPE_PIC32MK_CANFD  "pic32mk-canfd"
 
 /*
  * Board state.
@@ -349,6 +351,52 @@ static void pic32mk_i2c_create(PIC32MKState *s, hwaddr sfr_offset)
     sfr_device_create(&s->sfr, TYPE_PIC32MK_I2C, sfr_offset, &error_fatal);
 }
 
+/*
+ * pic32mk_find_canbus — look up a can-bus object created with
+ *   -object can-bus,id=canbus<idx>
+ * Returns NULL if no such object exists (CAN instance runs standalone).
+ */
+static CanBusState *pic32mk_find_canbus(int idx)
+{
+    char path[32];
+    snprintf(path, sizeof(path), "/objects/canbus%d", idx);
+    Object *obj = object_resolve_path_type(path, TYPE_CAN_BUS, NULL);
+    return obj ? CAN_BUS(obj) : NULL;
+}
+
+/*
+ * Create a CAN FD instance:
+ *  - SFR region (mmio 0) mapped into the SFR window at sfr_offset
+ *  - Message RAM (mmio 1) mapped into system memory at msgram_phys_base
+ *  - Single IRQ wired to EVIC input irq_src
+ *  - canbus: optional virtual bus (NULL = standalone/loopback only)
+ */
+static void pic32mk_canfd_create(PIC32MKState *s,
+                                 hwaddr sfr_offset,
+                                 hwaddr msgram_phys_base,
+                                 int irq_src,
+                                 CanBusState *canbus)
+{
+    DeviceState *dev = qdev_new(TYPE_PIC32MK_CANFD);
+    qdev_prop_set_uint32(dev, "msg-ram-base", (uint32_t)msgram_phys_base);
+    if (canbus) {
+        object_property_set_link(OBJECT(dev), "canbus",
+                                 OBJECT(canbus), &error_fatal);
+    }
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+
+    /* SFR block overrides the catch-all at priority 1 */
+    memory_region_add_subregion_overlap(&s->sfr, sfr_offset,
+        sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 1);
+
+    /* Message RAM mapped into the flat system address space */
+    memory_region_add_subregion(get_system_memory(), msgram_phys_base,
+        sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 1));
+
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
+                       qdev_get_gpio_in(s->evic, irq_src));
+}
+
 /* -----------------------------------------------------------------------
  * Firmware loading
  * ----------------------------------------------------------------------- */
@@ -418,13 +466,13 @@ static void pic32mk_machine_init(MachineState *machine)
                         serial_hd(2));
     pic32mk_uart_create(s, 4, PIC32MK_UART4_OFFSET,
                         PIC32MK_IRQ_U4RX, PIC32MK_IRQ_U4TX, PIC32MK_IRQ_U4E,
-                        NULL);
+                        serial_hd(3));
     pic32mk_uart_create(s, 5, PIC32MK_UART5_OFFSET,
                         PIC32MK_IRQ_U5RX, PIC32MK_IRQ_U5TX, PIC32MK_IRQ_U5E,
-                        NULL);
+                        serial_hd(4));
     pic32mk_uart_create(s, 6, PIC32MK_UART6_OFFSET,
                         PIC32MK_IRQ_U6RX, PIC32MK_IRQ_U6TX, PIC32MK_IRQ_U6E,
-                        NULL);
+                        serial_hd(5));
 
     /* Timers 1–9: Timer1 is Type A (2-bit TCKPS {1,8,64,256}); 2–9 are Type B/C */
     pic32mk_timer_create(s, PIC32MK_T1_OFFSET, PIC32MK_IRQ_T1, true);
@@ -456,6 +504,20 @@ static void pic32mk_machine_init(MachineState *machine)
     pic32mk_i2c_create(s, PIC32MK_I2C2_OFFSET);
     pic32mk_i2c_create(s, PIC32MK_I2C3_OFFSET);
     pic32mk_i2c_create(s, PIC32MK_I2C4_OFFSET);
+
+    /* CAN FD 1–4 */
+    pic32mk_canfd_create(s, PIC32MK_CAN1_OFFSET,
+                         PIC32MK_CAN1_MSGRAM_BASE, PIC32MK_IRQ_CAN1,
+                         pic32mk_find_canbus(0));
+    pic32mk_canfd_create(s, PIC32MK_CAN2_OFFSET,
+                         PIC32MK_CAN2_MSGRAM_BASE, PIC32MK_IRQ_CAN2,
+                         pic32mk_find_canbus(1));
+    pic32mk_canfd_create(s, PIC32MK_CAN3_OFFSET,
+                         PIC32MK_CAN3_MSGRAM_BASE, PIC32MK_IRQ_CAN3,
+                         pic32mk_find_canbus(2));
+    pic32mk_canfd_create(s, PIC32MK_CAN4_OFFSET,
+                         PIC32MK_CAN4_MSGRAM_BASE, PIC32MK_IRQ_CAN4,
+                         pic32mk_find_canbus(3));
 
     pic32mk_load_firmware(machine);
 }
