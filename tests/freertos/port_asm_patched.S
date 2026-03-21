@@ -862,3 +862,15 @@ vCAN2InterruptWrapper:
     nop
     portRESTORE_CONTEXT
     .end    vCAN2InterruptWrapper
+
+    /* USB1 interrupt wrapper — calls DRV_USBFS_Tasks_ISR (source 34, IFS1 bit 2) */
+    .extern USB1_InterruptHandler
+
+    .global vUSB1InterruptWrapper
+    .ent    vUSB1InterruptWrapper
+vUSB1InterruptWrapper:
+    portSAVE_CONTEXT
+    jal     USB1_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vUSB1InterruptWrapper

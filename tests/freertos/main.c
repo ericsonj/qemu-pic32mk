@@ -17,6 +17,7 @@
 #include "plib_uart2.h"
 #include "plib_canfd1.h"
 #include "plib_canfd2.h"
+#include "usb_init.h"
 
 /* -----------------------------------------------------------------------
  * UART1 TX helpers — thin wrappers around plib UART1_Write()
@@ -367,6 +368,70 @@ static void vUart2ConsumerTask(void *pvParam)
 }
 
 /* -----------------------------------------------------------------------
+ * USB CDC TX task
+ *
+ * Waits 3 s for USB enumeration, then sends "[CDC] Hello #N\r\n" every
+ * second.  Uses USB_SendFrame() which is non-blocking.
+ * ----------------------------------------------------------------------- */
+
+static void vUsbCdcTask(void *pvParam)
+{
+    (void)pvParam;
+    static uint8_t s_buf[48];
+    uint32_t count = 0;
+
+    /* Wait for host to enumerate the device */
+    vTaskDelay(pdMS_TO_TICKS(3000));
+
+    for (;;) {
+        const char prefix[]  = "[CDC] Hello #";
+        const char suffix[]  = "\r\n";
+        uint8_t tmp[12];
+        uint32_t val;
+        int n;
+
+        count++;
+
+        /* Build message manually — no printf/snprintf available */
+        uint8_t *p = s_buf;
+        const char *c;
+        for (c = prefix; *c; c++) *p++ = (uint8_t)*c;
+
+        /* Decimal count */
+        val = count;
+        n = 0;
+        if (val == 0U) {
+            tmp[n++] = '0';
+        } else {
+            while (val) { tmp[n++] = (uint8_t)('0' + val % 10); val /= 10; }
+            /* reverse */
+            {
+                int l = 0, r = n - 1;
+                while (l < r) {
+                    uint8_t t = tmp[l]; tmp[l] = tmp[r]; tmp[r] = t;
+                    l++; r--;
+                }
+            }
+        }
+        {
+            int i;
+            for (i = 0; i < n; i++) *p++ = tmp[i];
+        }
+        for (c = suffix; *c; c++) *p++ = (uint8_t)*c;
+
+        /* Retry until accepted (USB may still be busy from previous TX) */
+        {
+            size_t len = (size_t)(p - s_buf);
+            while (!USB_SendFrame(s_buf, len)) {
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+/* -----------------------------------------------------------------------
  * main
  * ----------------------------------------------------------------------- */
 
@@ -376,6 +441,7 @@ int main(void)
     UART2_Initialize();
     CAN1_Initialize();
     CAN2_Initialize();
+    USB1_Initialize();
 
     uart1_puts("PIC32MK QEMU booting FreeRTOS...\r\n");
     uart1_puts("UART2 RX -> FreeRTOS queue -> consumer task\r\n");
@@ -412,6 +478,10 @@ int main(void)
                 NULL, tskIDLE_PRIORITY + 2, NULL);
     xTaskCreate(vCan2RxTask, "C2Rx", configMINIMAL_STACK_SIZE,
                 NULL, tskIDLE_PRIORITY + 2, NULL);
+    xTaskCreate(vUsbDeviceTask, "USB",  512,
+                NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(vUsbCdcTask,   "CDC",  configMINIMAL_STACK_SIZE * 2,
+                NULL, tskIDLE_PRIORITY + 1, NULL);
 
     vTaskStartScheduler();
 

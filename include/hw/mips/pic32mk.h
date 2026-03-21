@@ -83,8 +83,12 @@
 #define PIC32MK_CAN4_MSGRAM_BASE 0x1F939000u
 #define PIC32MK_CAN_MSGRAM_SIZE  (75u * 1024u)  /* max 74 KB, rounded up */
 
-/* USB OTG 1-2                                  0xBF889000 */
-#define PIC32MK_USB_OFFSET      0x089000u
+/* USB OTG 1                                   0xBF889000 */
+#define PIC32MK_USB1_OFFSET     0x089000u
+#define PIC32MK_USB_OFFSET      PIC32MK_USB1_OFFSET   /* legacy alias */
+
+/* USB OTG 2                                   0xBF88A000 */
+#define PIC32MK_USB2_OFFSET     0x08A000u
 
 /* RTCC                                         0xBF8C0000 */
 #define PIC32MK_RTCC_OFFSET     0x0C0000u
@@ -115,8 +119,10 @@
 #define PIC32MK_EVIC_IPC0       0x0140u     /* Interrupt priority control [0..63] */
 #define PIC32MK_EVIC_OFF0       0x0540u     /* Vector address offsets [0..190] */
 
-/* Number of interrupt sources / vectors */
-#define PIC32MK_NUM_IRQ_SOURCES 216
+/* Number of interrupt sources / vectors.
+ * The EVIC IFS/IEC registers span 8×32 = 256 bits; USB1 (244) and USB2 (246)
+ * are in IFS7.  Use 256 to cover the full IPC/IFS table. */
+#define PIC32MK_NUM_IRQ_SOURCES 256
 #define PIC32MK_NUM_VECTORS     190
 
 /* -----------------------------------------------------------------------
@@ -186,6 +192,12 @@
 #define PIC32MK_IRQ_CAN2        168
 #define PIC32MK_IRQ_CAN3        187
 #define PIC32MK_IRQ_CAN4        188
+
+/* USB OTG — interrupt vector numbers from XC32 p32mk1024mcm100.h
+ * USB1: vector 34 → IFS1 bit 2, IPC8[18:16]
+ * USB2: vector 244 → IFS7 bit 20, IPC61[2:0] */
+#define PIC32MK_IRQ_USB1        34
+#define PIC32MK_IRQ_USB2        244
 
 /* DMA channels 0-7 */
 #define PIC32MK_IRQ_DMA0        134

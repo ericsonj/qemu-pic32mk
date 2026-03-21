@@ -141,6 +141,10 @@ _int_handler:
     bnez    $27, _uart1_fault_int
     nop
 
+    andi    $27, $26, 0x4           /* USB1IF (source 34 = IFS1 bit 2) */
+    bnez    $27, _usb1_int
+    nop
+
     /* --- Check UART2 interrupts in IFS3/IEC3 ---
      * UART2: U2E=source 115 (IFS3 bit 19), U2RX=116 (bit 20), U2TX=117 (bit 21)
      * IFS3 at EVIC+0x0070, IEC3 at EVIC+0x00F0 */
@@ -222,6 +226,12 @@ _uart1_rx_int:
 _uart1_fault_int:
     .extern vUART1FaultInterruptWrapper
     la      $26, vUART1FaultInterruptWrapper
+    jr      $26
+    nop
+
+_usb1_int:
+    .extern vUSB1InterruptWrapper
+    la      $26, vUSB1InterruptWrapper
     jr      $26
     nop
 

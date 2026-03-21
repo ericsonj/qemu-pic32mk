@@ -161,6 +161,20 @@ typedef union {
 #define IPC1bits        (*(volatile __IPC1_T1_t *)(_EVIC_BASE + 0x0150u))
 
 /*
+ * IPC8 covers EVIC sources 32-35.  USB1 = source 34 → byte 2 of IPC8.
+ * IPC8 offset = 0x0140 + 8*0x10 = 0x01C0.
+ * USB1 priority bits = [18:16], subpriority [20:19].
+ */
+#define IPC8            (*(volatile uint32_t *)(_EVIC_BASE + 0x01C0u))
+#define IPC8CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x01C4u))
+#define IPC8SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x01C8u))
+#define IPC8INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x01CCu))
+#define _IPC8_USB1IP_POSITION   18u   /* USB1 priority bits [20:18] (EVIC shift+2) */
+#define _IPC8_USB1IP_MASK       (0x7u << 18u)
+#define _IPC8_USB1IS_POSITION   16u   /* USB1 subpriority bits [17:16] */
+#define _IPC8_USB1IS_MASK       (0x3u << 16u)
+
+/*
  * IPC9 covers EVIC sources 36-39.  UART1 FAULT=38 (byte 2), RX=39 (byte 3).
  * IPC9 offset = 0x0140 + 9*0x10 = 0x01D0.
  */
@@ -801,11 +815,392 @@ typedef union {
 #define _CFD2MASK0_MIDE_MASK         0x20000000u
 
 /* -----------------------------------------------------------------------
+ * IFS7 / IEC7  (sources 224–255)
+ * USB2 = EVIC source 244 → IFS7/IEC7 bit 20
+ * IFS7 at EVIC+0x00B0, IEC7 at EVIC+0x0130
+ * ----------------------------------------------------------------------- */
+
+#define IFS7            (*(volatile uint32_t *)(_EVIC_BASE + 0x00B0u))
+#define IFS7CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x00B4u))
+#define IFS7SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x00B8u))
+#define IFS7INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x00BCu))
+
+#define IEC7            (*(volatile uint32_t *)(_EVIC_BASE + 0x0130u))
+#define IEC7CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0134u))
+#define IEC7SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0138u))
+#define IEC7INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x013Cu))
+
+#define _IFS7_USB2IF_MASK   (1u << 20)   /* source 244 = IFS7 bit 20 */
+#define _IEC7_USB2IE_MASK   (1u << 20)
+
+/* USB1 interrupt: source 34 = IFS1 bit 2 */
+#define _IFS1_USB1IF_MASK   (1u << 2)
+#define _IEC1_USB1IE_MASK   (1u << 2)
+
+/* -----------------------------------------------------------------------
+ * USB1 registers  (base 0xBF889000, first user register at +0x040)
+ * USB2 registers  (base 0xBF88A000, first user register at +0x040)
+ *
+ * _USB_BASE_ADDRESS / _USB2_BASE_ADDRESS match XC32 p32mk1024mcm100.h:
+ *   USB1 = 0xBF889040,  USB2 = 0xBF88A040
+ * USB_MODULE_ID is a typedef uint32_t (peripheral identified by base addr).
+ * ----------------------------------------------------------------------- */
+
+#define _USB_BASE_ADDRESS   0xBF889040u
+#define _USB2_BASE_ADDRESS  0xBF88A040u
+#define USB_NUMBER_OF_MODULES 2U
+
+/* -----------------------------------------------------------------------
  * Vector numbers (used in configTICK_INTERRUPT_VECTOR)
  * ----------------------------------------------------------------------- */
 
 #define _TIMER_1_VECTOR         4
 #define _CORE_TIMER_VECTOR      0
+#define _USB_1_VECTOR           34U
+#define _USB_2_VECTOR           244U
+
+/* -----------------------------------------------------------------------
+ * USB register bit-field typedef structs
+ * Extracted from XC32 p32mk1024mcm100.h (extern declarations omitted —
+ * we use our own volatile-pointer macros for register access).
+ * Required by driver/usb/usbfs/src/templates/usbfs_registers.h which
+ * does #include <xc.h> and uses these types directly.
+ * ----------------------------------------------------------------------- */
+
+typedef struct {
+  uint32_t VBUSVDIF:1;
+  uint32_t :1;
+  uint32_t SESENDIF:1;
+  uint32_t SESVDIF:1;
+  uint32_t ACTVIF:1;
+  uint32_t LSTATEIF:1;
+  uint32_t T1MSECIF:1;
+  uint32_t IDIF:1;
+} __U1OTGIRbits_t;
+
+typedef struct {
+  uint32_t VBUSVDIE:1;
+  uint32_t :1;
+  uint32_t SESENDIE:1;
+  uint32_t SESVDIE:1;
+  uint32_t ACTVIE:1;
+  uint32_t LSTATEIE:1;
+  uint32_t T1MSECIE:1;
+  uint32_t IDIE:1;
+} __U1OTGIEbits_t;
+
+typedef struct {
+  uint32_t VBUSVD:1;
+  uint32_t :1;
+  uint32_t SESEND:1;
+  uint32_t SESVD:1;
+  uint32_t :1;
+  uint32_t LSTATE:1;
+  uint32_t :1;
+  uint32_t ID:1;
+} __U1OTGSTATbits_t;
+
+typedef struct {
+  uint32_t VBUSDIS:1;
+  uint32_t VBUSCHG:1;
+  uint32_t OTGEN:1;
+  uint32_t VBUSON:1;
+  uint32_t DMPULDWN:1;
+  uint32_t DPPULDWN:1;
+  uint32_t DMPULUP:1;
+  uint32_t DPPULUP:1;
+} __U1OTGCONbits_t;
+
+typedef struct {
+  uint32_t USBPWR:1;
+  uint32_t USUSPEND:1;
+  uint32_t :1;
+  uint32_t USBBUSY:1;
+  uint32_t USLPGRD:1;
+  uint32_t :2;
+  uint32_t UACTPND:1;
+} __U1PWRCbits_t;
+
+typedef union {
+  struct {
+    uint32_t URSTIF_DETACHIF:1;
+    uint32_t UERRIF:1;
+    uint32_t SOFIF:1;
+    uint32_t TRNIF:1;
+    uint32_t IDLEIF:1;
+    uint32_t RESUMEIF:1;
+    uint32_t ATTACHIF:1;
+    uint32_t STALLIF:1;
+  };
+  struct {
+    uint32_t DETACHIF:1;
+  };
+  struct {
+    uint32_t URSTIF:1;
+  };
+} __U1IRbits_t;
+
+typedef union {
+  struct {
+    uint32_t URSTIE_DETACHIE:1;
+    uint32_t UERRIE:1;
+    uint32_t SOFIE:1;
+    uint32_t TRNIE:1;
+    uint32_t IDLEIE:1;
+    uint32_t RESUMEIE:1;
+    uint32_t ATTACHIE:1;
+    uint32_t STALLIE:1;
+  };
+  struct {
+    uint32_t DETACHIE:1;
+  };
+  struct {
+    uint32_t URSTIE:1;
+  };
+} __U1IEbits_t;
+
+typedef union {
+  struct {
+    uint32_t PIDEF:1;
+    uint32_t CRC5EF_EOFEF:1;
+    uint32_t CRC16EF:1;
+    uint32_t DFN8EF:1;
+    uint32_t BTOEF:1;
+    uint32_t DMAEF:1;
+    uint32_t BMXEF:1;
+    uint32_t BTSEF:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t CRC5EF:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t EOFEF:1;
+  };
+} __U1EIRbits_t;
+
+typedef union {
+  struct {
+    uint32_t PIDEE:1;
+    uint32_t CRC5EE_EOFEE:1;
+    uint32_t CRC16EE:1;
+    uint32_t DFN8EE:1;
+    uint32_t BTOEE:1;
+    uint32_t DMAEE:1;
+    uint32_t BMXEE:1;
+    uint32_t BTSEE:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t CRC5EE:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t EOFEE:1;
+  };
+} __U1EIEbits_t;
+
+typedef union {
+  struct {
+    uint32_t :2;
+    uint32_t PPBI:1;
+    uint32_t DIR:1;
+    uint32_t ENDPT:4;
+  };
+  struct {
+    uint32_t :4;
+    uint32_t ENDPT0:1;
+    uint32_t ENDPT1:1;
+    uint32_t ENDPT2:1;
+    uint32_t ENDPT3:1;
+  };
+} __U1STATbits_t;
+
+typedef union {
+  struct {
+    uint32_t USBEN_SOFEN:1;
+    uint32_t PPBRST:1;
+    uint32_t RESUME:1;
+    uint32_t HOSTEN:1;
+    uint32_t USBRST:1;
+    uint32_t PKTDIS_TOKBUSY:1;
+    uint32_t SE0:1;
+    uint32_t JSTATE:1;
+  };
+  struct {
+    uint32_t USBEN:1;
+  };
+  struct {
+    uint32_t SOFEN:1;
+    uint32_t :4;
+    uint32_t PKTDIS:1;
+  };
+  struct {
+    uint32_t :5;
+    uint32_t TOKBUSY:1;
+  };
+} __U1CONbits_t;
+
+typedef union {
+  struct {
+    uint32_t DEVADDR:7;
+    uint32_t LSPDEN:1;
+  };
+  struct {
+    uint32_t DEVADDR0:1;
+    uint32_t DEVADDR1:1;
+    uint32_t DEVADDR2:1;
+    uint32_t DEVADDR3:1;
+    uint32_t DEVADDR4:1;
+    uint32_t DEVADDR5:1;
+    uint32_t DEVADDR6:1;
+  };
+} __U1ADDRbits_t;
+
+typedef struct {
+  uint32_t :1;
+  uint32_t BDTPTRL:7;
+} __U1BDTP1bits_t;
+
+typedef union {
+  struct {
+    uint32_t FRML:8;
+  };
+  struct {
+    uint32_t FRM0:1;
+    uint32_t FRM1:1;
+    uint32_t FRM2:1;
+    uint32_t FRM3:1;
+    uint32_t FRM4:1;
+    uint32_t FRM5:1;
+    uint32_t FRM6:1;
+    uint32_t FRM7:1;
+  };
+} __U1FRMLbits_t;
+
+typedef union {
+  struct {
+    uint32_t FRMH:3;
+  };
+  struct {
+    uint32_t FRM8:1;
+    uint32_t FRM9:1;
+    uint32_t FRM10:1;
+  };
+} __U1FRMHbits_t;
+
+typedef union {
+  struct {
+    uint32_t EP:4;
+    uint32_t PID:4;
+  };
+  struct {
+    uint32_t EP0:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t EP1:1;
+    uint32_t EP2:1;
+    uint32_t EP3:1;
+    uint32_t PID0:1;
+  };
+  struct {
+    uint32_t :5;
+    uint32_t PID1:1;
+    uint32_t PID2:1;
+    uint32_t PID3:1;
+  };
+} __U1TOKbits_t;
+
+typedef struct {
+  uint32_t CNT:8;
+} __U1SOFbits_t;
+
+typedef struct {
+  uint32_t BDTPTRH:8;
+} __U1BDTP2bits_t;
+
+typedef struct {
+  uint32_t BDTPTRU:8;
+} __U1BDTP3bits_t;
+
+typedef struct {
+  uint32_t UASUSPND:1;
+  uint32_t :2;
+  uint32_t LSDEV:1;
+  uint32_t USBSIDL:1;
+  uint32_t :1;
+  uint32_t UOEMON:1;
+  uint32_t UTEYE:1;
+} __U1CNFG1bits_t;
+
+typedef struct {
+  uint32_t EPHSHK:1;
+  uint32_t EPSTALL:1;
+  uint32_t EPTXEN:1;
+  uint32_t EPRXEN:1;
+  uint32_t EPCONDIS:1;
+  uint32_t :1;
+  uint32_t RETRYDIS:1;
+  uint32_t LSPD:1;
+} __U1EP0bits_t;
+
+/* EP1–EP15 share the same layout (no RETRYDIS/LSPD fields) */
+typedef struct {
+  uint32_t EPHSHK:1;
+  uint32_t EPSTALL:1;
+  uint32_t EPTXEN:1;
+  uint32_t EPRXEN:1;
+  uint32_t EPCONDIS:1;
+} __U1EP1bits_t, __U1EP2bits_t, __U1EP3bits_t, __U1EP4bits_t,
+  __U1EP5bits_t, __U1EP6bits_t, __U1EP7bits_t, __U1EP8bits_t,
+  __U1EP9bits_t, __U1EP10bits_t, __U1EP11bits_t, __U1EP12bits_t,
+  __U1EP13bits_t, __U1EP14bits_t, __U1EP15bits_t;
+
+/* -----------------------------------------------------------------------
+ * USB register bit-mask and position constants
+ * Extracted from XC32 p32mk1024mcm100.h for usbfs_registers.h compatibility.
+ * ----------------------------------------------------------------------- */
+#define _U1ADDR_DEVADDR_MASK                     0x0000007Fu
+#define _U1ADDR_LSPDEN_MASK                      0x00000080u
+#define _U1CNFG1_UASUSPND_MASK                   0x00000001u
+#define _U1CNFG1_USBSIDL_MASK                    0x00000010u
+#define _U1CNFG1_UTEYE_MASK                      0x00000080u
+#define _U1CNFG1_UTEYE_POSITION                  0x00000007u
+#define _U1CON_HOSTEN_MASK                       0x00000008u
+#define _U1CON_PKTDIS_TOKBUSY_MASK               0x00000020u
+#define _U1CON_PPBRST_MASK                       0x00000002u
+#define _U1CON_RESUME_MASK                       0x00000004u
+#define _U1CON_USBEN_SOFEN_MASK                  0x00000001u
+#define _U1CON_USBEN_SOFEN_POSITION              0x00000000u
+#define _U1CON_USBRST_MASK                       0x00000010u
+#define _U1EP0_EPCONDIS_MASK                     0x00000010u
+#define _U1EP0_EPCONDIS_POSITION                 0x00000004u
+#define _U1EP0_EPHSHK_MASK                       0x00000001u
+#define _U1EP0_EPHSHK_POSITION                   0x00000000u
+#define _U1EP0_EPRXEN_MASK                       0x00000008u
+#define _U1EP0_EPSTALL_MASK                      0x00000002u
+#define _U1EP0_EPSTALL_POSITION                  0x00000001u
+#define _U1EP0_EPTXEN_MASK                       0x00000004u
+#define _U1EP0_LSPD_MASK                         0x00000080u
+#define _U1EP0_RETRYDIS_MASK                     0x00000040u
+#define _U1EP1_EPCONDIS_POSITION                 0x00000004u
+#define _U1EP1_EPHSHK_POSITION                   0x00000000u
+#define _U1EP1_EPSTALL_POSITION                  0x00000001u
+#define _U1OTGCON_DMPULDWN_MASK                  0x00000010u
+#define _U1OTGCON_DMPULUP_MASK                   0x00000040u
+#define _U1OTGCON_DPPULDWN_MASK                  0x00000020u
+#define _U1OTGCON_DPPULUP_MASK                   0x00000080u
+#define _U1OTGCON_OTGEN_MASK                     0x00000004u
+#define _U1OTGCON_VBUSCHG_MASK                   0x00000002u
+#define _U1OTGCON_VBUSDIS_MASK                   0x00000001u
+#define _U1OTGCON_VBUSON_MASK                    0x00000008u
+#define _U1PWRC_USBPWR_MASK                      0x00000001u
+#define _U1PWRC_USLPGRD_MASK                     0x00000010u
+#define _U1PWRC_USUSPEND_MASK                    0x00000002u
+#define _U1TOK_EP_MASK                           0x0000000Fu
+#define _U1TOK_PID_POSITION                      0x00000004u
 
 #endif /* __ASSEMBLER__ */
 #endif /* XC_H */

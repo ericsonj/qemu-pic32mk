@@ -20,4 +20,7 @@ void UART2_TX_InterruptHandler(void);
 void CAN1_InterruptHandler(void);
 void CAN2_InterruptHandler(void);
 
+/* USB1 ISR — calls DRV_USBFS_Tasks_ISR internally */
+void USB1_InterruptHandler(void);
+
 #endif /* INTERRUPTS_H */

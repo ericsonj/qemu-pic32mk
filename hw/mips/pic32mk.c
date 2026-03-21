@@ -21,9 +21,11 @@
 #include "hw/mips/mips.h"
 #include "hw/mips/pic32mk.h"
 #include "hw/mips/pic32mk_evic.h"
+#include "hw/mips/pic32mk_usb.h"
 #include "system/address-spaces.h"
 #include "system/system.h"
 #include "net/can_emu.h"
+#include "chardev/char.h"
 #include "cpu.h"
 
 /* Device type strings from our peripheral files */
@@ -34,6 +36,7 @@
 #define TYPE_PIC32MK_I2C    "pic32mk-i2c"
 #define TYPE_PIC32MK_DMA    "pic32mk-dma"
 #define TYPE_PIC32MK_CANFD  "pic32mk-canfd"
+#define TYPE_PIC32MK_USB    "pic32mk-usb"
 
 /*
  * Board state.
@@ -397,6 +400,27 @@ static void pic32mk_canfd_create(PIC32MKState *s,
                        qdev_get_gpio_in(s->evic, irq_src));
 }
 
+/*
+ * Create a USB OTG instance, map SFR into the SFR window, connect IRQ.
+ */
+static void pic32mk_usb_create(PIC32MKState *s,
+                               hwaddr sfr_offset, int irq_src,
+                               const char *chardev_id)
+{
+    DeviceState *dev = qdev_new(TYPE_PIC32MK_USB);
+    if (chardev_id) {
+        Chardev *chr = qemu_chr_find(chardev_id);
+        if (chr) {
+            qdev_prop_set_chr(dev, "chardev", chr);
+        }
+    }
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+    memory_region_add_subregion_overlap(&s->sfr, sfr_offset,
+        sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 1);
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
+                       qdev_get_gpio_in(s->evic, irq_src));
+}
+
 /* -----------------------------------------------------------------------
  * Firmware loading
  * ----------------------------------------------------------------------- */
@@ -518,6 +542,10 @@ static void pic32mk_machine_init(MachineState *machine)
     pic32mk_canfd_create(s, PIC32MK_CAN4_OFFSET,
                          PIC32MK_CAN4_MSGRAM_BASE, PIC32MK_IRQ_CAN4,
                          pic32mk_find_canbus(3));
+
+    /* USB OTG 1–2 (Phase 4A — register-file stub) */
+    pic32mk_usb_create(s, PIC32MK_USB1_OFFSET, PIC32MK_IRQ_USB1, "usbcdc");
+    pic32mk_usb_create(s, PIC32MK_USB2_OFFSET, PIC32MK_IRQ_USB2, NULL);
 
     pic32mk_load_firmware(machine);
 }

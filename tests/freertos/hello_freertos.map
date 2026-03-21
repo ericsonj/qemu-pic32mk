@@ -7,7 +7,7 @@ Discarded input sections
  .reginfo       0x00000000       0x18 build/main.o
  .MIPS.abiflags
                 0x00000000       0x18 build/main.o
- .pdr           0x00000000      0x240 build/main.o
+ .pdr           0x00000000      0x260 build/main.o
  .comment       0x00000000       0x26 build/main.o
  .note.GNU-stack
                 0x00000000        0x0 build/main.o
@@ -181,13 +181,179 @@ Discarded input sections
  .comment       0x00000000       0x26 build/plib_canfd2.o
  .note.GNU-stack
                 0x00000000        0x0 build/plib_canfd2.o
+ .text          0x00000000        0x0 build/usb_init.o
+ .data          0x00000000        0x0 build/usb_init.o
+ .bss           0x00000000        0x0 build/usb_init.o
+ .reginfo       0x00000000       0x18 build/usb_init.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/usb_init.o
+ .pdr           0x00000000       0xc0 build/usb_init.o
+ .comment       0x00000000       0x26 build/usb_init.o
+ .note.GNU-stack
+                0x00000000        0x0 build/usb_init.o
+ .text          0x00000000        0x0 build/usb_device_init_data.o
+ .data          0x00000000        0x0 build/usb_device_init_data.o
+ .bss           0x00000000        0x0 build/usb_device_init_data.o
+ .reginfo       0x00000000       0x18 build/usb_device_init_data.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/usb_device_init_data.o
+ .pdr           0x00000000        0x0 build/usb_device_init_data.o
+ .comment       0x00000000       0x26 build/usb_device_init_data.o
+ .note.GNU-stack
+                0x00000000        0x0 build/usb_device_init_data.o
+ .text          0x00000000        0x0 build/usb_device.o
+ .data          0x00000000        0x0 build/usb_device.o
+ .bss           0x00000000        0x0 build/usb_device.o
+ .reginfo       0x00000000       0x18 build/usb_device.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/usb_device.o
+ .pdr           0x00000000      0x620 build/usb_device.o
+ .text.USB_DEVICE_Status
+                0x00000000       0x2c build/usb_device.o
+ .text.USB_DEVICE_Deinitialize
+                0x00000000       0x28 build/usb_device.o
+ .text.USB_DEVICE_EndpointIsEnabled
+                0x00000000       0x44 build/usb_device.o
+ .text.USB_DEVICE_EndpointStall
+                0x00000000       0x3c build/usb_device.o
+ .text.USB_DEVICE_EndpointStallClear
+                0x00000000       0x3c build/usb_device.o
+ .text.USB_DEVICE_EndpointIsStalled
+                0x00000000       0x44 build/usb_device.o
+ .text.USB_DEVICE_IsSuspended
+                0x00000000       0x34 build/usb_device.o
+ .text.USB_DEVICE_StateGet
+                0x00000000       0x34 build/usb_device.o
+ .text.USB_DEVICE_Close
+                0x00000000       0x2c build/usb_device.o
+ .text.USB_DEVICE_ClientStatusGet
+                0x00000000       0x30 build/usb_device.o
+ .text.USB_DEVICE_ActiveConfigurationGet
+                0x00000000       0x30 build/usb_device.o
+ .text.USB_DEVICE_ActiveSpeedGet
+                0x00000000       0x34 build/usb_device.o
+ .text.USB_DEVICE_ControlReceive
+                0x00000000       0x50 build/usb_device.o
+ .text.USB_DEVICE_PowerStateSet
+                0x00000000       0x38 build/usb_device.o
+ .text.USB_DEVICE_RemoteWakeupStatusGet
+                0x00000000       0x30 build/usb_device.o
+ .text.USB_DEVICE_RemoteWakeupStop
+                0x00000000       0x34 build/usb_device.o
+ .text.USB_DEVICE_RemoteWakeupStart
+                0x00000000       0x34 build/usb_device.o
+ .text.USB_DEVICE_IRPCancel
+                0x00000000       0x44 build/usb_device.o
+ .text.F_USB_DEVICE_EndpointMutexCreateFunction
+                0x00000000       0x54 build/usb_device.o
+ .text.F_USB_DEVICE_EndpointMutexDeleteFunction
+                0x00000000       0x3c build/usb_device.o
+ .text.F_USB_DEVICE_GetStringDescriptorRequestProcessAdvanced
+                0x00000000       0xbc build/usb_device.o
+ .text.F_USB_DEVICE_Other_Speed_Descriptor_Request
+                0x00000000        0x8 build/usb_device.o
+ .comment       0x00000000       0x26 build/usb_device.o
+ .note.GNU-stack
+                0x00000000        0x0 build/usb_device.o
+ .text          0x00000000        0x0 build/usb_device_cdc.o
+ .data          0x00000000        0x0 build/usb_device_cdc.o
+ .bss           0x00000000        0x0 build/usb_device_cdc.o
+ .reginfo       0x00000000       0x18 build/usb_device_cdc.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/usb_device_cdc.o
+ .pdr           0x00000000      0x1c0 build/usb_device_cdc.o
+ .text.F_USB_DEVICE_CDC_SerialStateSendIRPCallback
+                0x00000000       0xbc build/usb_device_cdc.o
+ .text.F_USB_DEVICE_CDC_ReadIRPCallback
+                0x00000000       0xbc build/usb_device_cdc.o
+ .text.USB_DEVICE_CDC_Read
+                0x00000000      0x1f8 build/usb_device_cdc.o
+ .text.USB_DEVICE_CDC_ReadPacketSizeGet
+                0x00000000       0x1c build/usb_device_cdc.o
+ .text.USB_DEVICE_CDC_WritePacketSizeGet
+                0x00000000       0x1c build/usb_device_cdc.o
+ .text.USB_DEVICE_CDC_SerialStateNotificationSend
+                0x00000000      0x214 build/usb_device_cdc.o
+ .comment       0x00000000       0x26 build/usb_device_cdc.o
+ .note.GNU-stack
+                0x00000000        0x0 build/usb_device_cdc.o
+ .text          0x00000000        0x0 build/usb_device_cdc_acm.o
+ .data          0x00000000        0x0 build/usb_device_cdc_acm.o
+ .bss           0x00000000        0x0 build/usb_device_cdc_acm.o
+ .reginfo       0x00000000       0x18 build/usb_device_cdc_acm.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/usb_device_cdc_acm.o
+ .pdr           0x00000000       0x20 build/usb_device_cdc_acm.o
+ .comment       0x00000000       0x26 build/usb_device_cdc_acm.o
+ .note.GNU-stack
+                0x00000000        0x0 build/usb_device_cdc_acm.o
+ .text          0x00000000        0x0 build/drv_usbfs.o
+ .data          0x00000000        0x0 build/drv_usbfs.o
+ .bss           0x00000000        0x0 build/drv_usbfs.o
+ .reginfo       0x00000000       0x18 build/drv_usbfs.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/drv_usbfs.o
+ .pdr           0x00000000      0x120 build/drv_usbfs.o
+ .text.DRV_USBFS_Deinitialize
+                0x00000000       0xb8 build/drv_usbfs.o
+ .text.DRV_USBFS_Status
+                0x00000000       0x1c build/drv_usbfs.o
+ .text.DRV_USBFS_Tasks
+                0x00000000        0x8 build/drv_usbfs.o
+ .text.DRV_USBFS_USB1_Handler
+                0x00000000       0x20 build/drv_usbfs.o
+ .comment       0x00000000       0x26 build/drv_usbfs.o
+ .note.GNU-stack
+                0x00000000        0x0 build/drv_usbfs.o
+ .text          0x00000000        0x0 build/drv_usbfs_device.o
+ .data          0x00000000        0x0 build/drv_usbfs_device.o
+ .bss           0x00000000        0x0 build/drv_usbfs_device.o
+ .reginfo       0x00000000       0x18 build/drv_usbfs_device.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/drv_usbfs_device.o
+ .pdr           0x00000000      0x2a0 build/drv_usbfs_device.o
+ .text.F_DRV_USBFS_DEVICE_EndpointObjectEnable
+                0x00000000       0x28 build/drv_usbfs_device.o
+ .comment       0x00000000       0x26 build/drv_usbfs_device.o
+ .note.GNU-stack
+                0x00000000        0x0 build/drv_usbfs_device.o
+ .text          0x00000000        0x0 build/osal_freertos.o
+ .data          0x00000000        0x0 build/osal_freertos.o
+ .bss           0x00000000        0x0 build/osal_freertos.o
+ .reginfo       0x00000000       0x18 build/osal_freertos.o
+ .MIPS.abiflags
+                0x00000000       0x18 build/osal_freertos.o
+ .pdr           0x00000000      0x1e0 build/osal_freertos.o
+ .text.OSAL_SEM_Create
+                0x00000000       0xa8 build/osal_freertos.o
+ .text.OSAL_SEM_Delete
+                0x00000000       0x30 build/osal_freertos.o
+ .text.OSAL_SEM_Pend
+                0x00000000       0x48 build/osal_freertos.o
+ .text.OSAL_SEM_Post
+                0x00000000       0x4c build/osal_freertos.o
+ .text.OSAL_SEM_PostISR
+                0x00000000       0x6c build/osal_freertos.o
+ .text.OSAL_SEM_GetCount
+                0x00000000       0x28 build/osal_freertos.o
+ .text.OSAL_MUTEX_Delete
+                0x00000000       0x4c build/osal_freertos.o
+ .text.OSAL_Malloc
+                0x00000000       0x1c build/osal_freertos.o
+ .text.OSAL_Free
+                0x00000000       0x1c build/osal_freertos.o
+ .text.OSAL_Initialize
+                0x00000000        0x8 build/osal_freertos.o
+ .comment       0x00000000       0x26 build/osal_freertos.o
+ .note.GNU-stack
+                0x00000000        0x0 build/osal_freertos.o
  .text          0x00000000        0x0 build/FreeRTOS_tasks.o
  .data          0x00000000        0x0 build/FreeRTOS_tasks.o
  .bss           0x00000000        0x0 build/FreeRTOS_tasks.o
  .reginfo       0x00000000       0x18 build/FreeRTOS_tasks.o
  .MIPS.abiflags
                 0x00000000       0x18 build/FreeRTOS_tasks.o
- .pdr           0x00000000      0x4a0 build/FreeRTOS_tasks.o
+ .pdr           0x00000000      0x520 build/FreeRTOS_tasks.o
  .text.vTaskEndScheduler
                 0x00000000       0x34 build/FreeRTOS_tasks.o
  .text.xTaskGetTickCountFromISR
@@ -233,13 +399,11 @@ Discarded input sections
  .reginfo       0x00000000       0x18 build/queue.o
  .MIPS.abiflags
                 0x00000000       0x18 build/queue.o
- .pdr           0x00000000      0x2c0 build/queue.o
- .text.xQueueGenericSend
-                0x00000000      0x224 build/queue.o
+ .pdr           0x00000000      0x300 build/queue.o
+ .text.xQueueCreateCountingSemaphore
+                0x00000000       0x5c build/queue.o
  .text.xQueueGiveFromISR
                 0x00000000      0x100 build/queue.o
- .text.xQueueSemaphoreTake
-                0x00000000      0x1e4 build/queue.o
  .text.xQueuePeek
                 0x00000000      0x1fc build/queue.o
  .text.xQueueReceiveFromISR
@@ -319,7 +483,7 @@ Discarded input sections
  .reginfo       0x00000000       0x18 build/port_asm_patched.o
  .MIPS.abiflags
                 0x00000000       0x18 build/port_asm_patched.o
- .pdr           0x00000000      0x160 build/port_asm_patched.o
+ .pdr           0x00000000      0x180 build/port_asm_patched.o
 
 Memory Configuration
 
@@ -331,7 +495,7 @@ ram              0xa0000000         0x00040000         xrw
 Linker script and memory map
 
 
-.vectors        0xbfc40000     0x6198
+.vectors        0xbfc40000     0xaca8
  *(.vectors)
  .vectors       0xbfc40000      0x480 build/crt0.o
                 0xbfc40000                _start
@@ -348,434 +512,746 @@ Linker script and memory map
  *(.text .text.*)
  .text.uart1_puts
                 0xbfc40904       0x6c build/main.o
- .text.uart1_putc
-                0xbfc40970       0x30 build/main.o
- .text.uart1_puthex
-                0xbfc409a0       0x90 build/main.o
- .text.vCan2RxTask
-                0xbfc40a30       0xf4 build/main.o
- .text.vCan1RxTask
-                0xbfc40b24      0x104 build/main.o
- .text.uart1_putu
-                0xbfc40c28       0xc8 build/main.o
- .text.vUart2ConsumerTask
-                0xbfc40cf0       0x88 build/main.o
  .text.vPingTask
-                0xbfc40d78       0x2c build/main.o
+                0xbfc40970       0x2c build/main.o
+ .text.vUsbCdcTask
+                0xbfc4099c      0x1d0 build/main.o
+ .text.uart1_putc
+                0xbfc40b6c       0x30 build/main.o
+ .text.uart1_puthex
+                0xbfc40b9c       0x90 build/main.o
+ .text.vCan2RxTask
+                0xbfc40c2c       0xf4 build/main.o
+ .text.vCan1RxTask
+                0xbfc40d20      0x104 build/main.o
+ .text.uart1_putu
+                0xbfc40e24       0xc8 build/main.o
+ .text.vUart2ConsumerTask
+                0xbfc40eec       0x88 build/main.o
  .text.vCanTxTask
-                0xbfc40da4       0x98 build/main.o
+                0xbfc40f74       0x98 build/main.o
  .text.vHelloTask
-                0xbfc40e3c      0x128 build/main.o
+                0xbfc4100c      0x128 build/main.o
  .text.can2_rx_callback
-                0xbfc40f64       0xc0 build/main.o
+                0xbfc41134       0xc0 build/main.o
  .text.can1_rx_callback
-                0xbfc41024       0xc0 build/main.o
+                0xbfc411f4       0xc0 build/main.o
  .text.uart2_rx_callback
-                0xbfc410e4       0x78 build/main.o
+                0xbfc412b4       0x78 build/main.o
  .text.vApplicationSetupTickTimerInterrupt
-                0xbfc4115c       0x44 build/main.o
-                0xbfc4115c                vApplicationSetupTickTimerInterrupt
+                0xbfc4132c       0x44 build/main.o
+                0xbfc4132c                vApplicationSetupTickTimerInterrupt
  .text.vApplicationMallocFailedHook
-                0xbfc411a0       0x1c build/main.o
-                0xbfc411a0                vApplicationMallocFailedHook
+                0xbfc41370       0x1c build/main.o
+                0xbfc41370                vApplicationMallocFailedHook
  .text.vApplicationStackOverflowHook
-                0xbfc411bc       0x1c build/main.o
-                0xbfc411bc                vApplicationStackOverflowHook
+                0xbfc4138c       0x1c build/main.o
+                0xbfc4138c                vApplicationStackOverflowHook
  .text.vApplicationIdleHook
-                0xbfc411d8        0xc build/main.o
-                0xbfc411d8                vApplicationIdleHook
- .text.main     0xbfc411e4      0x234 build/main.o
-                0xbfc411e4                main
- .text.memset   0xbfc41418       0x24 build/libc_stubs.o
-                0xbfc41418                memset
- .text.memcpy   0xbfc4143c       0x2c build/libc_stubs.o
-                0xbfc4143c                memcpy
+                0xbfc413a8        0xc build/main.o
+                0xbfc413a8                vApplicationIdleHook
+ .text.main     0xbfc413b4      0x284 build/main.o
+                0xbfc413b4                main
+ .text.memset   0xbfc41638       0x24 build/libc_stubs.o
+                0xbfc41638                memset
+ .text.memcpy   0xbfc4165c       0x2c build/libc_stubs.o
+                0xbfc4165c                memcpy
  .text.UART1_WritePendingBytesGet
-                0xbfc41468       0x38 build/plib_uart1.o
+                0xbfc41688       0x38 build/plib_uart1.o
  .text.UART1_Initialize
-                0xbfc414a0       0xd0 build/plib_uart1.o
-                0xbfc414a0                UART1_Initialize
+                0xbfc416c0       0xd0 build/plib_uart1.o
+                0xbfc416c0                UART1_Initialize
  .text.UART1_ReadCountGet
-                0xbfc41570       0x38 build/plib_uart1.o
-                0xbfc41570                UART1_ReadCountGet
+                0xbfc41790       0x38 build/plib_uart1.o
+                0xbfc41790                UART1_ReadCountGet
  .text.UART1_Write
-                0xbfc415a8      0x178 build/plib_uart1.o
-                0xbfc415a8                UART1_Write
+                0xbfc417c8      0x178 build/plib_uart1.o
+                0xbfc417c8                UART1_Write
  .text.UART1_WriteFreeBufferCountGet
-                0xbfc41720       0x34 build/plib_uart1.o
-                0xbfc41720                UART1_WriteFreeBufferCountGet
+                0xbfc41940       0x34 build/plib_uart1.o
+                0xbfc41940                UART1_WriteFreeBufferCountGet
  .text.UART1_FAULT_InterruptHandler
-                0xbfc41754       0xd8 build/plib_uart1.o
-                0xbfc41754                UART1_FAULT_InterruptHandler
+                0xbfc41974       0xd8 build/plib_uart1.o
+                0xbfc41974                UART1_FAULT_InterruptHandler
  .text.UART1_RX_InterruptHandler
-                0xbfc4182c      0x1d4 build/plib_uart1.o
-                0xbfc4182c                UART1_RX_InterruptHandler
+                0xbfc41a4c      0x1d4 build/plib_uart1.o
+                0xbfc41a4c                UART1_RX_InterruptHandler
  .text.UART1_TX_InterruptHandler
-                0xbfc41a00      0x190 build/plib_uart1.o
-                0xbfc41a00                UART1_TX_InterruptHandler
+                0xbfc41c20      0x190 build/plib_uart1.o
+                0xbfc41c20                UART1_TX_InterruptHandler
  .text.UART2_WritePendingBytesGet
-                0xbfc41b90       0x38 build/plib_uart2.o
+                0xbfc41db0       0x38 build/plib_uart2.o
  .text.UART2_Initialize
-                0xbfc41bc8       0xd0 build/plib_uart2.o
-                0xbfc41bc8                UART2_Initialize
+                0xbfc41de8       0xd0 build/plib_uart2.o
+                0xbfc41de8                UART2_Initialize
  .text.UART2_Read
-                0xbfc41c98       0xb0 build/plib_uart2.o
-                0xbfc41c98                UART2_Read
+                0xbfc41eb8       0xb0 build/plib_uart2.o
+                0xbfc41eb8                UART2_Read
  .text.UART2_ReadCountGet
-                0xbfc41d48       0x38 build/plib_uart2.o
-                0xbfc41d48                UART2_ReadCountGet
+                0xbfc41f68       0x38 build/plib_uart2.o
+                0xbfc41f68                UART2_ReadCountGet
  .text.UART2_ReadNotificationEnable
-                0xbfc41d80       0x1c build/plib_uart2.o
-                0xbfc41d80                UART2_ReadNotificationEnable
+                0xbfc41fa0       0x1c build/plib_uart2.o
+                0xbfc41fa0                UART2_ReadNotificationEnable
  .text.UART2_ReadThresholdSet
-                0xbfc41d9c       0x18 build/plib_uart2.o
-                0xbfc41d9c                UART2_ReadThresholdSet
+                0xbfc41fbc       0x18 build/plib_uart2.o
+                0xbfc41fbc                UART2_ReadThresholdSet
  .text.UART2_ReadCallbackRegister
-                0xbfc41db4       0x18 build/plib_uart2.o
-                0xbfc41db4                UART2_ReadCallbackRegister
+                0xbfc41fd4       0x18 build/plib_uart2.o
+                0xbfc41fd4                UART2_ReadCallbackRegister
  .text.UART2_WriteFreeBufferCountGet
-                0xbfc41dcc       0x34 build/plib_uart2.o
-                0xbfc41dcc                UART2_WriteFreeBufferCountGet
+                0xbfc41fec       0x34 build/plib_uart2.o
+                0xbfc41fec                UART2_WriteFreeBufferCountGet
  .text.UART2_FAULT_InterruptHandler
-                0xbfc41e00       0xd8 build/plib_uart2.o
-                0xbfc41e00                UART2_FAULT_InterruptHandler
+                0xbfc42020       0xd8 build/plib_uart2.o
+                0xbfc42020                UART2_FAULT_InterruptHandler
  .text.UART2_RX_InterruptHandler
-                0xbfc41ed8      0x1d0 build/plib_uart2.o
-                0xbfc41ed8                UART2_RX_InterruptHandler
+                0xbfc420f8      0x1d0 build/plib_uart2.o
+                0xbfc420f8                UART2_RX_InterruptHandler
  .text.UART2_TX_InterruptHandler
-                0xbfc420a8      0x190 build/plib_uart2.o
-                0xbfc420a8                UART2_TX_InterruptHandler
+                0xbfc422c8      0x190 build/plib_uart2.o
+                0xbfc422c8                UART2_TX_InterruptHandler
  .text.CAN1_Initialize
-                0xbfc42238      0x11c build/plib_canfd1.o
-                0xbfc42238                CAN1_Initialize
+                0xbfc42458      0x11c build/plib_canfd1.o
+                0xbfc42458                CAN1_Initialize
  .text.CAN1_MessageTransmit
-                0xbfc42354      0x264 build/plib_canfd1.o
-                0xbfc42354                CAN1_MessageTransmit
+                0xbfc42574      0x264 build/plib_canfd1.o
+                0xbfc42574                CAN1_MessageTransmit
  .text.CAN1_MessageReceive
-                0xbfc425b8      0x130 build/plib_canfd1.o
-                0xbfc425b8                CAN1_MessageReceive
+                0xbfc427d8      0x130 build/plib_canfd1.o
+                0xbfc427d8                CAN1_MessageReceive
  .text.CAN1_CallbackRegister
-                0xbfc426e8       0x24 build/plib_canfd1.o
-                0xbfc426e8                CAN1_CallbackRegister
+                0xbfc42908       0x24 build/plib_canfd1.o
+                0xbfc42908                CAN1_CallbackRegister
  .text.CAN1_RX_InterruptHandler
-                0xbfc4270c      0x31c build/plib_canfd1.o
+                0xbfc4292c      0x31c build/plib_canfd1.o
  .text.CAN1_TX_InterruptHandler
-                0xbfc42a28       0xb8 build/plib_canfd1.o
+                0xbfc42c48       0xb8 build/plib_canfd1.o
  .text.CAN1_MISC_InterruptHandler
-                0xbfc42ae0       0x7c build/plib_canfd1.o
+                0xbfc42d00       0x7c build/plib_canfd1.o
  .text.CAN1_InterruptHandler
-                0xbfc42b5c       0x80 build/plib_canfd1.o
-                0xbfc42b5c                CAN1_InterruptHandler
+                0xbfc42d7c       0x80 build/plib_canfd1.o
+                0xbfc42d7c                CAN1_InterruptHandler
  .text.CAN2_Initialize
-                0xbfc42bdc      0x11c build/plib_canfd2.o
-                0xbfc42bdc                CAN2_Initialize
+                0xbfc42dfc      0x11c build/plib_canfd2.o
+                0xbfc42dfc                CAN2_Initialize
  .text.CAN2_MessageReceive
-                0xbfc42cf8      0x130 build/plib_canfd2.o
-                0xbfc42cf8                CAN2_MessageReceive
+                0xbfc42f18      0x130 build/plib_canfd2.o
+                0xbfc42f18                CAN2_MessageReceive
  .text.CAN2_CallbackRegister
-                0xbfc42e28       0x24 build/plib_canfd2.o
-                0xbfc42e28                CAN2_CallbackRegister
+                0xbfc43048       0x24 build/plib_canfd2.o
+                0xbfc43048                CAN2_CallbackRegister
  .text.CAN2_RX_InterruptHandler
-                0xbfc42e4c      0x31c build/plib_canfd2.o
+                0xbfc4306c      0x31c build/plib_canfd2.o
  .text.CAN2_TX_InterruptHandler
-                0xbfc43168       0xb8 build/plib_canfd2.o
+                0xbfc43388       0xb8 build/plib_canfd2.o
  .text.CAN2_MISC_InterruptHandler
-                0xbfc43220       0x7c build/plib_canfd2.o
+                0xbfc43440       0x7c build/plib_canfd2.o
  .text.CAN2_InterruptHandler
-                0xbfc4329c       0x80 build/plib_canfd2.o
-                0xbfc4329c                CAN2_InterruptHandler
+                0xbfc434bc       0x80 build/plib_canfd2.o
+                0xbfc434bc                CAN2_InterruptHandler
+ .text.usb_cdc_event_handler
+                0xbfc4353c       0x20 build/usb_init.o
+ .text.usb_device_event_handler
+                0xbfc4355c       0xac build/usb_init.o
+ .text.USB1_Initialize
+                0xbfc43608       0x7c build/usb_init.o
+                0xbfc43608                USB1_Initialize
+ .text.USB1_InterruptHandler
+                0xbfc43684       0x20 build/usb_init.o
+                0xbfc43684                USB1_InterruptHandler
+ .text.USB_SendFrame
+                0xbfc436a4       0x98 build/usb_init.o
+                0xbfc436a4                USB_SendFrame
+ .text.vUsbDeviceTask
+                0xbfc4373c       0x88 build/usb_init.o
+                0xbfc4373c                vUsbDeviceTask
+ .text.F_USB_DEVICE_Ep0TransmitCompleteCallback
+                0xbfc437c4       0xc4 build/usb_device.o
+                0xbfc437c4                F_USB_DEVICE_Ep0TransmitCompleteCallback
+ .text.F_USB_DEVICE_Ep0ReceiveCompleteCallback
+                0xbfc43888      0x188 build/usb_device.o
+                0xbfc43888                F_USB_DEVICE_Ep0ReceiveCompleteCallback
+ .text.USB_DEVICE_Initialize
+                0xbfc43a10      0x15c build/usb_device.o
+                0xbfc43a10                USB_DEVICE_Initialize
+ .text.USB_DEVICE_Tasks
+                0xbfc43b6c      0x15c build/usb_device.o
+                0xbfc43b6c                USB_DEVICE_Tasks
+ .text.USB_DEVICE_Open
+                0xbfc43cc8       0x5c build/usb_device.o
+                0xbfc43cc8                USB_DEVICE_Open
+ .text.F_USB_DEVICE_DeInitializeAllFunctionDrivers
+                0xbfc43d24       0xb4 build/usb_device.o
+                0xbfc43d24                F_USB_DEVICE_DeInitializeAllFunctionDrivers
+ .text.F_USB_DEVICE_EventHandler
+                0xbfc43dd8      0x210 build/usb_device.o
+                0xbfc43dd8                F_USB_DEVICE_EventHandler
+ .text.F_USB_DEVICE_GetFunctionDriverEntryByInterface
+                0xbfc43fe8       0x8c build/usb_device.o
+                0xbfc43fe8                F_USB_DEVICE_GetFunctionDriverEntryByInterface
+ .text.F_USB_DEVICE_ConfigureDevice
+                0xbfc44074      0x10c build/usb_device.o
+                0xbfc44074                F_USB_DEVICE_ConfigureDevice
+ .text.F_USB_DEVICE_FindEndpoint
+                0xbfc44180       0x84 build/usb_device.o
+                0xbfc44180                F_USB_DEVICE_FindEndpoint
+ .text.F_USB_DEVICE_RedirectControlXfrToClient
+                0xbfc44204       0x58 build/usb_device.o
+                0xbfc44204                F_USB_DEVICE_RedirectControlXfrToClient
+ .text.F_USB_DEVICE_ClientHandleValidate
+                0xbfc4425c       0x28 build/usb_device.o
+                0xbfc4425c                F_USB_DEVICE_ClientHandleValidate
+ .text.USB_DEVICE_Attach
+                0xbfc44284       0x48 build/usb_device.o
+                0xbfc44284                USB_DEVICE_Attach
+ .text.USB_DEVICE_Detach
+                0xbfc442cc       0x50 build/usb_device.o
+                0xbfc442cc                USB_DEVICE_Detach
+ .text.USB_DEVICE_EndpointEnable
+                0xbfc4431c       0x58 build/usb_device.o
+                0xbfc4431c                USB_DEVICE_EndpointEnable
+ .text.USB_DEVICE_EndpointDisable
+                0xbfc44374       0x44 build/usb_device.o
+                0xbfc44374                USB_DEVICE_EndpointDisable
+ .text.USB_DEVICE_EventHandlerSet
+                0xbfc443b8       0x58 build/usb_device.o
+                0xbfc443b8                USB_DEVICE_EventHandlerSet
+ .text.USB_DEVICE_ControlSend
+                0xbfc44410       0x88 build/usb_device.o
+                0xbfc44410                USB_DEVICE_ControlSend
+ .text.USB_DEVICE_ControlStatus
+                0xbfc44498       0x7c build/usb_device.o
+                0xbfc44498                USB_DEVICE_ControlStatus
+ .text.F_USB_DEVICE_ForwardControlXfrToFunction
+                0xbfc44514       0xac build/usb_device.o
+                0xbfc44514                F_USB_DEVICE_ForwardControlXfrToFunction
+ .text.F_USB_DEVICE_ProcessStandardEndpointRequest
+                0xbfc445c0      0x114 build/usb_device.o
+                0xbfc445c0                F_USB_DEVICE_ProcessStandardEndpointRequest
+ .text.F_USB_DEVICE_ProcessStandardDeviceSetRequests
+                0xbfc446d4      0x254 build/usb_device.o
+                0xbfc446d4                F_USB_DEVICE_ProcessStandardDeviceSetRequests
+ .text.USB_DEVICE_IRPSubmit
+                0xbfc44928       0x54 build/usb_device.o
+                0xbfc44928                USB_DEVICE_IRPSubmit
+ .text.USB_DEVICE_IRPCancelAll
+                0xbfc4497c       0x44 build/usb_device.o
+                0xbfc4497c                USB_DEVICE_IRPCancelAll
+ .text.F_USB_DEVICE_GetStringDescriptorRequestProcess
+                0xbfc449c0       0xcc build/usb_device.o
+                0xbfc449c0                F_USB_DEVICE_GetStringDescriptorRequestProcess
+ .text.F_USB_DEVICE_ProcessStandardDeviceGetRequests
+                0xbfc44a8c      0x200 build/usb_device.o
+                0xbfc44a8c                F_USB_DEVICE_ProcessStandardDeviceGetRequests
+ .text.F_USB_DEVICE_ControlTransferHandler
+                0xbfc44c8c      0x1f4 build/usb_device.o
+                0xbfc44c8c                F_USB_DEVICE_ControlTransferHandler
+ .text.F_USB_DEVICE_CDC_WriteIRPCallback
+                0xbfc44e80       0xbc build/usb_device_cdc.o
+                0xbfc44e80                F_USB_DEVICE_CDC_WriteIRPCallback
+ .text.F_USB_DEVICE_CDC_GlobalInitialize
+                0xbfc44f3c       0x48 build/usb_device_cdc.o
+                0xbfc44f3c                F_USB_DEVICE_CDC_GlobalInitialize
+ .text.F_USB_DEVICE_CDC_Initialization
+                0xbfc44f84      0x154 build/usb_device_cdc.o
+                0xbfc44f84                F_USB_DEVICE_CDC_Initialization
+ .text.F_USB_DEVICE_CDC_ControlTransferHandler
+                0xbfc450d8      0x104 build/usb_device_cdc.o
+                0xbfc450d8                F_USB_DEVICE_CDC_ControlTransferHandler
+ .text.F_USB_DEVICE_CDC_EndpointDisable
+                0xbfc451dc       0x58 build/usb_device_cdc.o
+                0xbfc451dc                F_USB_DEVICE_CDC_EndpointDisable
+ .text.F_USB_DEVICE_CDC_Deinitialization
+                0xbfc45234       0x70 build/usb_device_cdc.o
+                0xbfc45234                F_USB_DEVICE_CDC_Deinitialization
+ .text.USB_DEVICE_CDC_Write
+                0xbfc452a4      0x228 build/usb_device_cdc.o
+                0xbfc452a4                USB_DEVICE_CDC_Write
+ .text.USB_DEVICE_CDC_EventHandlerSet
+                0xbfc454cc       0x38 build/usb_device_cdc.o
+                0xbfc454cc                USB_DEVICE_CDC_EventHandlerSet
+ .text.F_USB_DEVICE_CDC_ACMSetUpPacketHandler
+                0xbfc45504       0xe0 build/usb_device_cdc_acm.o
+                0xbfc45504                F_USB_DEVICE_CDC_ACMSetUpPacketHandler
+ .text.DRV_USBFS_Initialize
+                0xbfc455e4      0x170 build/drv_usbfs.o
+                0xbfc455e4                DRV_USBFS_Initialize
+ .text.DRV_USBFS_Open
+                0xbfc45754       0x58 build/drv_usbfs.o
+                0xbfc45754                DRV_USBFS_Open
+ .text.DRV_USBFS_Close
+                0xbfc457ac       0x2c build/drv_usbfs.o
+                0xbfc457ac                DRV_USBFS_Close
+ .text.DRV_USBFS_Tasks_ISR
+                0xbfc457d8       0xa0 build/drv_usbfs.o
+                0xbfc457d8                DRV_USBFS_Tasks_ISR
+ .text.DRV_USBFS_ClientEventCallBackSet
+                0xbfc45878       0x78 build/drv_usbfs.o
+                0xbfc45878                DRV_USBFS_ClientEventCallBackSet
+ .text.DRV_USBFS_DEVICE_AddressSet
+                0xbfc458f0       0x28 build/drv_usbfs_device.o
+                0xbfc458f0                DRV_USBFS_DEVICE_AddressSet
+ .text.DRV_USBFS_DEVICE_CurrentSpeedGet
+                0xbfc45918       0x10 build/drv_usbfs_device.o
+                0xbfc45918                DRV_USBFS_DEVICE_CurrentSpeedGet
+ .text.DRV_USBFS_DEVICE_RemoteWakeupStart
+                0xbfc45928       0x28 build/drv_usbfs_device.o
+                0xbfc45928                DRV_USBFS_DEVICE_RemoteWakeupStart
+ .text.DRV_USBFS_DEVICE_RemoteWakeupStop
+                0xbfc45950       0x28 build/drv_usbfs_device.o
+                0xbfc45950                DRV_USBFS_DEVICE_RemoteWakeupStop
+ .text.DRV_USBFS_DEVICE_Attach
+                0xbfc45978       0x78 build/drv_usbfs_device.o
+                0xbfc45978                DRV_USBFS_DEVICE_Attach
+ .text.DRV_USBFS_DEVICE_EndpointIsEnabled
+                0xbfc459f0       0x58 build/drv_usbfs_device.o
+                0xbfc459f0                DRV_USBFS_DEVICE_EndpointIsEnabled
+ .text.DRV_USBFS_DEVICE_EndpointIsStalled
+                0xbfc45a48       0x58 build/drv_usbfs_device.o
+                0xbfc45a48                DRV_USBFS_DEVICE_EndpointIsStalled
+ .text.DRV_USBFS_DEVICE_SOFNumberGet
+                0xbfc45aa0       0x38 build/drv_usbfs_device.o
+                0xbfc45aa0                DRV_USBFS_DEVICE_SOFNumberGet
+ .text.DRV_USBFS_DEVICE_Detach
+                0xbfc45ad8       0x9c build/drv_usbfs_device.o
+                0xbfc45ad8                DRV_USBFS_DEVICE_Detach
+ .text.DRV_USBFS_DEVICE_EndpointDisable
+                0xbfc45b74      0x12c build/drv_usbfs_device.o
+                0xbfc45b74                DRV_USBFS_DEVICE_EndpointDisable
+ .text.DRV_USBFS_DEVICE_IRPCancel
+                0xbfc45ca0      0x154 build/drv_usbfs_device.o
+                0xbfc45ca0                DRV_USBFS_DEVICE_IRPCancel
+ .text.DRV_USBFS_DEVICE_EndpointEnable
+                0xbfc45df4      0x19c build/drv_usbfs_device.o
+                0xbfc45df4                DRV_USBFS_DEVICE_EndpointEnable
+ .text.F_DRV_USBFS_DEVICE_Initialize
+                0xbfc45f90       0x2c build/drv_usbfs_device.o
+                0xbfc45f90                F_DRV_USBFS_DEVICE_Initialize
+ .text.F_DRV_USBFS_DEVICE_EndpointBDTEntryArm
+                0xbfc45fbc       0xe0 build/drv_usbfs_device.o
+                0xbfc45fbc                F_DRV_USBFS_DEVICE_EndpointBDTEntryArm
+ .text.DRV_USBFS_DEVICE_IRPSubmit
+                0xbfc4609c      0x26c build/drv_usbfs_device.o
+                0xbfc4609c                DRV_USBFS_DEVICE_IRPSubmit
+ .text.F_DRV_USBFS_DEVICE_IRPQueueFlush
+                0xbfc46308       0x7c build/drv_usbfs_device.o
+                0xbfc46308                F_DRV_USBFS_DEVICE_IRPQueueFlush
+ .text.DRV_USBFS_DEVICE_IRPCancelAll
+                0xbfc46384      0x178 build/drv_usbfs_device.o
+                0xbfc46384                DRV_USBFS_DEVICE_IRPCancelAll
+ .text.DRV_USBFS_DEVICE_EndpointStall
+                0xbfc464fc      0x1d8 build/drv_usbfs_device.o
+                0xbfc464fc                DRV_USBFS_DEVICE_EndpointStall
+ .text.DRV_USBFS_DEVICE_EndpointStallClear
+                0xbfc466d4      0x1c8 build/drv_usbfs_device.o
+                0xbfc466d4                DRV_USBFS_DEVICE_EndpointStallClear
+ .text.F_DRV_USBFS_DEVICE_Tasks_ISR
+                0xbfc4689c      0x664 build/drv_usbfs_device.o
+                0xbfc4689c                F_DRV_USBFS_DEVICE_Tasks_ISR
+ .text.OSAL_CRIT_Enter
+                0xbfc46f00       0x40 build/osal_freertos.o
+                0xbfc46f00                OSAL_CRIT_Enter
+ .text.OSAL_CRIT_Leave
+                0xbfc46f40       0x3c build/osal_freertos.o
+                0xbfc46f40                OSAL_CRIT_Leave
+ .text.OSAL_MUTEX_Create
+                0xbfc46f7c       0x50 build/osal_freertos.o
+                0xbfc46f7c                OSAL_MUTEX_Create
+ .text.OSAL_MUTEX_Lock
+                0xbfc46fcc       0x48 build/osal_freertos.o
+                0xbfc46fcc                OSAL_MUTEX_Lock
+ .text.OSAL_MUTEX_Unlock
+                0xbfc47014       0x50 build/osal_freertos.o
+                0xbfc47014                OSAL_MUTEX_Unlock
  .text.prvResetNextTaskUnblockTime
-                0xbfc4331c       0x44 build/FreeRTOS_tasks.o
+                0xbfc47064       0x44 build/FreeRTOS_tasks.o
  .text.prvAddCurrentTaskToDelayedList
-                0xbfc43360      0x194 build/FreeRTOS_tasks.o
+                0xbfc470a8      0x194 build/FreeRTOS_tasks.o
  .text.prvIdleTask
-                0xbfc434f4       0x44 build/FreeRTOS_tasks.o
+                0xbfc4723c       0x44 build/FreeRTOS_tasks.o
  .text.vTaskSuspendAll
-                0xbfc43538       0x18 build/FreeRTOS_tasks.o
-                0xbfc43538                vTaskSuspendAll
+                0xbfc47280       0x18 build/FreeRTOS_tasks.o
+                0xbfc47280                vTaskSuspendAll
  .text.xTaskGetTickCount
-                0xbfc43550       0x10 build/FreeRTOS_tasks.o
-                0xbfc43550                xTaskGetTickCount
+                0xbfc47298       0x10 build/FreeRTOS_tasks.o
+                0xbfc47298                xTaskGetTickCount
  .text.uxTaskGetNumberOfTasks
-                0xbfc43560       0x10 build/FreeRTOS_tasks.o
-                0xbfc43560                uxTaskGetNumberOfTasks
+                0xbfc472a8       0x10 build/FreeRTOS_tasks.o
+                0xbfc472a8                uxTaskGetNumberOfTasks
  .text.xTaskIncrementTick
-                0xbfc43570      0x26c build/FreeRTOS_tasks.o
-                0xbfc43570                xTaskIncrementTick
+                0xbfc472b8      0x26c build/FreeRTOS_tasks.o
+                0xbfc472b8                xTaskIncrementTick
  .text.vTaskSwitchContext
-                0xbfc437dc      0x148 build/FreeRTOS_tasks.o
-                0xbfc437dc                vTaskSwitchContext
+                0xbfc47524      0x148 build/FreeRTOS_tasks.o
+                0xbfc47524                vTaskSwitchContext
  .text.vTaskPlaceOnEventList
-                0xbfc43924       0x3c build/FreeRTOS_tasks.o
-                0xbfc43924                vTaskPlaceOnEventList
+                0xbfc4766c       0x3c build/FreeRTOS_tasks.o
+                0xbfc4766c                vTaskPlaceOnEventList
  .text.xTaskRemoveFromEventList
-                0xbfc43960      0x180 build/FreeRTOS_tasks.o
-                0xbfc43960                xTaskRemoveFromEventList
+                0xbfc476a8      0x180 build/FreeRTOS_tasks.o
+                0xbfc476a8                xTaskRemoveFromEventList
  .text.vTaskInternalSetTimeOutState
-                0xbfc43ae0       0x1c build/FreeRTOS_tasks.o
-                0xbfc43ae0                vTaskInternalSetTimeOutState
+                0xbfc47828       0x1c build/FreeRTOS_tasks.o
+                0xbfc47828                vTaskInternalSetTimeOutState
  .text.vTaskMissedYield
-                0xbfc43afc       0x14 build/FreeRTOS_tasks.o
-                0xbfc43afc                vTaskMissedYield
+                0xbfc47844       0x14 build/FreeRTOS_tasks.o
+                0xbfc47844                vTaskMissedYield
+ .text.xTaskPriorityInherit
+                0xbfc47858      0x178 build/FreeRTOS_tasks.o
+                0xbfc47858                xTaskPriorityInherit
+ .text.xTaskPriorityDisinherit
+                0xbfc479d0      0x124 build/FreeRTOS_tasks.o
+                0xbfc479d0                xTaskPriorityDisinherit
+ .text.vTaskPriorityDisinheritAfterTimeout
+                0xbfc47af4      0x148 build/FreeRTOS_tasks.o
+                0xbfc47af4                vTaskPriorityDisinheritAfterTimeout
  .text.vTaskEnterCritical
-                0xbfc43b10       0x44 build/FreeRTOS_tasks.o
-                0xbfc43b10                vTaskEnterCritical
+                0xbfc47c3c       0x44 build/FreeRTOS_tasks.o
+                0xbfc47c3c                vTaskEnterCritical
  .text.vTaskExitCritical
-                0xbfc43b54       0x60 build/FreeRTOS_tasks.o
-                0xbfc43b54                vTaskExitCritical
+                0xbfc47c80       0x60 build/FreeRTOS_tasks.o
+                0xbfc47c80                vTaskExitCritical
  .text.xTaskCreate
-                0xbfc43bb4      0x304 build/FreeRTOS_tasks.o
-                0xbfc43bb4                xTaskCreate
+                0xbfc47ce0      0x308 build/FreeRTOS_tasks.o
+                0xbfc47ce0                xTaskCreate
  .text.vTaskStartScheduler
-                0xbfc43eb8       0xd4 build/FreeRTOS_tasks.o
-                0xbfc43eb8                vTaskStartScheduler
+                0xbfc47fe8       0xd4 build/FreeRTOS_tasks.o
+                0xbfc47fe8                vTaskStartScheduler
  .text.xTaskResumeAll
-                0xbfc43f8c      0x240 build/FreeRTOS_tasks.o
-                0xbfc43f8c                xTaskResumeAll
+                0xbfc480bc      0x240 build/FreeRTOS_tasks.o
+                0xbfc480bc                xTaskResumeAll
  .text.vTaskDelay
-                0xbfc441cc       0x70 build/FreeRTOS_tasks.o
-                0xbfc441cc                vTaskDelay
+                0xbfc482fc       0x70 build/FreeRTOS_tasks.o
+                0xbfc482fc                vTaskDelay
  .text.xTaskCheckForTimeOut
-                0xbfc4423c       0xb4 build/FreeRTOS_tasks.o
-                0xbfc4423c                xTaskCheckForTimeOut
+                0xbfc4836c       0xb4 build/FreeRTOS_tasks.o
+                0xbfc4836c                xTaskCheckForTimeOut
+ .text.pvTaskIncrementMutexHeldCount
+                0xbfc48420       0x24 build/FreeRTOS_tasks.o
+                0xbfc48420                pvTaskIncrementMutexHeldCount
  .text.prvIsQueueEmpty
-                0xbfc442f0       0x34 build/queue.o
+                0xbfc48444       0x34 build/queue.o
  .text.prvCopyDataToQueue
-                0xbfc44324       0xe0 build/queue.o
+                0xbfc48478      0x108 build/queue.o
  .text.prvCopyDataFromQueue
-                0xbfc44404       0x58 build/queue.o
+                0xbfc48580       0x58 build/queue.o
  .text.prvUnlockQueue
-                0xbfc4445c      0x104 build/queue.o
+                0xbfc485d8      0x104 build/queue.o
  .text.xQueueGenericReset
-                0xbfc44560       0xfc build/queue.o
-                0xbfc44560                xQueueGenericReset
+                0xbfc486dc       0xfc build/queue.o
+                0xbfc486dc                xQueueGenericReset
  .text.xQueueGenericCreate
-                0xbfc4465c       0xa8 build/queue.o
-                0xbfc4465c                xQueueGenericCreate
+                0xbfc487d8       0xa8 build/queue.o
+                0xbfc487d8                xQueueGenericCreate
+ .text.xQueueGenericSend
+                0xbfc48880      0x224 build/queue.o
+                0xbfc48880                xQueueGenericSend
+ .text.xQueueCreateMutex
+                0xbfc48aa4       0x58 build/queue.o
+                0xbfc48aa4                xQueueCreateMutex
  .text.xQueueGenericSendFromISR
-                0xbfc44704      0x12c build/queue.o
-                0xbfc44704                xQueueGenericSendFromISR
+                0xbfc48afc      0x12c build/queue.o
+                0xbfc48afc                xQueueGenericSendFromISR
  .text.xQueueReceive
-                0xbfc44830      0x204 build/queue.o
-                0xbfc44830                xQueueReceive
+                0xbfc48c28      0x204 build/queue.o
+                0xbfc48c28                xQueueReceive
+ .text.xQueueSemaphoreTake
+                0xbfc48e2c      0x280 build/queue.o
+                0xbfc48e2c                xQueueSemaphoreTake
  .text.vListInitialise
-                0xbfc44a34       0x20 build/list.o
-                0xbfc44a34                vListInitialise
+                0xbfc490ac       0x20 build/list.o
+                0xbfc490ac                vListInitialise
  .text.vListInitialiseItem
-                0xbfc44a54        0x8 build/list.o
-                0xbfc44a54                vListInitialiseItem
+                0xbfc490cc        0x8 build/list.o
+                0xbfc490cc                vListInitialiseItem
  .text.vListInsert
-                0xbfc44a5c       0x58 build/list.o
-                0xbfc44a5c                vListInsert
+                0xbfc490d4       0x58 build/list.o
+                0xbfc490d4                vListInsert
  .text.uxListRemove
-                0xbfc44ab4       0x44 build/list.o
-                0xbfc44ab4                uxListRemove
+                0xbfc4912c       0x44 build/list.o
+                0xbfc4912c                uxListRemove
  .text.pvPortMalloc
-                0xbfc44af8      0x10c build/heap_1.o
-                0xbfc44af8                pvPortMalloc
+                0xbfc49170      0x10c build/heap_1.o
+                0xbfc49170                pvPortMalloc
  .text.vPortFree
-                0xbfc44c04        0x8 build/heap_1.o
-                0xbfc44c04                vPortFree
+                0xbfc4927c        0x8 build/heap_1.o
+                0xbfc4927c                vPortFree
  .text.prvTaskExitError
-                0xbfc44c0c       0x1c build/port.o
+                0xbfc49284       0x1c build/port.o
  .text.pxPortInitialiseStack
-                0xbfc44c28       0x50 build/port.o
-                0xbfc44c28                pxPortInitialiseStack
+                0xbfc492a0       0x50 build/port.o
+                0xbfc492a0                pxPortInitialiseStack
  .text.xPortStartScheduler
-                0xbfc44c78       0x54 build/port.o
-                0xbfc44c78                xPortStartScheduler
+                0xbfc492f0       0x54 build/port.o
+                0xbfc492f0                xPortStartScheduler
  .text.uxPortSetInterruptMaskFromISR
-                0xbfc44ccc       0x28 build/port.o
-                0xbfc44ccc                uxPortSetInterruptMaskFromISR
+                0xbfc49344       0x28 build/port.o
+                0xbfc49344                uxPortSetInterruptMaskFromISR
  .text.vPortIncrementTick
-                0xbfc44cf4       0x54 build/port.o
-                0xbfc44cf4                vPortIncrementTick
+                0xbfc4936c       0x54 build/port.o
+                0xbfc4936c                vPortIncrementTick
  .text.vPortClearInterruptMaskFromISR
-                0xbfc44d48        0xc build/port.o
-                0xbfc44d48                vPortClearInterruptMaskFromISR
- *fill*         0xbfc44d54        0xc 
- .text          0xbfc44d60     0x1270 build/port_asm_patched.o
-                0xbfc44d60                vPortStartFirstTask
-                0xbfc44e64                vUART1TXInterruptWrapper
-                0xbfc45090                vUART1RXInterruptWrapper
-                0xbfc452bc                vUART1FaultInterruptWrapper
-                0xbfc454e8                vUART2TXInterruptWrapper
-                0xbfc45714                vUART2RXInterruptWrapper
-                0xbfc45940                vUART2FaultInterruptWrapper
-                0xbfc45b6c                vCAN1InterruptWrapper
-                0xbfc45d98                vCAN2InterruptWrapper
+                0xbfc493c0        0xc build/port.o
+                0xbfc493c0                vPortClearInterruptMaskFromISR
+ *fill*         0xbfc493cc        0x4 
+ .text          0xbfc493d0     0x1490 build/port_asm_patched.o
+                0xbfc493d0                vPortStartFirstTask
+                0xbfc494d4                vUART1TXInterruptWrapper
+                0xbfc49700                vUART1RXInterruptWrapper
+                0xbfc4992c                vUART1FaultInterruptWrapper
+                0xbfc49b58                vUART2TXInterruptWrapper
+                0xbfc49d84                vUART2RXInterruptWrapper
+                0xbfc49fb0                vUART2FaultInterruptWrapper
+                0xbfc4a1dc                vCAN1InterruptWrapper
+                0xbfc4a408                vCAN2InterruptWrapper
+                0xbfc4a634                vUSB1InterruptWrapper
  *(.gnu.linkonce.t.*)
  *(.rodata .rodata.*)
- .rodata.uart1_puthex.str1.4
-                0xbfc45fd0      0x198 build/main.o
-                                 0x14 (size before relaxing)
- .rodata.vCan2RxTask.str1.4
-                0xbfc46168       0x24 build/main.o
- .rodata.vCan1RxTask.str1.4
-                0xbfc46168       0x1c build/main.o
- .rodata.vUart2ConsumerTask.str1.4
-                0xbfc46168        0xc build/main.o
  .rodata.vPingTask.str1.4
-                0xbfc46168        0x8 build/main.o
+                0xbfc4a860      0x1b0 build/main.o
+                                  0x8 (size before relaxing)
+ .rodata.vUsbCdcTask.str1.4
+                0xbfc4aa10       0x10 build/main.o
+ .rodata.uart1_puthex.str1.4
+                0xbfc4aa10       0x14 build/main.o
+ .rodata.vCan2RxTask.str1.4
+                0xbfc4aa10       0x24 build/main.o
+ .rodata.vCan1RxTask.str1.4
+                0xbfc4aa10       0x1c build/main.o
+ .rodata.vUart2ConsumerTask.str1.4
+                0xbfc4aa10        0xc build/main.o
  .rodata.vCanTxTask.str1.4
-                0xbfc46168       0x40 build/main.o
+                0xbfc4aa10       0x40 build/main.o
  .rodata.vHelloTask.str1.4
-                0xbfc46168       0x1c build/main.o
+                0xbfc4aa10       0x1c build/main.o
  .rodata.vApplicationMallocFailedHook.str1.4
-                0xbfc46168       0x18 build/main.o
+                0xbfc4aa10       0x18 build/main.o
  .rodata.vApplicationStackOverflowHook.str1.4
-                0xbfc46168       0x18 build/main.o
+                0xbfc4aa10       0x18 build/main.o
  .rodata.main.str1.4
-                0xbfc46168       0x9c build/main.o
+                0xbfc4aa10       0xa4 build/main.o
  .rodata.hello_payload.0
-                0xbfc46168        0x8 build/main.o
+                0xbfc4aa10        0x8 build/main.o
  .rodata.dlcToLength
-                0xbfc46170       0x10 build/plib_canfd1.o
+                0xbfc4aa18       0x10 build/plib_canfd1.o
  .rodata.dlcToLength
-                0xbfc46180       0x10 build/plib_canfd2.o
+                0xbfc4aa28       0x10 build/plib_canfd2.o
+ .rodata.usb_device_event_handler
+                0xbfc4aa38       0x30 build/usb_init.o
+ .rodata.drv_init.0
+                0xbfc4aa68       0x2c build/usb_init.o
+ .rodata.usbDevInitData0
+                0xbfc4aa94       0x34 build/usb_device_init_data.o
+                0xbfc4aa94                usbDevInitData0
+ .rodata.usbMasterDescriptor0
+                0xbfc4aac8       0x2c build/usb_device_init_data.o
+ .rodata.stringDescriptors0
+                0xbfc4aaf4        0xc build/usb_device_init_data.o
+ .rodata.sd002_0
+                0xbfc4ab00       0x1c build/usb_device_init_data.o
+ .rodata.sd001_0
+                0xbfc4ab1c       0x18 build/usb_device_init_data.o
+ .rodata.sd000_0
+                0xbfc4ab34        0x4 build/usb_device_init_data.o
+ .rodata.fullSpeedConfigDescSet0
+                0xbfc4ab38        0x4 build/usb_device_init_data.o
+ .rodata.fullSpeedConfigurationDescriptor0
+                0xbfc4ab3c       0x44 build/usb_device_init_data.o
+ .rodata.deviceDescriptor0
+                0xbfc4ab80       0x14 build/usb_device_init_data.o
+ .rodata.funcRegistrationTable0
+                0xbfc4ab94       0x14 build/usb_device_init_data.o
+ .rodata.cdcInit0
+                0xbfc4aba8        0xc build/usb_device_init_data.o
+ .rodata.F_USB_DEVICE_EventHandler
+                0xbfc4abb4       0x28 build/usb_device.o
+ .rodata.F_USB_DEVICE_ProcessStandardDeviceGetRequests
+                0xbfc4abdc       0x20 build/usb_device.o
+ .rodata.cdcFunctionDriver
+                0xbfc4abfc       0x14 build/usb_device_cdc.o
+                0xbfc4abfc                cdcFunctionDriver
+ .rodata.F_USB_DEVICE_CDC_ACMSetUpPacketHandler
+                0xbfc4ac10       0x90 build/usb_device_cdc_acm.o
  .rodata.vTaskStartScheduler.str1.4
-                0xbfc46190        0x8 build/FreeRTOS_tasks.o
+                0xbfc4aca0        0x8 build/FreeRTOS_tasks.o
  .rodata.uxTopUsedPriority
-                0xbfc46190        0x4 build/FreeRTOS_tasks.o
+                0xbfc4aca0        0x4 build/FreeRTOS_tasks.o
  .rodata.xISRStackTop
-                0xbfc46194        0x4 build/port.o
-                0xbfc46194                xISRStackTop
+                0xbfc4aca4        0x4 build/port.o
+                0xbfc4aca4                xISRStackTop
  *(.gnu.linkonce.r.*)
-                0xbfc46204                        . = ALIGN (0x4)
-                0xbfc46198                        _etext = .
-                0xbfc46198                        _data_lma = LOADADDR (.data)
+                0xbfc4aca8                        . = ALIGN (0x4)
+                0xbfc4aca8                        _etext = .
+                0xbfc4aca8                        _data_lma = LOADADDR (.data)
 
-.data           0xa0000000        0x4 load address 0xbfc46198
+.rel.dyn        0xbfc4aca8        0x0
+ .rel.dyn       0xbfc4aca8        0x0 build/drv_usbfs_device.o
+
+.data           0xa0000000       0x60 load address 0xbfc4aca8
                 0xa0000000                        _data_start = .
  *(.data .data.*)
+ .data.s_dev_hdl
+                0xa0000000        0x4 build/usb_init.o
+ .data.s_dev_obj
+                0xa0000004        0x4 build/usb_init.o
+ .data.s_drv_obj
+                0xa0000008        0x4 build/usb_init.o
+ .data.gDrvUSBFSDeviceInterface
+                0xa000000c       0x50 build/drv_usbfs_device.o
+                0xa000000c                gDrvUSBFSDeviceInterface
  .data.uxInterruptNesting
-                0xa0000000        0x4 build/port.o
-                0xa0000000                uxInterruptNesting
+                0xa000005c        0x4 build/port.o
+                0xa000005c                uxInterruptNesting
  *(.gnu.linkonce.d.*)
-                0xa0000004                        . = ALIGN (0x4)
-                0xa0000004                        _data_end = .
+                0xa0000060                        . = ALIGN (0x4)
+                0xa0000060                        _data_end = .
 
-.bss            0xa0000010     0x7594 load address 0xbfc4619c
-                0xa0000010                        _bss_start = .
+.bss            0xa0000200     0x79ac load address 0xbfc4ad08
+                0xa0000200                        _bss_start = .
  *(.bss .bss.*)
+ .bss.s_buf.1   0xa0000200       0x30 build/main.o
  .bss.xUart2RxQueue
-                0xa0000010        0x4 build/main.o
+                0xa0000230        0x4 build/main.o
  .bss.can2_rx_attr
-                0xa0000014        0x4 build/main.o
+                0xa0000234        0x4 build/main.o
  .bss.can2_rx_ts
-                0xa0000018        0x4 build/main.o
+                0xa0000238        0x4 build/main.o
  .bss.can2_rx_data
-                0xa000001c        0x8 build/main.o
+                0xa000023c        0x8 build/main.o
  .bss.can2_rx_len
-                0xa0000024        0x1 build/main.o
- *fill*         0xa0000025        0x3 
+                0xa0000244        0x1 build/main.o
+ *fill*         0xa0000245        0x3 
  .bss.can2_rx_id
-                0xa0000028        0x4 build/main.o
+                0xa0000248        0x4 build/main.o
  .bss.xCan2RxQueue
-                0xa000002c        0x4 build/main.o
+                0xa000024c        0x4 build/main.o
  .bss.can1_rx_attr
-                0xa0000030        0x4 build/main.o
+                0xa0000250        0x4 build/main.o
  .bss.can1_rx_ts
-                0xa0000034        0x4 build/main.o
+                0xa0000254        0x4 build/main.o
  .bss.can1_rx_data
-                0xa0000038        0x8 build/main.o
+                0xa0000258        0x8 build/main.o
  .bss.can1_rx_len
-                0xa0000040        0x1 build/main.o
- *fill*         0xa0000041        0x3 
+                0xa0000260        0x1 build/main.o
+ *fill*         0xa0000261        0x3 
  .bss.can1_rx_id
-                0xa0000044        0x4 build/main.o
+                0xa0000264        0x4 build/main.o
  .bss.xCan1RxQueue
-                0xa0000048        0x4 build/main.o
+                0xa0000268        0x4 build/main.o
  .bss.UART1_WriteBuffer
-                0xa000004c       0x80 build/plib_uart1.o
+                0xa000026c       0x80 build/plib_uart1.o
  .bss.UART1_ReadBuffer
-                0xa00000cc       0x80 build/plib_uart1.o
- .bss.uart1Obj  0xa000014c       0x40 build/plib_uart1.o
+                0xa00002ec       0x80 build/plib_uart1.o
+ .bss.uart1Obj  0xa000036c       0x40 build/plib_uart1.o
  .bss.UART2_WriteBuffer
-                0xa000018c       0x80 build/plib_uart2.o
+                0xa00003ac       0x80 build/plib_uart2.o
  .bss.UART2_ReadBuffer
-                0xa000020c       0x80 build/plib_uart2.o
- .bss.uart2Obj  0xa000028c       0x40 build/plib_uart2.o
+                0xa000042c       0x80 build/plib_uart2.o
+ .bss.uart2Obj  0xa00004ac       0x40 build/plib_uart2.o
  .bss.sequence.0
-                0xa00002cc        0x4 build/plib_canfd1.o
+                0xa00004ec        0x4 build/plib_canfd1.o
  .bss.can_message_buffer
-                0xa00002d0       0xe0 build/plib_canfd1.o
+                0xa00004f0       0xe0 build/plib_canfd1.o
  .bss.can1MsgIndex
-                0xa00003b0        0x8 build/plib_canfd1.o
+                0xa00005d0        0x8 build/plib_canfd1.o
  .bss.can1ErrorCallbackObj
-                0xa00003b8        0x8 build/plib_canfd1.o
+                0xa00005d8        0x8 build/plib_canfd1.o
  .bss.can1CallbackObj
-                0xa00003c0       0x18 build/plib_canfd1.o
+                0xa00005e0       0x18 build/plib_canfd1.o
  .bss.can1RxMsg
-                0xa00003d8      0x500 build/plib_canfd1.o
- .bss.can1Obj   0xa00008d8        0x4 build/plib_canfd1.o
- *fill*         0xa00008dc        0x4 
+                0xa00005f8      0x500 build/plib_canfd1.o
+ .bss.can1Obj   0xa0000af8        0x4 build/plib_canfd1.o
+ *fill*         0xa0000afc        0x4 
  .bss.can_message_buffer
-                0xa00008e0       0xe0 build/plib_canfd2.o
+                0xa0000b00       0xe0 build/plib_canfd2.o
  .bss.can2MsgIndex
-                0xa00009c0        0x8 build/plib_canfd2.o
+                0xa0000be0        0x8 build/plib_canfd2.o
  .bss.can2ErrorCallbackObj
-                0xa00009c8        0x8 build/plib_canfd2.o
+                0xa0000be8        0x8 build/plib_canfd2.o
  .bss.can2CallbackObj
-                0xa00009d0       0x18 build/plib_canfd2.o
+                0xa0000bf0       0x18 build/plib_canfd2.o
  .bss.can2RxMsg
-                0xa00009e8      0x500 build/plib_canfd2.o
- .bss.can2Obj   0xa0000ee8        0x4 build/plib_canfd2.o
+                0xa0000c08      0x500 build/plib_canfd2.o
+ .bss.can2Obj   0xa0001108        0x4 build/plib_canfd2.o
+ .bss.s_cdc_tx_busy
+                0xa000110c        0x1 build/usb_init.o
+ .bss.s_cdc_configured
+                0xa000110d        0x1 build/usb_init.o
+ *fill*         0xa000110e        0x2 
+ .bss.sysObj    0xa0001110        0x8 build/usb_init.o
+                0xa0001110                sysObj
+ *fill*         0xa0001118       0xe8 
+ .bss.s_endpointTable
+                0xa0001200       0x60 build/usb_init.o
+ .bss.usbDeviceInstance
+                0xa0001260      0x100 build/usb_device.o
+ .bss.gUSBDeviceCDCSerialStateResponse
+                0xa0001360       0x10 build/usb_device_cdc.o
+ .bss.gUSBDeviceCDCInstance
+                0xa0001370       0x44 build/usb_device_cdc.o
+ .bss.gUSBDeviceCdcCommonDataObj
+                0xa00013b4        0x8 build/usb_device_cdc.o
+ .bss.gUSBDeviceCDCIRP
+                0xa00013bc       0x6c build/usb_device_cdc.o
+ .bss.gDrvUSBGroup
+                0xa0001428       0xc8 build/drv_usbfs.o
  .bss.uxSchedulerSuspended
-                0xa0000eec        0x4 build/FreeRTOS_tasks.o
+                0xa00014f0        0x4 build/FreeRTOS_tasks.o
  .bss.xIdleTaskHandles
-                0xa0000ef0        0x4 build/FreeRTOS_tasks.o
+                0xa00014f4        0x4 build/FreeRTOS_tasks.o
  .bss.xNextTaskUnblockTime
-                0xa0000ef4        0x4 build/FreeRTOS_tasks.o
+                0xa00014f8        0x4 build/FreeRTOS_tasks.o
  .bss.uxTaskNumber
-                0xa0000ef8        0x4 build/FreeRTOS_tasks.o
+                0xa00014fc        0x4 build/FreeRTOS_tasks.o
  .bss.xNumOfOverflows
-                0xa0000efc        0x4 build/FreeRTOS_tasks.o
+                0xa0001500        0x4 build/FreeRTOS_tasks.o
  .bss.xYieldPendings
-                0xa0000f00        0x4 build/FreeRTOS_tasks.o
+                0xa0001504        0x4 build/FreeRTOS_tasks.o
  .bss.xPendedTicks
-                0xa0000f04        0x4 build/FreeRTOS_tasks.o
+                0xa0001508        0x4 build/FreeRTOS_tasks.o
  .bss.xSchedulerRunning
-                0xa0000f08        0x4 build/FreeRTOS_tasks.o
+                0xa000150c        0x4 build/FreeRTOS_tasks.o
  .bss.uxTopReadyPriority
-                0xa0000f0c        0x4 build/FreeRTOS_tasks.o
+                0xa0001510        0x4 build/FreeRTOS_tasks.o
  .bss.xTickCount
-                0xa0000f10        0x4 build/FreeRTOS_tasks.o
+                0xa0001514        0x4 build/FreeRTOS_tasks.o
  .bss.uxCurrentNumberOfTasks
-                0xa0000f14        0x4 build/FreeRTOS_tasks.o
+                0xa0001518        0x4 build/FreeRTOS_tasks.o
  .bss.xSuspendedTaskList
-                0xa0000f18       0x14 build/FreeRTOS_tasks.o
+                0xa000151c       0x14 build/FreeRTOS_tasks.o
  .bss.xPendingReadyList
-                0xa0000f2c       0x14 build/FreeRTOS_tasks.o
+                0xa0001530       0x14 build/FreeRTOS_tasks.o
  .bss.pxOverflowDelayedTaskList
-                0xa0000f40        0x4 build/FreeRTOS_tasks.o
+                0xa0001544        0x4 build/FreeRTOS_tasks.o
  .bss.pxDelayedTaskList
-                0xa0000f44        0x4 build/FreeRTOS_tasks.o
+                0xa0001548        0x4 build/FreeRTOS_tasks.o
  .bss.xDelayedTaskList2
-                0xa0000f48       0x14 build/FreeRTOS_tasks.o
+                0xa000154c       0x14 build/FreeRTOS_tasks.o
  .bss.xDelayedTaskList1
-                0xa0000f5c       0x14 build/FreeRTOS_tasks.o
+                0xa0001560       0x14 build/FreeRTOS_tasks.o
  .bss.pxReadyTasksLists
-                0xa0000f70       0x64 build/FreeRTOS_tasks.o
+                0xa0001574       0x64 build/FreeRTOS_tasks.o
  .bss.pxCurrentTCB
-                0xa0000fd4        0x4 build/FreeRTOS_tasks.o
-                0xa0000fd4                pxCurrentTCB
+                0xa00015d8        0x4 build/FreeRTOS_tasks.o
+                0xa00015d8                pxCurrentTCB
  .bss.pucAlignedHeap.0
-                0xa0000fd8        0x4 build/heap_1.o
+                0xa00015dc        0x4 build/heap_1.o
  .bss.xNextFreeByte
-                0xa0000fdc        0x4 build/heap_1.o
- .bss.ucHeap    0xa0000fe0     0x5dc0 build/heap_1.o
+                0xa00015e0        0x4 build/heap_1.o
+ .bss.ucHeap    0xa00015e4     0x5dc0 build/heap_1.o
+ *fill*         0xa00073a4        0x4 
  .bss.xISRStack
-                0xa0006da0      0x800 build/port.o
-                0xa0006da0                xISRStack
+                0xa00073a8      0x800 build/port.o
+                0xa00073a8                xISRStack
  .bss.uxSavedTaskStackPointer
-                0xa00075a0        0x4 build/port.o
-                0xa00075a0                uxSavedTaskStackPointer
+                0xa0007ba8        0x4 build/port.o
+                0xa0007ba8                uxSavedTaskStackPointer
  *(.gnu.linkonce.b.*)
  *(COMMON)
-                0xa00075a4                        . = ALIGN (0x4)
-                0xa00075a4                        _bss_end = .
-                0xa00075b0                        _gp = ALIGN (0x10)
+                0xa0007bac                        . = ALIGN (0x4)
+                0xa0007bac                        _bss_end = .
+                0xa0007bb0                        _gp = ALIGN (0x10)
                 0xa003fff8                        _stack_top = ((ORIGIN (ram) + LENGTH (ram)) - 0x8)
 
 /DISCARD/
@@ -790,6 +1266,14 @@ LOAD build/plib_uart1.o
 LOAD build/plib_uart2.o
 LOAD build/plib_canfd1.o
 LOAD build/plib_canfd2.o
+LOAD build/usb_init.o
+LOAD build/usb_device_init_data.o
+LOAD build/usb_device.o
+LOAD build/usb_device_cdc.o
+LOAD build/usb_device_cdc_acm.o
+LOAD build/drv_usbfs.o
+LOAD build/drv_usbfs_device.o
+LOAD build/osal_freertos.o
 LOAD build/FreeRTOS_tasks.o
 LOAD build/queue.o
 LOAD build/list.o
@@ -806,6 +1290,14 @@ OUTPUT(hello_freertos.elf elf32-tradlittlemips)
  .mdebug.abi32  0x00000000        0x0 build/plib_uart2.o
  .mdebug.abi32  0x00000000        0x0 build/plib_canfd1.o
  .mdebug.abi32  0x00000000        0x0 build/plib_canfd2.o
+ .mdebug.abi32  0x00000000        0x0 build/usb_init.o
+ .mdebug.abi32  0x00000000        0x0 build/usb_device_init_data.o
+ .mdebug.abi32  0x00000000        0x0 build/usb_device.o
+ .mdebug.abi32  0x00000000        0x0 build/usb_device_cdc.o
+ .mdebug.abi32  0x00000000        0x0 build/usb_device_cdc_acm.o
+ .mdebug.abi32  0x00000000        0x0 build/drv_usbfs.o
+ .mdebug.abi32  0x00000000        0x0 build/drv_usbfs_device.o
+ .mdebug.abi32  0x00000000        0x0 build/osal_freertos.o
  .mdebug.abi32  0x00000000        0x0 build/FreeRTOS_tasks.o
  .mdebug.abi32  0x00000000        0x0 build/queue.o
  .mdebug.abi32  0x00000000        0x0 build/list.o
@@ -827,156 +1319,255 @@ OUTPUT(hello_freertos.elf elf32-tradlittlemips)
  .gnu.attributes
                 0x00000050       0x10 build/plib_canfd2.o
  .gnu.attributes
-                0x00000060       0x10 build/FreeRTOS_tasks.o
+                0x00000060       0x10 build/usb_init.o
  .gnu.attributes
-                0x00000070       0x10 build/queue.o
+                0x00000070       0x10 build/usb_device_init_data.o
  .gnu.attributes
-                0x00000080       0x10 build/list.o
+                0x00000080       0x10 build/usb_device.o
  .gnu.attributes
-                0x00000090       0x10 build/heap_1.o
+                0x00000090       0x10 build/usb_device_cdc.o
  .gnu.attributes
-                0x000000a0       0x10 build/port.o
+                0x000000a0       0x10 build/usb_device_cdc_acm.o
  .gnu.attributes
-                0x000000b0       0x10 build/crt0.o
+                0x000000b0       0x10 build/drv_usbfs.o
  .gnu.attributes
-                0x000000c0       0x10 build/port_asm_patched.o
+                0x000000c0       0x10 build/drv_usbfs_device.o
+ .gnu.attributes
+                0x000000d0       0x10 build/osal_freertos.o
+ .gnu.attributes
+                0x000000e0       0x10 build/FreeRTOS_tasks.o
+ .gnu.attributes
+                0x000000f0       0x10 build/queue.o
+ .gnu.attributes
+                0x00000100       0x10 build/list.o
+ .gnu.attributes
+                0x00000110       0x10 build/heap_1.o
+ .gnu.attributes
+                0x00000120       0x10 build/port.o
+ .gnu.attributes
+                0x00000130       0x10 build/crt0.o
+ .gnu.attributes
+                0x00000140       0x10 build/port_asm_patched.o
 
-.debug_info     0x00000000     0x92aa
- .debug_info    0x00000000     0x1376 build/main.o
- .debug_info    0x00001376      0x140 build/libc_stubs.o
- .debug_info    0x000014b6      0xcb9 build/plib_uart1.o
- .debug_info    0x0000216f      0xc31 build/plib_uart2.o
- .debug_info    0x00002da0      0xe82 build/plib_canfd1.o
- .debug_info    0x00003c22      0xe82 build/plib_canfd2.o
- .debug_info    0x00004aa4     0x234f build/FreeRTOS_tasks.o
- .debug_info    0x00006df3     0x1ab6 build/queue.o
- .debug_info    0x000088a9      0x2a7 build/list.o
- .debug_info    0x00008b50      0x20d build/heap_1.o
- .debug_info    0x00008d5d      0x54d build/port.o
+.debug_info     0x00000000    0x1a02f
+ .debug_info    0x00000000     0x1604 build/main.o
+ .debug_info    0x00001604      0x140 build/libc_stubs.o
+ .debug_info    0x00001744      0xcb9 build/plib_uart1.o
+ .debug_info    0x000023fd      0xc31 build/plib_uart2.o
+ .debug_info    0x0000302e      0xe82 build/plib_canfd1.o
+ .debug_info    0x00003eb0      0xe82 build/plib_canfd2.o
+ .debug_info    0x00004d32      0xef2 build/usb_init.o
+ .debug_info    0x00005c24     0x12fc build/usb_device_init_data.o
+ .debug_info    0x00006f20     0x35bd build/usb_device.o
+ .debug_info    0x0000a4dd     0x1d47 build/usb_device_cdc.o
+ .debug_info    0x0000c224      0x8d4 build/usb_device_cdc_acm.o
+ .debug_info    0x0000caf8     0x25fc build/drv_usbfs.o
+ .debug_info    0x0000f0f4     0x5a9e build/drv_usbfs_device.o
+ .debug_info    0x00014b92      0x7ed build/osal_freertos.o
+ .debug_info    0x0001537f     0x2562 build/FreeRTOS_tasks.o
+ .debug_info    0x000178e1     0x1d41 build/queue.o
+ .debug_info    0x00019622      0x2a7 build/list.o
+ .debug_info    0x000198c9      0x20d build/heap_1.o
+ .debug_info    0x00019ad6      0x559 build/port.o
 
-.debug_abbrev   0x00000000     0x1efc
- .debug_abbrev  0x00000000      0x38d build/main.o
- .debug_abbrev  0x0000038d       0xc9 build/libc_stubs.o
- .debug_abbrev  0x00000456      0x348 build/plib_uart1.o
- .debug_abbrev  0x0000079e      0x345 build/plib_uart2.o
- .debug_abbrev  0x00000ae3      0x324 build/plib_canfd1.o
- .debug_abbrev  0x00000e07      0x324 build/plib_canfd2.o
- .debug_abbrev  0x0000112b      0x4c8 build/FreeRTOS_tasks.o
- .debug_abbrev  0x000015f3      0x377 build/queue.o
- .debug_abbrev  0x0000196a       0xef build/list.o
- .debug_abbrev  0x00001a59      0x162 build/heap_1.o
- .debug_abbrev  0x00001bbb      0x341 build/port.o
+.debug_abbrev   0x00000000     0x3b2d
+ .debug_abbrev  0x00000000      0x3a2 build/main.o
+ .debug_abbrev  0x000003a2       0xc9 build/libc_stubs.o
+ .debug_abbrev  0x0000046b      0x348 build/plib_uart1.o
+ .debug_abbrev  0x000007b3      0x345 build/plib_uart2.o
+ .debug_abbrev  0x00000af8      0x324 build/plib_canfd1.o
+ .debug_abbrev  0x00000e1c      0x324 build/plib_canfd2.o
+ .debug_abbrev  0x00001140      0x2ad build/usb_init.o
+ .debug_abbrev  0x000013ed      0x21d build/usb_device_init_data.o
+ .debug_abbrev  0x0000160a      0x420 build/usb_device.o
+ .debug_abbrev  0x00001a2a      0x434 build/usb_device_cdc.o
+ .debug_abbrev  0x00001e5e      0x222 build/usb_device_cdc_acm.o
+ .debug_abbrev  0x00002080      0x4b7 build/drv_usbfs.o
+ .debug_abbrev  0x00002537      0x573 build/drv_usbfs_device.o
+ .debug_abbrev  0x00002aaa      0x257 build/osal_freertos.o
+ .debug_abbrev  0x00002d01      0x4c8 build/FreeRTOS_tasks.o
+ .debug_abbrev  0x000031c9      0x37d build/queue.o
+ .debug_abbrev  0x00003546       0xef build/list.o
+ .debug_abbrev  0x00003635      0x162 build/heap_1.o
+ .debug_abbrev  0x00003797      0x396 build/port.o
 
 .debug_loclists
-                0x00000000     0x5299
+                0x00000000     0xc021
  .debug_loclists
-                0x00000000      0x417 build/main.o
+                0x00000000      0x600 build/main.o
  .debug_loclists
-                0x00000417      0x118 build/libc_stubs.o
+                0x00000600      0x118 build/libc_stubs.o
  .debug_loclists
-                0x0000052f      0x796 build/plib_uart1.o
+                0x00000718      0x796 build/plib_uart1.o
  .debug_loclists
-                0x00000cc5      0x709 build/plib_uart2.o
+                0x00000eae      0x709 build/plib_uart2.o
  .debug_loclists
-                0x000013ce      0x9cb build/plib_canfd1.o
+                0x000015b7      0x9cb build/plib_canfd1.o
  .debug_loclists
-                0x00001d99      0x9cb build/plib_canfd2.o
+                0x00001f82      0x9cb build/plib_canfd2.o
  .debug_loclists
-                0x00002764     0x17a4 build/FreeRTOS_tasks.o
+                0x0000294d      0x1b8 build/usb_init.o
  .debug_loclists
-                0x00003f08     0x11c5 build/queue.o
+                0x00002b05     0x1f32 build/usb_device.o
  .debug_loclists
-                0x000050cd       0x48 build/list.o
+                0x00004a37      0xcda build/usb_device_cdc.o
  .debug_loclists
-                0x00005115       0x79 build/heap_1.o
+                0x00005711      0x2dd build/usb_device_cdc_acm.o
  .debug_loclists
-                0x0000518e      0x10b build/port.o
+                0x000059ee      0x59b build/drv_usbfs.o
+ .debug_loclists
+                0x00005f89     0x2da7 build/drv_usbfs_device.o
+ .debug_loclists
+                0x00008d30      0x466 build/osal_freertos.o
+ .debug_loclists
+                0x00009196     0x198f build/FreeRTOS_tasks.o
+ .debug_loclists
+                0x0000ab25     0x1330 build/queue.o
+ .debug_loclists
+                0x0000be55       0x48 build/list.o
+ .debug_loclists
+                0x0000be9d       0x79 build/heap_1.o
+ .debug_loclists
+                0x0000bf16      0x10b build/port.o
 
-.debug_aranges  0x00000000      0x6f0
+.debug_aranges  0x00000000      0xb80
  .debug_aranges
-                0x00000000       0xa8 build/main.o
+                0x00000000       0xb0 build/main.o
  .debug_aranges
-                0x000000a8       0x28 build/libc_stubs.o
+                0x000000b0       0x28 build/libc_stubs.o
  .debug_aranges
-                0x000000d0       0xd8 build/plib_uart1.o
+                0x000000d8       0xd8 build/plib_uart1.o
  .debug_aranges
-                0x000001a8       0xd8 build/plib_uart2.o
+                0x000001b0       0xd8 build/plib_uart2.o
  .debug_aranges
-                0x00000280       0xc8 build/plib_canfd1.o
+                0x00000288       0xc8 build/plib_canfd1.o
  .debug_aranges
-                0x00000348       0xc8 build/plib_canfd2.o
+                0x00000350       0xc8 build/plib_canfd2.o
  .debug_aranges
-                0x00000410      0x140 build/FreeRTOS_tasks.o
+                0x00000418       0x48 build/usb_init.o
  .debug_aranges
-                0x00000550       0xc8 build/queue.o
+                0x00000460       0x18 build/usb_device_init_data.o
  .debug_aranges
-                0x00000618       0x40 build/list.o
+                0x00000478      0x1a0 build/usb_device.o
  .debug_aranges
-                0x00000658       0x40 build/heap_1.o
+                0x00000618       0x88 build/usb_device_cdc.o
  .debug_aranges
-                0x00000698       0x58 build/port.o
+                0x000006a0       0x20 build/usb_device_cdc_acm.o
+ .debug_aranges
+                0x000006c0       0x60 build/drv_usbfs.o
+ .debug_aranges
+                0x00000720       0xc0 build/drv_usbfs_device.o
+ .debug_aranges
+                0x000007e0       0x90 build/osal_freertos.o
+ .debug_aranges
+                0x00000870      0x160 build/FreeRTOS_tasks.o
+ .debug_aranges
+                0x000009d0       0xd8 build/queue.o
+ .debug_aranges
+                0x00000aa8       0x40 build/list.o
+ .debug_aranges
+                0x00000ae8       0x40 build/heap_1.o
+ .debug_aranges
+                0x00000b28       0x58 build/port.o
 
 .debug_rnglists
-                0x00000000      0x909
+                0x00000000      0xd28
  .debug_rnglists
-                0x00000000       0xd7 build/main.o
+                0x00000000      0x10c build/main.o
  .debug_rnglists
-                0x000000d7       0x19 build/libc_stubs.o
+                0x0000010c       0x19 build/libc_stubs.o
  .debug_rnglists
-                0x000000f0      0x132 build/plib_uart1.o
+                0x00000125      0x132 build/plib_uart1.o
  .debug_rnglists
-                0x00000222      0x132 build/plib_uart2.o
+                0x00000257      0x132 build/plib_uart2.o
  .debug_rnglists
-                0x00000354       0xa7 build/plib_canfd1.o
+                0x00000389       0xa7 build/plib_canfd1.o
  .debug_rnglists
-                0x000003fb       0xa7 build/plib_canfd2.o
+                0x00000430       0xa7 build/plib_canfd2.o
  .debug_rnglists
-                0x000004a2      0x298 build/FreeRTOS_tasks.o
+                0x000004d7       0x34 build/usb_init.o
  .debug_rnglists
-                0x0000073a      0x13b build/queue.o
+                0x0000050b      0x150 build/usb_device.o
  .debug_rnglists
-                0x00000875       0x2b build/list.o
+                0x0000065b       0x69 build/usb_device_cdc.o
  .debug_rnglists
-                0x000008a0       0x2c build/heap_1.o
+                0x000006c4       0x14 build/usb_device_cdc_acm.o
  .debug_rnglists
-                0x000008cc       0x3d build/port.o
+                0x000006d8       0x46 build/drv_usbfs.o
+ .debug_rnglists
+                0x0000071e      0x114 build/drv_usbfs_device.o
+ .debug_rnglists
+                0x00000832       0x68 build/osal_freertos.o
+ .debug_rnglists
+                0x0000089a      0x2b3 build/FreeRTOS_tasks.o
+ .debug_rnglists
+                0x00000b4d      0x147 build/queue.o
+ .debug_rnglists
+                0x00000c94       0x2b build/list.o
+ .debug_rnglists
+                0x00000cbf       0x2c build/heap_1.o
+ .debug_rnglists
+                0x00000ceb       0x3d build/port.o
 
-.debug_line     0x00000000     0x70ff
- .debug_line    0x00000000      0x888 build/main.o
- .debug_line    0x00000888      0x10d build/libc_stubs.o
- .debug_line    0x00000995      0xb82 build/plib_uart1.o
- .debug_line    0x00001517      0xb3b build/plib_uart2.o
- .debug_line    0x00002052      0xdee build/plib_canfd1.o
- .debug_line    0x00002e40      0xdee build/plib_canfd2.o
- .debug_line    0x00003c2e     0x19d1 build/FreeRTOS_tasks.o
- .debug_line    0x000055ff     0x10a9 build/queue.o
- .debug_line    0x000066a8      0x396 build/list.o
- .debug_line    0x00006a3e      0x34b build/heap_1.o
- .debug_line    0x00006d89      0x376 build/port.o
+.debug_line     0x00000000     0xe0f4
+ .debug_line    0x00000000      0xa5a build/main.o
+ .debug_line    0x00000a5a      0x10d build/libc_stubs.o
+ .debug_line    0x00000b67      0xb82 build/plib_uart1.o
+ .debug_line    0x000016e9      0xb3b build/plib_uart2.o
+ .debug_line    0x00002224      0xdee build/plib_canfd1.o
+ .debug_line    0x00003012      0xdee build/plib_canfd2.o
+ .debug_line    0x00003e00      0x66e build/usb_init.o
+ .debug_line    0x0000446e      0x387 build/usb_device_init_data.o
+ .debug_line    0x000047f5     0x1b97 build/usb_device.o
+ .debug_line    0x0000638c      0xd4b build/usb_device_cdc.o
+ .debug_line    0x000070d7      0x29c build/usb_device_cdc_acm.o
+ .debug_line    0x00007373      0xa7a build/drv_usbfs.o
+ .debug_line    0x00007ded     0x24c0 build/drv_usbfs_device.o
+ .debug_line    0x0000a2ad      0x5a6 build/osal_freertos.o
+ .debug_line    0x0000a853     0x1c37 build/FreeRTOS_tasks.o
+ .debug_line    0x0000c48a     0x1213 build/queue.o
+ .debug_line    0x0000d69d      0x396 build/list.o
+ .debug_line    0x0000da33      0x34b build/heap_1.o
+ .debug_line    0x0000dd7e      0x376 build/port.o
 
-.debug_str      0x00000000     0x2c0a
- .debug_str     0x00000000     0x2c0a build/main.o
-                                0x7e6 (size before relaxing)
- .debug_str     0x00002c0a      0x181 build/libc_stubs.o
- .debug_str     0x00002c0a      0x803 build/plib_uart1.o
- .debug_str     0x00002c0a      0x7e5 build/plib_uart2.o
- .debug_str     0x00002c0a      0xa5c build/plib_canfd1.o
- .debug_str     0x00002c0a      0xa5c build/plib_canfd2.o
- .debug_str     0x00002c0a      0xe58 build/FreeRTOS_tasks.o
- .debug_str     0x00002c0a      0x8fa build/queue.o
- .debug_str     0x00002c0a      0x35d build/list.o
- .debug_str     0x00002c0a      0x32e build/heap_1.o
- .debug_str     0x00002c0a      0x4a6 build/port.o
+.debug_str      0x00000000     0x936a
+ .debug_str     0x00000000     0x936a build/main.o
+                                0x833 (size before relaxing)
+ .debug_str     0x0000936a      0x181 build/libc_stubs.o
+ .debug_str     0x0000936a      0x803 build/plib_uart1.o
+ .debug_str     0x0000936a      0x7e5 build/plib_uart2.o
+ .debug_str     0x0000936a      0xa5c build/plib_canfd1.o
+ .debug_str     0x0000936a      0xa5c build/plib_canfd2.o
+ .debug_str     0x0000936a     0x1785 build/usb_init.o
+ .debug_str     0x0000936a     0x1e1e build/usb_device_init_data.o
+ .debug_str     0x0000936a     0x2bbd build/usb_device.o
+ .debug_str     0x0000936a     0x2622 build/usb_device_cdc.o
+ .debug_str     0x0000936a      0xd7b build/usb_device_cdc_acm.o
+ .debug_str     0x0000936a     0x1f75 build/drv_usbfs.o
+ .debug_str     0x0000936a     0x2c0f build/drv_usbfs_device.o
+ .debug_str     0x0000936a      0x5c5 build/osal_freertos.o
+ .debug_str     0x0000936a      0xf59 build/FreeRTOS_tasks.o
+ .debug_str     0x0000936a      0xa5f build/queue.o
+ .debug_str     0x0000936a      0x35d build/list.o
+ .debug_str     0x0000936a      0x32e build/heap_1.o
+ .debug_str     0x0000936a      0x4a6 build/port.o
 
-.debug_frame    0x00000000     0x12f8
- .debug_frame   0x00000000      0x230 build/main.o
- .debug_frame   0x00000230       0x30 build/libc_stubs.o
- .debug_frame   0x00000260      0x214 build/plib_uart1.o
- .debug_frame   0x00000474      0x214 build/plib_uart2.o
- .debug_frame   0x00000688      0x1c0 build/plib_canfd1.o
- .debug_frame   0x00000848      0x1c0 build/plib_canfd2.o
- .debug_frame   0x00000a08      0x43c build/FreeRTOS_tasks.o
- .debug_frame   0x00000e44      0x338 build/queue.o
- .debug_frame   0x0000117c       0x60 build/list.o
- .debug_frame   0x000011dc       0x74 build/heap_1.o
- .debug_frame   0x00001250       0xa8 build/port.o
+.debug_frame    0x00000000     0x21f0
+ .debug_frame   0x00000000      0x254 build/main.o
+ .debug_frame   0x00000254       0x30 build/libc_stubs.o
+ .debug_frame   0x00000284      0x214 build/plib_uart1.o
+ .debug_frame   0x00000498      0x214 build/plib_uart2.o
+ .debug_frame   0x000006ac      0x1c0 build/plib_canfd1.o
+ .debug_frame   0x0000086c      0x1c0 build/plib_canfd2.o
+ .debug_frame   0x00000a2c       0xc0 build/usb_init.o
+ .debug_frame   0x00000aec      0x608 build/usb_device.o
+ .debug_frame   0x000010f4      0x1cc build/usb_device_cdc.o
+ .debug_frame   0x000012c0       0x30 build/usb_device_cdc_acm.o
+ .debug_frame   0x000012f0       0xe8 build/drv_usbfs.o
+ .debug_frame   0x000013d8      0x284 build/drv_usbfs_device.o
+ .debug_frame   0x0000165c      0x1c0 build/osal_freertos.o
+ .debug_frame   0x0000181c      0x4d0 build/FreeRTOS_tasks.o
+ .debug_frame   0x00001cec      0x388 build/queue.o
+ .debug_frame   0x00002074       0x60 build/list.o
+ .debug_frame   0x000020d4       0x74 build/heap_1.o
+ .debug_frame   0x00002148       0xa8 build/port.o

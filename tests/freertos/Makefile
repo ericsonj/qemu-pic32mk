@@ -11,6 +11,9 @@ OBJCOPY = mipsel-linux-gnu-objcopy
 
 FREERTOS = /home/ericson/PROJECTS/VOLTU/C_C++/PRG-IDU/PRG-IDU-0003/firmware/src/third_party/rtos/FreeRTOS/Source
 
+# Harmony 3 framework base (USB drivers, OSAL, system headers)
+FIRMWARE_CFG = /home/ericson/PROJECTS/VOLTU/C_C++/PRG-IDU/PRG-IDU-0003/firmware/src/config/default
+
 # Architecture flags for MIPS32r2 + DSP ASE r2 + soft-float + 32-bit ABI
 ARCH = -march=mips32r2 -mdspr2 -msoft-float -mno-micromips -mabi=32 -EL -G 0 -mno-abicalls
 
@@ -24,7 +27,11 @@ CFLAGS = $(ARCH) \
 	-I$(GCC_INCLUDES) \
 	-I$(FREERTOS)/include \
 	-I$(FREERTOS)/portable/MPLAB/PIC32MK \
-	-I/usr/mipsel-linux-gnu/include
+	-I/usr/mipsel-linux-gnu/include \
+	-I$(FIRMWARE_CFG) \
+	-I$(FIRMWARE_CFG)/driver/usb/usbfs/src \
+	-Wno-unused-parameter \
+	-Wno-sign-compare
 
 ASFLAGS = $(ARCH) \
 	-ffreestanding -nostdlib -nostdinc \
@@ -47,6 +54,14 @@ C_SRCS = \
 	plib_uart2.c \
 	plib_canfd1.c \
 	plib_canfd2.c \
+	usb_init.c \
+	usb_device_init_data.c \
+	usb_device.c \
+	usb_device_cdc.c \
+	usb_device_cdc_acm.c \
+	drv_usbfs.c \
+	drv_usbfs_device.c \
+	osal_freertos.c \
 	$(FREERTOS)/FreeRTOS_tasks.c \
 	$(FREERTOS)/queue.c \
 	$(FREERTOS)/list.c \
@@ -67,7 +82,8 @@ OBJS   = $(C_OBJS) $(S_OBJS)
 VPATH = . \
 	$(FREERTOS) \
 	$(FREERTOS)/portable/MemMang \
-	$(FREERTOS)/portable/MPLAB/PIC32MK
+	$(FREERTOS)/portable/MPLAB/PIC32MK \
+	$(FIRMWARE_CFG)
 
 .PHONY: all clean run
 

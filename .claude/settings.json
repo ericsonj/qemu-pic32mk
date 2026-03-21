@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"UART1_TX_InterruptHandler\\\\|UART1_RX_InterruptHandler\\\\|CAN1_InterruptHandler\\\\|CAN2_InterruptHandler\" /home/ericson/PROJECTS/C_C++/qemu/tests/freertos/*.c)"
+    ]
+  }
+}

@@ -70,11 +70,16 @@
 #define configUSE_CO_ROUTINES               0
 #define configMAX_CO_ROUTINE_PRIORITIES     2
 
+/* XC32 / CMSIS compatibility: osal_freertos.h uses __STATIC_INLINE */
+#ifndef __STATIC_INLINE
+#define __STATIC_INLINE static inline
+#endif
+
 /* Feature set */
 #define configUSE_TASK_NOTIFICATIONS        1
-#define configUSE_MUTEXES                   0
+#define configUSE_MUTEXES                   1   /* required by osal_freertos / USB stack */
 #define configUSE_RECURSIVE_MUTEXES         0
-#define configUSE_COUNTING_SEMAPHORES       0
+#define configUSE_COUNTING_SEMAPHORES       1   /* required by osal_freertos */
 #define configUSE_QUEUE_SETS                0
 #define configUSE_APPLICATION_TASK_TAG      0
 #define configUSE_TASK_FPU_SUPPORT          0
