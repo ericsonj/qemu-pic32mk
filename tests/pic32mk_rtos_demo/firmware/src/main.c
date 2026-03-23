@@ -23,6 +23,7 @@
 #include "plib_clk.h"
 #include "usb_init.h"
 #include "plib_gpio.h"
+#include "plib_adchs.h"
 
 /* -----------------------------------------------------------------------
  * UART1 TX helpers — thin wrappers around plib UART1_Write()
@@ -544,6 +545,50 @@ static void vGpioMonitorTask(void *pvParam)
 }
 
 /* -----------------------------------------------------------------------
+ * ADC Monitor task — reads CH15 (TEMP_MOTOR) via EOS interrupt
+ * ----------------------------------------------------------------------- */
+
+static SemaphoreHandle_t xAdcEosSemaphore;
+
+static void adc_eos_callback(uintptr_t context)
+{
+    (void)context;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(xAdcEosSemaphore, &xHigherPriorityTaskWoken);
+}
+
+static void vAdcMonitorTask(void *pvParam)
+{
+    (void)pvParam;
+
+    xAdcEosSemaphore = xSemaphoreCreateBinary();
+    ADCHS_EOSCallbackRegister(adc_eos_callback, 0);
+
+    uart1_puts("[ADC] CH15 (TEMP_MOTOR) monitor started\r\n");
+    uart1_puts("[ADC] Inject: gpio_tool.py adc-set 15 2048\r\n");
+
+    for (;;)
+    {
+        /* Trigger a global software edge conversion */
+        ADCHS_GlobalEdgeConversionStart();
+
+        /* Wait for End-of-Scan interrupt */
+        xSemaphoreTake(xAdcEosSemaphore, portMAX_DELAY);
+
+        /* Read channel 15 result */
+        if (ADCHS_ChannelResultIsReady(ADCHS_CH15))
+        {
+            uint32_t result = ADCHS_ChannelResultGet(ADCHS_CH15);
+            uart1_puts("[ADC] CH15 = ");
+            uart1_putu(result);
+            uart1_puts("\r\n");
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10000));
+    }
+}
+
+/* -----------------------------------------------------------------------
  * main
  * ----------------------------------------------------------------------- */
 
@@ -557,6 +602,7 @@ int main(void)
     CAN2_Initialize();
     USB1_Initialize();
     GPIO_Initialize();
+    ADCHS_Initialize();
     WDT_Enable();
 
     uart1_puts("PIC32MK QEMU booting FreeRTOS...\r\n");
@@ -602,6 +648,8 @@ int main(void)
                 NULL, tskIDLE_PRIORITY + 1, NULL);
     xTaskCreate(vGpioMonitorTask, "GpioMon", configMINIMAL_STACK_SIZE,
                 NULL, tskIDLE_PRIORITY + 2, NULL);
+    xTaskCreate(vAdcMonitorTask, "ADC", configMINIMAL_STACK_SIZE,
+                NULL, tskIDLE_PRIORITY + 1, NULL);
 
     vTaskStartScheduler();
 

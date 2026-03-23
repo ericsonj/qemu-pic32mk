@@ -76,6 +76,7 @@ void EVIC_Initialize(void) {
     IPC20SET = 0x4U | 0x0U;  /* TIMER_7:  Priority 1 / Subpriority 0 */
     IPC21SET = 0x4U | 0x0U;  /* TIMER_8:  Priority 1 / Subpriority 0 */
     IPC22SET = 0x4U | 0x0U;  /* TIMER_9:  Priority 1 / Subpriority 0 */
+    IPC25SET = 0x400U | 0x0U;  /* AD1EOS:  Priority 1 / Subpriority 0 */
     IPC41SET = 0x4000000U | 0x0U;  /* CAN1:  Priority 1 / Subpriority 0 */
     IPC42SET = 0x4U | 0x0U;  /* CAN2:  Priority 1 / Subpriority 0 */
     IPC46SET = 0x4000000U | 0x0U;  /* CAN3:  Priority 1 / Subpriority 0 */

@@ -34,8 +34,8 @@ INCS += -Ifirmware/src/third_party/rtos/FreeRTOS/Source/include
 CSRC += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MemMang/heap_1.c
 CSRC += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MK/port.c
 
-SRC_DIRS += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MK
 SRC_DIRS += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MemMang
+SRC_DIRS += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MK
 
 INCS += -Ifirmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MK
 
@@ -59,6 +59,7 @@ CSRC += firmware/src/config/default/peripheral/tmr/plib_tmr3.c
 CSRC += firmware/src/config/default/peripheral/tmr/plib_tmr7.c
 CSRC += firmware/src/config/default/peripheral/tmr/plib_tmr5.c
 CSRC += firmware/src/config/default/peripheral/tmr/plib_tmr2.c
+CSRC += firmware/src/config/default/peripheral/adchs/plib_adchs.c
 CSRC += firmware/src/config/default/peripheral/clk/plib_clk.c
 CSRC += firmware/src/config/default/peripheral/tmr1/plib_tmr1.c
 CSRC += firmware/src/config/default/peripheral/gpio/plib_gpio.c
@@ -71,18 +72,19 @@ CSRC += firmware/src/config/default/usb/src/usb_device_cdc.c
 ASSRC += firmware/src/config/default/crt0.S
 ASSRC += firmware/src/config/default/port_asm_patched.S
 
-SRC_DIRS += firmware/src/config/default/peripheral/tmr1
 SRC_DIRS += firmware/src/config/default/peripheral/canfd
-SRC_DIRS += firmware/src/config/default/peripheral/evic
-SRC_DIRS += firmware/src/config/default/peripheral/uart
-SRC_DIRS += firmware/src/config/default/driver/usb/usbfs/src
-SRC_DIRS += firmware/src/config/default/usb/src
 SRC_DIRS += firmware/src/config/default/peripheral/tmr
-SRC_DIRS += firmware/src/config/default/peripheral/gpio
-SRC_DIRS += firmware/src/config/default/osal
+SRC_DIRS += firmware/src/config/default/usb/src
 SRC_DIRS += firmware/src/config/default/peripheral/clk
-SRC_DIRS += firmware/src/config/default
+SRC_DIRS += firmware/src/config/default/driver/usb/usbfs/src
 SRC_DIRS += firmware/src/config/default/peripheral/wdt
+SRC_DIRS += firmware/src/config/default/peripheral/tmr1
+SRC_DIRS += firmware/src/config/default/osal
+SRC_DIRS += firmware/src/config/default/peripheral/adchs
+SRC_DIRS += firmware/src/config/default/peripheral/uart
+SRC_DIRS += firmware/src/config/default
+SRC_DIRS += firmware/src/config/default/peripheral/gpio
+SRC_DIRS += firmware/src/config/default/peripheral/evic
 
 INCS += -Ifirmware/src/config/default
 INCS += -Ifirmware/src/config/default/driver
@@ -100,6 +102,7 @@ INCS += -Ifirmware/src/config/default/system/reset
 INCS += -Ifirmware/src/config/default/peripheral/uart
 INCS += -Ifirmware/src/config/default/peripheral/evic
 INCS += -Ifirmware/src/config/default/peripheral/tmr
+INCS += -Ifirmware/src/config/default/peripheral/adchs
 INCS += -Ifirmware/src/config/default/peripheral/clk
 INCS += -Ifirmware/src/config/default/peripheral/tmr1
 INCS += -Ifirmware/src/config/default/peripheral/gpio

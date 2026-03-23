@@ -40,6 +40,7 @@
 #define TYPE_PIC32MK_WDT    "pic32mk-wdt"
 #define TYPE_PIC32MK_CRU    "pic32mk-cru"
 #define TYPE_PIC32MK_CFG    "pic32mk-cfg"
+#define TYPE_PIC32MK_ADCHS  "pic32mk-adchs"
 
 /*
  * Board state.
@@ -543,6 +544,21 @@ static void pic32mk_machine_init(MachineState *machine)
     pic32mk_i2c_create(s, PIC32MK_I2C2_OFFSET);
     pic32mk_i2c_create(s, PIC32MK_I2C3_OFFSET);
     pic32mk_i2c_create(s, PIC32MK_I2C4_OFFSET);
+
+    /* ADCHS — High-Speed ADC at 0xBF887000 */
+    {
+        DeviceState *adc = qdev_new(TYPE_PIC32MK_ADCHS);
+        object_property_add_child(OBJECT(machine), "adchs", OBJECT(adc));
+        sysbus_realize_and_unref(SYS_BUS_DEVICE(adc), &error_fatal);
+        MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(adc), 0);
+        memory_region_add_subregion_overlap(&s->sfr, PIC32MK_ADC_OFFSET,
+                                            mr, 1);
+        /* IRQ 0 = EOS (101), IRQ 1 = main ADC (92) */
+        sysbus_connect_irq(SYS_BUS_DEVICE(adc), 0,
+                           qdev_get_gpio_in(s->evic, PIC32MK_IRQ_ADC_EOS));
+        sysbus_connect_irq(SYS_BUS_DEVICE(adc), 1,
+                           qdev_get_gpio_in(s->evic, PIC32MK_IRQ_ADC));
+    }
 
     /* CAN FD 1–4 */
     pic32mk_canfd_create(s, PIC32MK_CAN1_OFFSET,

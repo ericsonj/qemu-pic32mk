@@ -886,3 +886,15 @@ vUSB1InterruptWrapper:
     nop
     portRESTORE_CONTEXT
     .end    vUSB1InterruptWrapper
+
+    /* ADC End-of-Scan interrupt wrapper (source 101, IFS3 bit 5) */
+    .extern ADC_EOS_InterruptHandler
+
+    .global vADCEOSInterruptWrapper
+    .ent    vADCEOSInterruptWrapper
+vADCEOSInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     ADC_EOS_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vADCEOSInterruptWrapper

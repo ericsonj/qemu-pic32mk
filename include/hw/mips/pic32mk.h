@@ -502,4 +502,153 @@ void pic32mk_gpio_set_chardev(DeviceState *dev, Chardev *chr);
 #define PIC32MK_DCHxCPTR        0xA0u
 #define PIC32MK_DCHxDAT         0xB0u
 
+/* -----------------------------------------------------------------------
+ * ADCHS peripheral registers (§22, DS60001519E)
+ * Base: 0xBF887000 (SFR offset 0x087000)
+ * Register block spans ~4 KB (0x000–0xE1C).
+ * Each register has SET/CLR/INV aliases at +4/+8/+C.
+ * ----------------------------------------------------------------------- */
+
+#define PIC32MK_ADC_OFFSET      0x087000u   /* 0xBF887000 */
+#define PIC32MK_ADC_SIZE        0x001000u   /* 4 KB register window */
+
+/* Control registers */
+#define PIC32MK_ADCCON1         0x000u
+#define PIC32MK_ADCCON2         0x010u
+#define PIC32MK_ADCCON3         0x020u
+#define PIC32MK_ADCTRGMODE      0x030u
+
+/* Input mode control (signed/unsigned per channel group) */
+#define PIC32MK_ADCIMCON1       0x040u
+#define PIC32MK_ADCIMCON2       0x050u
+#define PIC32MK_ADCIMCON3       0x060u
+#define PIC32MK_ADCIMCON4       0x070u
+
+/* Global interrupt enable (result ready, 2 × 32 bits) */
+#define PIC32MK_ADCGIRQEN1      0x080u
+#define PIC32MK_ADCGIRQEN2      0x090u
+
+/* Channel scan select */
+#define PIC32MK_ADCCSS1         0x0A0u
+#define PIC32MK_ADCCSS2         0x0B0u
+
+/* Data ready status */
+#define PIC32MK_ADCDSTAT1       0x0C0u
+#define PIC32MK_ADCDSTAT2       0x0D0u
+
+/* Compare enable */
+#define PIC32MK_ADCCMPEN1       0x0E0u
+#define PIC32MK_ADCCMPEN2       0x100u
+#define PIC32MK_ADCCMPEN3       0x120u
+#define PIC32MK_ADCCMPEN4       0x140u
+
+/* Compare values */
+#define PIC32MK_ADCCMP1         0x0F0u
+#define PIC32MK_ADCCMP2         0x110u
+#define PIC32MK_ADCCMP3         0x130u
+#define PIC32MK_ADCCMP4         0x150u
+
+/* Digital filter registers */
+#define PIC32MK_ADCFLTR1        0x1A0u
+#define PIC32MK_ADCFLTR2        0x1B0u
+#define PIC32MK_ADCFLTR3        0x1C0u
+#define PIC32MK_ADCFLTR4        0x1D0u
+
+/* Trigger configuration */
+#define PIC32MK_ADCTRG1         0x200u
+#define PIC32MK_ADCTRG2         0x210u
+#define PIC32MK_ADCTRG3         0x220u
+#define PIC32MK_ADCTRG4         0x230u
+#define PIC32MK_ADCTRG5         0x240u
+#define PIC32MK_ADCTRG6         0x250u
+#define PIC32MK_ADCTRG7         0x260u
+
+/* Compare control */
+#define PIC32MK_ADCCMPCON1      0x280u
+#define PIC32MK_ADCCMPCON2      0x290u
+#define PIC32MK_ADCCMPCON3      0x2A0u
+#define PIC32MK_ADCCMPCON4      0x2B0u
+
+/* Misc registers */
+#define PIC32MK_ADCBASE         0x300u
+#define PIC32MK_ADCTRGSNS       0x340u
+
+/* Sampling time (per-module) */
+#define PIC32MK_ADC0TIME        0x350u
+#define PIC32MK_ADC1TIME        0x360u
+#define PIC32MK_ADC2TIME        0x370u
+#define PIC32MK_ADC3TIME        0x380u
+#define PIC32MK_ADC4TIME        0x390u
+#define PIC32MK_ADC5TIME        0x3A0u
+
+/* Early interrupt enable / status */
+#define PIC32MK_ADCEIEN1        0x3C0u
+#define PIC32MK_ADCEIEN2        0x3D0u
+#define PIC32MK_ADCEISTAT1      0x3E0u
+#define PIC32MK_ADCEISTAT2      0x3F0u
+
+/* Analog module enable / warm-up control */
+#define PIC32MK_ADCANCON        0x400u
+
+/* Conversion data registers (stride 0x10 per channel index) */
+#define PIC32MK_ADCDATA_BASE    0x600u
+#define PIC32MK_ADCDATA_STRIDE  0x010u
+
+/* Per-module configuration */
+#define PIC32MK_ADC0CFG         0xD00u
+#define PIC32MK_ADC1CFG         0xD10u
+#define PIC32MK_ADC2CFG         0xD20u
+#define PIC32MK_ADC3CFG         0xD30u
+#define PIC32MK_ADC4CFG         0xD40u
+#define PIC32MK_ADC5CFG         0xD50u
+#define PIC32MK_ADC6CFG         0xD60u
+#define PIC32MK_ADC7CFG         0xD70u
+
+/* System configuration */
+#define PIC32MK_ADCSYSCFG0      0xE00u
+#define PIC32MK_ADCSYSCFG1      0xE10u
+
+/* Maximum channel index (0–53, with gaps) */
+#define PIC32MK_ADC_MAX_CH      54
+
+/* ADCCON1 bits */
+#define PIC32MK_ADCCON1_ON      (1u << 15)
+
+/* ADCCON2 bits */
+#define PIC32MK_ADCCON2_BGVRRDY (1u << 31)  /* Band-gap voltage ref ready */
+#define PIC32MK_ADCCON2_REFFLT  (1u << 30)  /* Reference fault */
+
+/* ADCCON3 bits */
+#define PIC32MK_ADCCON3_ADINSEL_MASK  0x3Fu        /* bits [5:0] channel select */
+#define PIC32MK_ADCCON3_RQCNVRT (1u << 8)          /* Request conversion */
+#define PIC32MK_ADCCON3_GSWTRG  (1u << 6)          /* Global software trigger */
+#define PIC32MK_ADCCON3_GLSWTRG (1u << 5)          /* Global level SW trigger */
+#define PIC32MK_ADCCON3_DIGEN_SHIFT  16             /* DIGENx at bits [23:16] */
+
+/* ADCANCON bits — ANENx and WKRDYx (modules 0–5, 7) */
+#define PIC32MK_ADCANCON_ANEN_SHIFT   0             /* ANENx at bits [7:0] */
+#define PIC32MK_ADCANCON_WKRDY_SHIFT  8             /* WKRDYx at bits [15:8] */
+
+/* -----------------------------------------------------------------------
+ * ADCHS interrupt source numbers (§8, Table 8-1) — vector/IRQ numbers
+ * ----------------------------------------------------------------------- */
+
+#define PIC32MK_IRQ_ADC         92   /* Main ADC interrupt */
+#define PIC32MK_IRQ_ADC_DC1     94   /* Digital comparator 1 */
+#define PIC32MK_IRQ_ADC_DC2     95   /* Digital comparator 2 */
+#define PIC32MK_IRQ_ADC_DF1     96   /* Digital filter 1 */
+#define PIC32MK_IRQ_ADC_DF2     97   /* Digital filter 2 */
+#define PIC32MK_IRQ_ADC_DF3     98   /* Digital filter 3 */
+#define PIC32MK_IRQ_ADC_DF4     99   /* Digital filter 4 */
+#define PIC32MK_IRQ_ADC_FAULT   100  /* ADC fault */
+#define PIC32MK_IRQ_ADC_EOS     101  /* End of scan */
+#define PIC32MK_IRQ_ADC_ARDY    102  /* Analog ready */
+#define PIC32MK_IRQ_ADC_URDY    103  /* Update ready */
+#define PIC32MK_IRQ_ADC_DMA     104  /* DMA */
+#define PIC32MK_IRQ_ADC_EARLY   105  /* Early interrupt */
+#define PIC32MK_IRQ_ADC_DATA0   106  /* Data ready channel 0 (base) */
+/* DATA1..DATA27 = 107..133, DATA33..41 = 139..147, DATA45..53 = 151..159 */
+#define PIC32MK_IRQ_ADC_DC3     245  /* Digital comparator 3 */
+#define PIC32MK_IRQ_ADC_DC4     246  /* Digital comparator 4 */
+
 #endif /* HW_MIPS_PIC32MK_H */

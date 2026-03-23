@@ -236,6 +236,12 @@ typedef union {
 #define IPC22SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x02A8u))
 #define IPC22INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x02ACu))
 
+/* IPC25 offset = 0x0140 + 25*0x10 = 0x02D0 */
+#define IPC25           (*(volatile uint32_t *)(_EVIC_BASE + 0x02D0u))
+#define IPC25CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x02D4u))
+#define IPC25SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x02D8u))
+#define IPC25INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x02DCu))
+
 /* IPC41 offset = 0x0140 + 41*0x10 = 0x03F0 */
 #define IPC41           (*(volatile uint32_t *)(_EVIC_BASE + 0x03F0u))
 #define IPC41CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x03F4u))
@@ -1949,6 +1955,285 @@ typedef struct {
 #define RPC9R       (*(volatile uint32_t *)0xBF8016A4u)
 #define RPF0R       (*(volatile uint32_t *)0xBF801740u)
 #define RPG0R       (*(volatile uint32_t *)0xBF801780u)
+
+/* -----------------------------------------------------------------------
+ * ADCHS — 12-bit High-Speed SAR ADC (§22, DS60001519E)
+ * Base: 0xBF887000
+ * ----------------------------------------------------------------------- */
+
+#define _ADC_BASE       0xBF887000u
+
+/* ADCCON1 — ADC Control Register 1 (offset 0x000) */
+#define ADCCON1         (*(volatile uint32_t *)(_ADC_BASE + 0x000u))
+#define ADCCON1CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x004u))
+#define ADCCON1SET      (*(volatile uint32_t *)(_ADC_BASE + 0x008u))
+#define ADCCON1INV      (*(volatile uint32_t *)(_ADC_BASE + 0x00Cu))
+
+typedef union {
+    struct {
+        uint32_t DMABL      : 3;
+        uint32_t STRGLVL    : 1;
+        uint32_t IRQVS      : 3;
+        uint32_t            : 2;
+        uint32_t FSPBCLKEN  : 1;
+        uint32_t FSSCLKEN   : 1;
+        uint32_t CVDEN      : 1;
+        uint32_t AICPMPEN   : 1;
+        uint32_t SIDL       : 1;
+        uint32_t            : 1;
+        uint32_t ON         : 1;
+        uint32_t STRGSRC    : 5;
+        uint32_t SELRES     : 2;
+        uint32_t FRACT      : 1;
+        uint32_t TRBSLV     : 3;
+        uint32_t TRBMST     : 3;
+        uint32_t TRBERR     : 1;
+        uint32_t TRBEN      : 1;
+    };
+    uint32_t w;
+} __ADCCON1_t;
+
+#define ADCCON1bits     (*(volatile __ADCCON1_t *)(_ADC_BASE + 0x000u))
+
+/* ADCCON2 — ADC Control Register 2 (offset 0x010) */
+#define ADCCON2         (*(volatile uint32_t *)(_ADC_BASE + 0x010u))
+#define ADCCON2CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x014u))
+#define ADCCON2SET      (*(volatile uint32_t *)(_ADC_BASE + 0x018u))
+#define ADCCON2INV      (*(volatile uint32_t *)(_ADC_BASE + 0x01Cu))
+
+typedef union {
+    struct {
+        uint32_t ADCDIV     : 7;
+        uint32_t            : 1;
+        uint32_t ADCEIS     : 3;
+        uint32_t            : 1;
+        uint32_t ADCEIOVR   : 1;
+        uint32_t EOSIEN     : 1;
+        uint32_t REFFLTIEN  : 1;
+        uint32_t BGVRIEN    : 1;
+        uint32_t SAMC       : 10;
+        uint32_t CVDCPL     : 3;
+        uint32_t EOSRDY     : 1;
+        uint32_t REFFLT     : 1;
+        uint32_t BGVRRDY    : 1;
+    };
+    uint32_t w;
+} __ADCCON2_t;
+
+#define ADCCON2bits     (*(volatile __ADCCON2_t *)(_ADC_BASE + 0x010u))
+
+/* ADCCON3 — ADC Control Register 3 (offset 0x020) */
+#define ADCCON3         (*(volatile uint32_t *)(_ADC_BASE + 0x020u))
+#define ADCCON3CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x024u))
+#define ADCCON3SET      (*(volatile uint32_t *)(_ADC_BASE + 0x028u))
+#define ADCCON3INV      (*(volatile uint32_t *)(_ADC_BASE + 0x02Cu))
+
+typedef union {
+    struct {
+        uint32_t ADINSEL    : 6;
+        uint32_t GSWTRG     : 1;
+        uint32_t GLSWTRG    : 1;
+        uint32_t RQCNVRT    : 1;
+        uint32_t SAMP       : 1;
+        uint32_t UPDRDY     : 1;
+        uint32_t UPDIEN     : 1;
+        uint32_t TRGSUSP    : 1;
+        uint32_t VREFSEL    : 3;
+        uint32_t DIGEN0     : 1;
+        uint32_t DIGEN1     : 1;
+        uint32_t DIGEN2     : 1;
+        uint32_t DIGEN3     : 1;
+        uint32_t DIGEN4     : 1;
+        uint32_t DIGEN5     : 1;
+        uint32_t            : 1;
+        uint32_t DIGEN7     : 1;
+        uint32_t CONCLKDIV  : 6;
+        uint32_t ADCSEL     : 2;
+    };
+    uint32_t w;
+} __ADCCON3_t;
+
+#define ADCCON3bits     (*(volatile __ADCCON3_t *)(_ADC_BASE + 0x020u))
+
+/* ADCTRGMODE — ADC Trigger Mode (offset 0x030) */
+#define ADCTRGMODE      (*(volatile uint32_t *)(_ADC_BASE + 0x030u))
+#define ADCTRGMODECLR   (*(volatile uint32_t *)(_ADC_BASE + 0x034u))
+#define ADCTRGMODESET   (*(volatile uint32_t *)(_ADC_BASE + 0x038u))
+#define ADCTRGMODEINV   (*(volatile uint32_t *)(_ADC_BASE + 0x03Cu))
+
+/* ADCIMCON1–4 — ADC Input Mode Control (offsets 0x040, 0x050, 0x060, 0x070) */
+#define ADCIMCON1       (*(volatile uint32_t *)(_ADC_BASE + 0x040u))
+#define ADCIMCON1CLR    (*(volatile uint32_t *)(_ADC_BASE + 0x044u))
+#define ADCIMCON1SET    (*(volatile uint32_t *)(_ADC_BASE + 0x048u))
+#define ADCIMCON1INV    (*(volatile uint32_t *)(_ADC_BASE + 0x04Cu))
+
+#define ADCIMCON2       (*(volatile uint32_t *)(_ADC_BASE + 0x050u))
+#define ADCIMCON2CLR    (*(volatile uint32_t *)(_ADC_BASE + 0x054u))
+#define ADCIMCON2SET    (*(volatile uint32_t *)(_ADC_BASE + 0x058u))
+#define ADCIMCON2INV    (*(volatile uint32_t *)(_ADC_BASE + 0x05Cu))
+
+#define ADCIMCON3       (*(volatile uint32_t *)(_ADC_BASE + 0x060u))
+#define ADCIMCON3CLR    (*(volatile uint32_t *)(_ADC_BASE + 0x064u))
+#define ADCIMCON3SET    (*(volatile uint32_t *)(_ADC_BASE + 0x068u))
+#define ADCIMCON3INV    (*(volatile uint32_t *)(_ADC_BASE + 0x06Cu))
+
+#define ADCIMCON4       (*(volatile uint32_t *)(_ADC_BASE + 0x070u))
+#define ADCIMCON4CLR    (*(volatile uint32_t *)(_ADC_BASE + 0x074u))
+#define ADCIMCON4SET    (*(volatile uint32_t *)(_ADC_BASE + 0x078u))
+#define ADCIMCON4INV    (*(volatile uint32_t *)(_ADC_BASE + 0x07Cu))
+
+/* ADCGIRQEN1–2 — ADC Global Interrupt Request Enable (offsets 0x080, 0x090) */
+#define ADCGIRQEN1      (*(volatile uint32_t *)(_ADC_BASE + 0x080u))
+#define ADCGIRQEN1CLR   (*(volatile uint32_t *)(_ADC_BASE + 0x084u))
+#define ADCGIRQEN1SET   (*(volatile uint32_t *)(_ADC_BASE + 0x088u))
+#define ADCGIRQEN1INV   (*(volatile uint32_t *)(_ADC_BASE + 0x08Cu))
+
+#define ADCGIRQEN2      (*(volatile uint32_t *)(_ADC_BASE + 0x090u))
+#define ADCGIRQEN2CLR   (*(volatile uint32_t *)(_ADC_BASE + 0x094u))
+#define ADCGIRQEN2SET   (*(volatile uint32_t *)(_ADC_BASE + 0x098u))
+#define ADCGIRQEN2INV   (*(volatile uint32_t *)(_ADC_BASE + 0x09Cu))
+
+/* ADCCSS1–2 — ADC Common Scan Select (offsets 0x0A0, 0x0B0) */
+#define ADCCSS1         (*(volatile uint32_t *)(_ADC_BASE + 0x0A0u))
+#define ADCCSS1CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x0A4u))
+#define ADCCSS1SET      (*(volatile uint32_t *)(_ADC_BASE + 0x0A8u))
+#define ADCCSS1INV      (*(volatile uint32_t *)(_ADC_BASE + 0x0ACu))
+
+#define ADCCSS2         (*(volatile uint32_t *)(_ADC_BASE + 0x0B0u))
+#define ADCCSS2CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x0B4u))
+#define ADCCSS2SET      (*(volatile uint32_t *)(_ADC_BASE + 0x0B8u))
+#define ADCCSS2INV      (*(volatile uint32_t *)(_ADC_BASE + 0x0BCu))
+
+/* ADCDSTAT1–2 — ADC Data Ready Status (offsets 0x0C0, 0x0D0) */
+#define ADCDSTAT1       (*(volatile uint32_t *)(_ADC_BASE + 0x0C0u))
+#define ADCDSTAT1CLR    (*(volatile uint32_t *)(_ADC_BASE + 0x0C4u))
+#define ADCDSTAT1SET    (*(volatile uint32_t *)(_ADC_BASE + 0x0C8u))
+#define ADCDSTAT1INV    (*(volatile uint32_t *)(_ADC_BASE + 0x0CCu))
+
+#define ADCDSTAT2       (*(volatile uint32_t *)(_ADC_BASE + 0x0D0u))
+#define ADCDSTAT2CLR    (*(volatile uint32_t *)(_ADC_BASE + 0x0D4u))
+#define ADCDSTAT2SET    (*(volatile uint32_t *)(_ADC_BASE + 0x0D8u))
+#define ADCDSTAT2INV    (*(volatile uint32_t *)(_ADC_BASE + 0x0DCu))
+
+/* ADCTRG1–7 — ADC Trigger Source (offsets 0x200–0x260) */
+#define ADCTRG1         (*(volatile uint32_t *)(_ADC_BASE + 0x200u))
+#define ADCTRG1CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x204u))
+#define ADCTRG1SET      (*(volatile uint32_t *)(_ADC_BASE + 0x208u))
+#define ADCTRG1INV      (*(volatile uint32_t *)(_ADC_BASE + 0x20Cu))
+
+#define ADCTRG2         (*(volatile uint32_t *)(_ADC_BASE + 0x210u))
+#define ADCTRG2CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x214u))
+#define ADCTRG2SET      (*(volatile uint32_t *)(_ADC_BASE + 0x218u))
+#define ADCTRG2INV      (*(volatile uint32_t *)(_ADC_BASE + 0x21Cu))
+
+#define ADCTRG3         (*(volatile uint32_t *)(_ADC_BASE + 0x220u))
+#define ADCTRG3CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x224u))
+#define ADCTRG3SET      (*(volatile uint32_t *)(_ADC_BASE + 0x228u))
+#define ADCTRG3INV      (*(volatile uint32_t *)(_ADC_BASE + 0x22Cu))
+
+#define ADCTRG4         (*(volatile uint32_t *)(_ADC_BASE + 0x230u))
+#define ADCTRG4CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x234u))
+#define ADCTRG4SET      (*(volatile uint32_t *)(_ADC_BASE + 0x238u))
+#define ADCTRG4INV      (*(volatile uint32_t *)(_ADC_BASE + 0x23Cu))
+
+#define ADCTRG5         (*(volatile uint32_t *)(_ADC_BASE + 0x240u))
+#define ADCTRG5CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x244u))
+#define ADCTRG5SET      (*(volatile uint32_t *)(_ADC_BASE + 0x248u))
+#define ADCTRG5INV      (*(volatile uint32_t *)(_ADC_BASE + 0x24Cu))
+
+#define ADCTRG6         (*(volatile uint32_t *)(_ADC_BASE + 0x250u))
+#define ADCTRG6CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x254u))
+#define ADCTRG6SET      (*(volatile uint32_t *)(_ADC_BASE + 0x258u))
+#define ADCTRG6INV      (*(volatile uint32_t *)(_ADC_BASE + 0x25Cu))
+
+#define ADCTRG7         (*(volatile uint32_t *)(_ADC_BASE + 0x260u))
+#define ADCTRG7CLR      (*(volatile uint32_t *)(_ADC_BASE + 0x264u))
+#define ADCTRG7SET      (*(volatile uint32_t *)(_ADC_BASE + 0x268u))
+#define ADCTRG7INV      (*(volatile uint32_t *)(_ADC_BASE + 0x26Cu))
+
+/* ADCTRGSNS — ADC Trigger Sense (offset 0x340) */
+#define ADCTRGSNS       (*(volatile uint32_t *)(_ADC_BASE + 0x340u))
+#define ADCTRGSNSCLR    (*(volatile uint32_t *)(_ADC_BASE + 0x344u))
+#define ADCTRGSNSSET    (*(volatile uint32_t *)(_ADC_BASE + 0x348u))
+#define ADCTRGSNSINV    (*(volatile uint32_t *)(_ADC_BASE + 0x34Cu))
+
+/* ADCEIEN1–2 — ADC Early Interrupt Enable (offsets 0x3C0, 0x3D0) */
+#define ADCEIEN1        (*(volatile uint32_t *)(_ADC_BASE + 0x3C0u))
+#define ADCEIEN1CLR     (*(volatile uint32_t *)(_ADC_BASE + 0x3C4u))
+#define ADCEIEN1SET     (*(volatile uint32_t *)(_ADC_BASE + 0x3C8u))
+#define ADCEIEN1INV     (*(volatile uint32_t *)(_ADC_BASE + 0x3CCu))
+
+#define ADCEIEN2        (*(volatile uint32_t *)(_ADC_BASE + 0x3D0u))
+#define ADCEIEN2CLR     (*(volatile uint32_t *)(_ADC_BASE + 0x3D4u))
+#define ADCEIEN2SET     (*(volatile uint32_t *)(_ADC_BASE + 0x3D8u))
+#define ADCEIEN2INV     (*(volatile uint32_t *)(_ADC_BASE + 0x3DCu))
+
+/* ADCANCON — ADC Analog and Bias Control (offset 0x400) */
+#define ADCANCON        (*(volatile uint32_t *)(_ADC_BASE + 0x400u))
+#define ADCANCONCLR     (*(volatile uint32_t *)(_ADC_BASE + 0x404u))
+#define ADCANCONSET     (*(volatile uint32_t *)(_ADC_BASE + 0x408u))
+#define ADCANCONINV     (*(volatile uint32_t *)(_ADC_BASE + 0x40Cu))
+
+typedef union {
+    struct {
+        uint32_t ANEN0      : 1;
+        uint32_t ANEN1      : 1;
+        uint32_t ANEN2      : 1;
+        uint32_t ANEN3      : 1;
+        uint32_t ANEN4      : 1;
+        uint32_t ANEN5      : 1;
+        uint32_t            : 1;
+        uint32_t ANEN7      : 1;
+        uint32_t WKRDY0     : 1;
+        uint32_t WKRDY1     : 1;
+        uint32_t WKRDY2     : 1;
+        uint32_t WKRDY3     : 1;
+        uint32_t WKRDY4     : 1;
+        uint32_t WKRDY5     : 1;
+        uint32_t            : 1;
+        uint32_t WKRDY7     : 1;
+        uint32_t WKIEN0     : 1;
+        uint32_t WKIEN1     : 1;
+        uint32_t WKIEN2     : 1;
+        uint32_t WKIEN3     : 1;
+        uint32_t WKIEN4     : 1;
+        uint32_t WKIEN5     : 1;
+        uint32_t            : 1;
+        uint32_t WKIEN7     : 1;
+        uint32_t WKUPCLKCNT : 4;
+        uint32_t            : 4;
+    };
+    uint32_t w;
+} __ADCANCON_t;
+
+#define ADCANCONbits    (*(volatile __ADCANCON_t *)(_ADC_BASE + 0x400u))
+
+/* ADCDATA0 — ADC Data Register base (offset 0x600, stride 0x10) */
+#define ADCDATA0        (*(volatile uint32_t *)(_ADC_BASE + 0x600u))
+
+/* ADC0CFG–ADC7CFG — ADC Module Configuration (offsets 0xD00–0xD70) */
+#define ADC0CFG         (*(volatile uint32_t *)(_ADC_BASE + 0xD00u))
+#define ADC1CFG         (*(volatile uint32_t *)(_ADC_BASE + 0xD10u))
+#define ADC2CFG         (*(volatile uint32_t *)(_ADC_BASE + 0xD20u))
+#define ADC3CFG         (*(volatile uint32_t *)(_ADC_BASE + 0xD30u))
+#define ADC4CFG         (*(volatile uint32_t *)(_ADC_BASE + 0xD40u))
+#define ADC5CFG         (*(volatile uint32_t *)(_ADC_BASE + 0xD50u))
+#define ADC6CFG         (*(volatile uint32_t *)(_ADC_BASE + 0xD60u))
+#define ADC7CFG         (*(volatile uint32_t *)(_ADC_BASE + 0xD70u))
+
+/* DEVADC0–DEVADC7 — Device ADC Calibration in Boot Flash (0xBFC45000) */
+#define DEVADC0         (*(volatile uint32_t *)0xBFC45000u)
+#define DEVADC1         (*(volatile uint32_t *)0xBFC45004u)
+#define DEVADC2         (*(volatile uint32_t *)0xBFC45008u)
+#define DEVADC3         (*(volatile uint32_t *)0xBFC4500Cu)
+#define DEVADC4         (*(volatile uint32_t *)0xBFC45010u)
+#define DEVADC5         (*(volatile uint32_t *)0xBFC45014u)
+#define DEVADC6         (*(volatile uint32_t *)0xBFC45018u)
+#define DEVADC7         (*(volatile uint32_t *)0xBFC4501Cu)
+
+/* ADC End-of-Scan interrupt masks in IEC3/IFS3 */
+#define _IFS3_AD1EOSIF_MASK     0x00000020u
+#define _IEC3_AD1EOSIE_MASK     0x00000020u
 
 #endif /* __ASSEMBLER__ */
 #endif /* XC_H */

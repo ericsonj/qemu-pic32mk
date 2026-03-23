@@ -163,6 +163,40 @@ def cmd_list_paths(qmp: QMPClient):
 
 
 # ---------------------------------------------------------------------------
+# ADC analog value commands
+# ---------------------------------------------------------------------------
+
+def cmd_adc_set(qmp: QMPClient, channel: int, value: int):
+    """Inject analog value (0–4095) for an ADC channel."""
+    prop = f'adc-ch{channel}'
+    qmp.qom_set(ADC_QOM_PATH, prop, value)
+    print(f'ADC channel {channel} input ← {value}')
+
+
+def cmd_adc_get(qmp: QMPClient, channel: int):
+    """Read last conversion result for an ADC channel."""
+    prop = f'adc-data{channel}'
+    val = qmp.qom_get(ADC_QOM_PATH, prop)
+    prop_in = f'adc-ch{channel}'
+    inp = qmp.qom_get(ADC_QOM_PATH, prop_in)
+    print(f'ADC channel {channel}: input={inp}, data={val}')
+
+
+def cmd_adc_list(qmp: QMPClient):
+    """Show all mapped VOLTU analog channels with input and data values."""
+    print(f'{"Ch":>4}  {"Signal":18s}  {"Input":>6}  {"Data":>6}')
+    print(f'{"-"*4:>4}  {"-"*18:18s}  {"-"*6:>6}  {"-"*6:>6}')
+    for ch in sorted(VOLTU_ANALOG.keys()):
+        sig, unit, _, _ = VOLTU_ANALOG[ch]
+        try:
+            inp = qmp.qom_get(ADC_QOM_PATH, f'adc-ch{ch}')
+            data = qmp.qom_get(ADC_QOM_PATH, f'adc-data{ch}')
+        except RuntimeError:
+            inp = data = '?'
+        print(f'{ch:>4}  {sig:18s}  {inp:>6}  {data:>6}')
+
+
+# ---------------------------------------------------------------------------
 # VOLTU pin name mapping: (port_letter, pin) -> (signal_name, direction_hint)
 # Only pins in this dict appear in the GUI.  Source: plib_gpio.h
 # ---------------------------------------------------------------------------
@@ -204,6 +238,24 @@ VOLTU_PINS = {
 }
 
 PORT_INDEX_TO_LETTER = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G'}
+
+ADC_QOM_PATH = '/machine/adchs'
+
+# ---------------------------------------------------------------------------
+# VOLTU analog channel mapping: channel -> (signal_name, unit, min, max)
+# Source: Harmony MHC ADC configuration for PRG-IDU
+# ---------------------------------------------------------------------------
+
+VOLTU_ANALOG = {
+    10: ('V_BAT_SENSE',    'mV', 0, 4095),
+    15: ('TEMP_MOTOR',     'raw', 0, 4095),
+    16: ('TEMP_INV',       'raw', 0, 4095),
+    17: ('I_PUMP_STEER',   'raw', 0, 4095),
+    18: ('I_FAN',          'raw', 0, 4095),
+    19: ('I_PUMP_IPU',     'raw', 0, 4095),
+    20: ('I_PUMP_IEP',     'raw', 0, 4095),
+    21: ('I_VACUUM',       'raw', 0, 4095),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -357,6 +409,80 @@ def cmd_gui(qmp: QMPClient, gpio_sock_path: str):
                           (port >> pin_num) & 1,
                           (lat >> pin_num) & 1)
 
+    # -- Analog channel widget -------------------------------------------------
+
+    class AnalogWidget:
+        """One row in the analog frame: label, slider, value display."""
+
+        def __init__(self, parent, row: int, channel: int, signal: str,
+                     unit: str, qmp_client: QMPClient):
+            self.channel = channel
+            self.qmp = qmp_client
+
+            tk.Label(parent, text=f'AN{channel}', width=6, anchor='w',
+                     font=('monospace', 10)).grid(row=row, column=0,
+                                                   padx=(4, 2), sticky='w')
+            tk.Label(parent, text=signal, width=18, anchor='w',
+                     font=('monospace', 10)).grid(row=row, column=1,
+                                                   padx=2, sticky='w')
+
+            self.slider_var = tk.IntVar(value=0)
+            self.slider = tk.Scale(parent, from_=0, to=4095,
+                                   orient='horizontal', length=200,
+                                   variable=self.slider_var,
+                                   showvalue=False,
+                                   command=self._on_slide)
+            self.slider.grid(row=row, column=2, padx=4)
+
+            self.val_label = tk.Label(parent, text='0', width=6,
+                                      font=('monospace', 10, 'bold'))
+            self.val_label.grid(row=row, column=3, padx=2)
+
+            tk.Label(parent, text=unit, width=4, anchor='w',
+                     font=('monospace', 9)).grid(row=row, column=4,
+                                                  padx=2, sticky='w')
+
+        def _on_slide(self, _val_str):
+            value = self.slider_var.get()
+            self.val_label.config(text=str(value))
+            try:
+                self.qmp.qom_set(ADC_QOM_PATH, f'adc-ch{self.channel}', value)
+            except (RuntimeError, ConnectionError):
+                pass
+
+        def set_value(self, value: int):
+            self.slider_var.set(value)
+            self.val_label.config(text=str(value))
+
+    # -- Analog frame ---------------------------------------------------------
+
+    class AnalogFrame(tk.LabelFrame):
+        """Frame with sliders for VOLTU analog channels."""
+
+        def __init__(self, parent, qmp_client: QMPClient):
+            super().__init__(parent, text='  ADC Analog Inputs  ',
+                             font=('sans-serif', 11, 'bold'), padx=4, pady=2)
+            self.widgets = {}
+
+            # Header
+            for col, hdr in enumerate(['Ch', 'Signal', 'Value', '', 'Unit']):
+                tk.Label(self, text=hdr, font=('sans-serif', 9, 'bold')
+                         ).grid(row=0, column=col, padx=2)
+
+            for i, ch in enumerate(sorted(VOLTU_ANALOG.keys())):
+                sig, unit, _, _ = VOLTU_ANALOG[ch]
+                aw = AnalogWidget(self, i + 1, ch, sig, unit, qmp_client)
+                self.widgets[ch] = aw
+
+        def read_initial(self, qmp_client: QMPClient):
+            """Read current injection values from QOM."""
+            for ch, aw in self.widgets.items():
+                try:
+                    val = qmp_client.qom_get(ADC_QOM_PATH, f'adc-ch{ch}')
+                    aw.set_value(int(val))
+                except (RuntimeError, ConnectionError):
+                    pass
+
     # -- Main GUI app ---------------------------------------------------------
 
     class GpioGuiApp:
@@ -385,6 +511,12 @@ def cmd_gui(qmp: QMPClient, gpio_sock_path: str):
                 pf.pack(fill='x', pady=2)
                 self.port_frames[port_letter] = pf
 
+            # Build analog frame if VOLTU_ANALOG channels are defined
+            self.analog_frame = None
+            if VOLTU_ANALOG:
+                self.analog_frame = AnalogFrame(container, qmp_client)
+                self.analog_frame.pack(fill='x', pady=2)
+
             # Status bar
             self.status_var = tk.StringVar(value='Connecting...')
             status_bar = tk.Label(self.root, textvariable=self.status_var,
@@ -400,7 +532,7 @@ def cmd_gui(qmp: QMPClient, gpio_sock_path: str):
             self._initial_read()
 
         def _initial_read(self):
-            """Read current state of all ports via QMP (one-time)."""
+            """Read current state of all ports and analog channels via QMP."""
             for port_letter, pf in self.port_frames.items():
                 try:
                     path = gpio_path(port_letter)
@@ -410,6 +542,8 @@ def cmd_gui(qmp: QMPClient, gpio_sock_path: str):
                     pf.update_pins(tris, lat, port)
                 except (RuntimeError, ConnectionError):
                     pass
+            if self.analog_frame:
+                self.analog_frame.read_initial(self.qmp)
             self.status_var.set('Connected')
 
         def _check_queue(self):
@@ -465,6 +599,15 @@ def main():
 
     sub.add_parser('list-paths', help='List QOM paths for GPIO devices')
 
+    p_adc_set = sub.add_parser('adc-set', help='Inject analog value for ADC channel')
+    p_adc_set.add_argument('channel', type=int, help='ADC channel number (0–53)')
+    p_adc_set.add_argument('value', type=int, help='12-bit value (0–4095)')
+
+    p_adc_get = sub.add_parser('adc-get', help='Read ADC channel conversion result')
+    p_adc_get.add_argument('channel', type=int, help='ADC channel number (0–53)')
+
+    sub.add_parser('adc-list', help='Show all mapped analog channel values')
+
     p_gui = sub.add_parser('gui', help='Launch tkinter GPIO visualization GUI')
     p_gui.add_argument('--gpio-sock', default='/tmp/gpio-events.sock',
                         help='GPIO chardev event socket (default: /tmp/gpio-events.sock)')
@@ -500,6 +643,12 @@ def main():
             cmd_get_port(qmp, args.port)
         elif args.command == 'list-paths':
             cmd_list_paths(qmp)
+        elif args.command == 'adc-set':
+            cmd_adc_set(qmp, args.channel, args.value)
+        elif args.command == 'adc-get':
+            cmd_adc_get(qmp, args.channel)
+        elif args.command == 'adc-list':
+            cmd_adc_list(qmp)
     except RuntimeError as e:
         print(f'Error: {e}', file=sys.stderr)
         sys.exit(1)

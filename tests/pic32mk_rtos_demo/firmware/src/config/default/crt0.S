@@ -158,6 +158,11 @@ _int_handler:
     lw      $26, 0x00F0($26)        /* $26 = IEC3 */
     and     $26, $27, $26           /* pending3 = IFS3 & IEC3 */
 
+    /* AD1EOS = source 101 = IFS3 bit 5 = 0x0020 */
+    andi    $27, $26, 0x0020        /* AD1EOSIF (bit 5) */
+    bnez    $27, _adc_eos_int
+    nop
+
     lui     $27, 0x0020             /* bit 21 = 0x00200000 (U2TXIF) */
     and     $27, $26, $27
     bnez    $27, _uart2_tx_int
@@ -273,6 +278,12 @@ _can1_int:
 _can2_int:
     .extern vCAN2InterruptWrapper
     la      $26, vCAN2InterruptWrapper
+    jr      $26
+    nop
+
+_adc_eos_int:
+    .extern vADCEOSInterruptWrapper
+    la      $26, vADCEOSInterruptWrapper
     jr      $26
     nop
     .end    _int_handler
