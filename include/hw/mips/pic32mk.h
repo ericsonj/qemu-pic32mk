@@ -43,8 +43,17 @@
  * All addresses below are KSEG1 virtual (0xBF800000 + offset).
  * ----------------------------------------------------------------------- */
 
-/* CFG / PMD / CACHE / NVM / WDT / CRU / PPS  0xBF800000 */
+/* CFG / PMD block (0xBF800000)                                           */
 #define PIC32MK_CFG_OFFSET      0x000000u
+#define PIC32MK_CFG_SIZE        0x000120u   /* CFGCON..CFGCON2+INV inclusive */
+
+/* CRU — Clock Reference Unit (0xBF801200)                                 */
+#define PIC32MK_CRU_OFFSET      0x001200u
+#define PIC32MK_CRU_SIZE        0x0001A0u   /* OSCCON..CLKSTAT+INV inclusive */
+
+/* WDT register block (0xBF800C00) */
+#define PIC32MK_WDT_OFFSET      0x000C00u
+#define PIC32MK_WDT_SIZE        0x000040u   /* WDTCON + SET/CLR/INV + padding */
 
 /* EVIC                                         0xBF810000 */
 #define PIC32MK_EVIC_OFFSET     0x010000u
@@ -105,6 +114,124 @@
 /* RCON reset flags (§7 register map) */
 #define PIC32MK_RCON_POR        (1u << 2)   /* Power-on Reset */
 #define PIC32MK_RCON_BOR        (1u << 3)   /* Brown-out Reset */
+
+/* -----------------------------------------------------------------------
+ * CFG / PMD registers (§6) — offsets from PIC32MK_CFG_OFFSET (0xBF800000)
+ * ----------------------------------------------------------------------- */
+
+#define PIC32MK_CFGCON          0x0000u     /* Configuration control */
+#define PIC32MK_SYSKEY          0x0030u     /* System key unlock */
+#define PIC32MK_PMD1            0x0040u     /* Peripheral Module Disable 1 */
+#define PIC32MK_PMD2            0x0050u
+#define PIC32MK_PMD3            0x0060u
+#define PIC32MK_PMD4            0x0070u
+#define PIC32MK_PMD5            0x0080u
+#define PIC32MK_PMD6            0x0090u
+#define PIC32MK_PMD7            0x00A0u
+#define PIC32MK_CFGCON2         0x0110u     /* Extended configuration control */
+
+/* CFGCON bits */
+#define PIC32MK_CFGCON_PGLOCK   (1u << 28)  /* Permission-group lock */
+#define PIC32MK_CFGCON_PMDLOCK  (1u << 29)  /* PMD lock */
+#define PIC32MK_CFGCON_IOLOCK   (1u << 30)  /* I/O lock */
+
+/* Number of PMD registers */
+#define PIC32MK_PMD_COUNT       7
+
+/* -----------------------------------------------------------------------
+ * CRU registers (§9) — offsets from PIC32MK_CRU_OFFSET (0xBF801200)
+ * Each register has SET/CLR/INV aliases at +4/+8/+C.
+ * ----------------------------------------------------------------------- */
+
+/* Oscillator / PLL registers */
+#define PIC32MK_CRU_OSCCON      0x00u       /* Oscillator Control */
+#define PIC32MK_CRU_OSCTUN      0x10u       /* Oscillator Tuning */
+#define PIC32MK_CRU_SPLLCON     0x20u       /* System PLL Control */
+#define PIC32MK_CRU_UPLLCON     0x30u       /* USB PLL Control */
+
+/* Reset-control registers (formerly in separate RCON stub) */
+#define PIC32MK_CRU_RCON        0x40u       /* Reset Control */
+#define PIC32MK_CRU_RSWRST      0x50u       /* Software Reset trigger */
+#define PIC32MK_CRU_RNMICON     0x60u       /* NMI Control */
+#define PIC32MK_CRU_PWRCON      0x70u       /* Power Control */
+
+/* Reference clock outputs 1–4 (CON + TRIM pairs, 0x20 stride) */
+#define PIC32MK_CRU_REFO1CON    0x80u
+#define PIC32MK_CRU_REFO1TRIM   0x90u
+#define PIC32MK_CRU_REFO2CON    0xA0u
+#define PIC32MK_CRU_REFO2TRIM   0xB0u
+#define PIC32MK_CRU_REFO3CON    0xC0u
+#define PIC32MK_CRU_REFO3TRIM   0xD0u
+#define PIC32MK_CRU_REFO4CON    0xE0u
+#define PIC32MK_CRU_REFO4TRIM   0xF0u
+
+/* Peripheral bus clock dividers 1–7 (0x10 stride) */
+#define PIC32MK_CRU_PB1DIV      0x100u
+#define PIC32MK_CRU_PB2DIV      0x110u
+#define PIC32MK_CRU_PB3DIV      0x120u
+#define PIC32MK_CRU_PB4DIV      0x130u
+#define PIC32MK_CRU_PB5DIV      0x140u
+#define PIC32MK_CRU_PB6DIV      0x150u
+#define PIC32MK_CRU_PB7DIV      0x160u
+
+/* Clock status */
+#define PIC32MK_CRU_CLKSTAT     0x190u
+
+/* Number of reference clocks and peripheral buses */
+#define PIC32MK_CRU_NREFO       4
+#define PIC32MK_CRU_NPB         7
+
+/* OSCCON bits (§9, Register 9-1) */
+#define PIC32MK_OSCCON_OSWEN    (1u << 0)
+#define PIC32MK_OSCCON_SOSCEN   (1u << 1)
+#define PIC32MK_OSCCON_CF       (1u << 3)
+#define PIC32MK_OSCCON_SLPEN    (1u << 4)
+#define PIC32MK_OSCCON_CLKLOCK  (1u << 7)
+#define PIC32MK_OSCCON_NOSC_MASK  0x00000700u   /* bits [10:8] */
+#define PIC32MK_OSCCON_NOSC_SHIFT 8
+#define PIC32MK_OSCCON_COSC_MASK  0x00007000u   /* bits [14:12] */
+#define PIC32MK_OSCCON_COSC_SHIFT 12
+#define PIC32MK_OSCCON_FRCDIV_MASK  0x07000000u /* bits [26:24] */
+#define PIC32MK_OSCCON_FRCDIV_SHIFT 24
+
+/* SPLLCON bits (§9, Register 9-4) */
+#define PIC32MK_SPLLCON_PLLRANGE_MASK  0x00000007u /* bits [2:0] */
+#define PIC32MK_SPLLCON_PLLICLK  (1u << 7)
+#define PIC32MK_SPLLCON_PLLIDIV_MASK   0x00000700u /* bits [10:8] */
+#define PIC32MK_SPLLCON_PLLMULT_MASK   0x007F0000u /* bits [22:16] */
+#define PIC32MK_SPLLCON_PLLODIV_MASK   0x07000000u /* bits [26:24] */
+
+/* UPLLCON bits (§9) — same layout as SPLLCON plus UPOSCEN */
+#define PIC32MK_UPLLCON_UPOSCEN  (1u << 25)
+
+/* REFOxCON bits (§9, Register 9-16) */
+#define PIC32MK_REFOCON_ROSEL_MASK  0x0000000Fu /* bits [3:0] */
+#define PIC32MK_REFOCON_ACTIVE   (1u << 8)
+#define PIC32MK_REFOCON_DIVSWEN  (1u << 9)
+#define PIC32MK_REFOCON_RSLP     (1u << 11)
+#define PIC32MK_REFOCON_OE       (1u << 12)
+#define PIC32MK_REFOCON_SIDL     (1u << 13)
+#define PIC32MK_REFOCON_ON       (1u << 15)
+#define PIC32MK_REFOCON_RODIV_MASK  0xFFFF0000u /* bits [31:16] */
+
+/* PBxDIV bits (§9) */
+#define PIC32MK_PBDIV_PBDIV_MASK  0x0000007Fu  /* bits [6:0] */
+#define PIC32MK_PBDIV_PBDIVRDY   (1u << 11)
+#define PIC32MK_PBDIV_ON         (1u << 15)
+
+/* CLKSTAT bits (§9, Register 9-31) */
+#define PIC32MK_CLKSTAT_FRCRDY   (1u << 0)
+#define PIC32MK_CLKSTAT_POSCRDY  (1u << 2)
+#define PIC32MK_CLKSTAT_SOSCRDY  (1u << 4)
+#define PIC32MK_CLKSTAT_LPRCRDY  (1u << 5)
+#define PIC32MK_CLKSTAT_SPLLRDY  (1u << 7)
+#define PIC32MK_CLKSTAT_UPLLRDY  (1u << 8)
+#define PIC32MK_CLKSTAT_ALL_RDY  (PIC32MK_CLKSTAT_FRCRDY  | \
+                                  PIC32MK_CLKSTAT_POSCRDY  | \
+                                  PIC32MK_CLKSTAT_SOSCRDY  | \
+                                  PIC32MK_CLKSTAT_LPRCRDY  | \
+                                  PIC32MK_CLKSTAT_SPLLRDY  | \
+                                  PIC32MK_CLKSTAT_UPLLRDY)
 
 /* -----------------------------------------------------------------------
  * EVIC registers (§8, p. 159) — offsets from 0xBF810000
@@ -208,6 +335,16 @@
 #define PIC32MK_IRQ_DMA5        139
 #define PIC32MK_IRQ_DMA6        140
 #define PIC32MK_IRQ_DMA7        141
+
+/* GPIO Change-Notice interrupt vectors (DS60001519E Table 8-1,
+ * _CHANGE_NOTICE_x_VECTOR from p32mk1024mcm100.h) */
+#define PIC32MK_IRQ_CNA         44
+#define PIC32MK_IRQ_CNB         45
+#define PIC32MK_IRQ_CNC         46
+#define PIC32MK_IRQ_CND         47
+#define PIC32MK_IRQ_CNE         48
+#define PIC32MK_IRQ_CNF         49
+#define PIC32MK_IRQ_CNG         50
 
 /* -----------------------------------------------------------------------
  * Timer peripheral registers (§14, DS60001519E)
@@ -330,6 +467,10 @@
 
 /* Number of GPIO ports (A–G) */
 #define PIC32MK_GPIO_NPORTS     7
+
+/* Set shared chardev for GPIO state-change event streaming.
+ * Called from board init; multiple ports share the same Chardev*. */
+void pic32mk_gpio_set_chardev(DeviceState *dev, Chardev *chr);
 
 /* -----------------------------------------------------------------------
  * DMA controller registers (§26, DS60001519E)

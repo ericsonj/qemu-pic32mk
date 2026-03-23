@@ -37,6 +37,9 @@
 #define TYPE_PIC32MK_DMA    "pic32mk-dma"
 #define TYPE_PIC32MK_CANFD  "pic32mk-canfd"
 #define TYPE_PIC32MK_USB    "pic32mk-usb"
+#define TYPE_PIC32MK_WDT    "pic32mk-wdt"
+#define TYPE_PIC32MK_CRU    "pic32mk-cru"
+#define TYPE_PIC32MK_CFG    "pic32mk-cfg"
 
 /*
  * Board state.
@@ -48,7 +51,6 @@ typedef struct {
     MemoryRegion    bflash1;
     MemoryRegion    bflash2;
     MemoryRegion    sfr;
-    MemoryRegion    sfr_rcon;
     MemoryRegion    sfr_unimpl;
 
     DeviceState    *evic;
@@ -86,29 +88,7 @@ static const MemoryRegionOps sfr_unimpl_ops = {
     },
 };
 
-/* -----------------------------------------------------------------------
- * RCON stub — returns POR|BOR on read so firmware sees a cold power-on reset.
- * ----------------------------------------------------------------------- */
 
-static uint64_t rcon_read(void *opaque, hwaddr addr, unsigned size)
-{
-    return PIC32MK_RCON_POR | PIC32MK_RCON_BOR;
-}
-
-static void rcon_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
-{
-    /* RSWRST trigger and RCON clear — stubbed */
-}
-
-static const MemoryRegionOps rcon_ops = {
-    .read       = rcon_read,
-    .write      = rcon_write,
-    .endianness = DEVICE_LITTLE_ENDIAN,
-    .valid = {
-        .min_access_size = 4,
-        .max_access_size = 4,
-    },
-};
 
 /* -----------------------------------------------------------------------
  * Helper: create a peripheral SysBusDevice, map its MMIO into the SFR
@@ -177,12 +157,6 @@ static void pic32mk_memory_init(PIC32MKState *s, MachineState *machine)
     /* SFR window: 1 MB container */
     memory_region_init(&s->sfr, NULL, "pic32mk.sfr", PIC32MK_SFR_SIZE);
     memory_region_add_subregion(sys_mem, PIC32MK_SFR_BASE, &s->sfr);
-
-    /* RCON stub at priority 1 (overrides catch-all) */
-    memory_region_init_io(&s->sfr_rcon, NULL, &rcon_ops, s,
-                          "pic32mk.rcon", 0x40);
-    memory_region_add_subregion_overlap(&s->sfr, PIC32MK_RCON_OFFSET,
-                                        &s->sfr_rcon, 1);
 
     /* Catch-all at priority 0 */
     memory_region_init_io(&s->sfr_unimpl, NULL, &sfr_unimpl_ops, s,
@@ -329,13 +303,46 @@ static void pic32mk_timer_create(PIC32MKState *s,
                        qdev_get_gpio_in(s->evic, irq_src));
 }
 
+static const char * const pic32mk_gpio_port_names[PIC32MK_GPIO_NPORTS] = {
+    "gpio-portA", "gpio-portB", "gpio-portC", "gpio-portD",
+    "gpio-portE", "gpio-portF", "gpio-portG",
+};
+
 /*
  * Create a GPIO port instance, map into the SFR window.
- * (No EVIC connection — CN interrupts are Phase 2B.)
+ * The CN interrupt output (sysbus IRQ 0) is wired to the EVIC.
+ * The device is registered as a named child of the machine object so that
+ * QOM paths are predictable: /machine/gpio-portA … /machine/gpio-portG.
  */
-static void pic32mk_gpio_create(PIC32MKState *s, hwaddr sfr_offset)
+static void pic32mk_gpio_create(PIC32MKState *s, MachineState *machine,
+                                int port_idx, hwaddr sfr_offset, int cn_irq,
+                                Chardev *gpio_chr)
 {
-    sfr_device_create(&s->sfr, TYPE_PIC32MK_GPIO, sfr_offset, &error_fatal);
+    /*
+     * Create the device first, register it as a named child of the machine
+     * BEFORE calling sysbus_realize_and_unref().  If the object already has
+     * a parent when device_realize() runs it will NOT be placed under the
+     * anonymous machine/unattached container, so object_property_add_child()
+     * won't hit the "!child->parent" assertion.
+     */
+    DeviceState *dev = qdev_new(TYPE_PIC32MK_GPIO);
+    qdev_prop_set_uint8(dev, "port-index", (uint8_t)port_idx);
+    object_property_add_child(OBJECT(machine),
+                              pic32mk_gpio_port_names[port_idx], OBJECT(dev));
+    if (!sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal)) {
+        return;
+    }
+
+    /* Shared chardev for GPIO event streaming (all ports write to same chardev) */
+    if (gpio_chr) {
+        pic32mk_gpio_set_chardev(dev, gpio_chr);
+    }
+
+    MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0);
+    memory_region_add_subregion_overlap(&s->sfr, sfr_offset, mr, 1);
+
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
+                       qdev_get_gpio_in(s->evic, cn_irq));
 }
 
 /*
@@ -509,10 +516,18 @@ static void pic32mk_machine_init(MachineState *machine)
     pic32mk_timer_create(s, PIC32MK_T8_OFFSET, PIC32MK_IRQ_T8, false);
     pic32mk_timer_create(s, PIC32MK_T9_OFFSET, PIC32MK_IRQ_T9, false);
 
-    /* GPIO ports A–G */
+    /* GPIO ports A–G: CN interrupt vectors 44–50 (_CHANGE_NOTICE_x_VECTOR) */
+    static const int cn_irqs[PIC32MK_GPIO_NPORTS] = {
+        PIC32MK_IRQ_CNA, PIC32MK_IRQ_CNB, PIC32MK_IRQ_CNC, PIC32MK_IRQ_CND,
+        PIC32MK_IRQ_CNE, PIC32MK_IRQ_CNF, PIC32MK_IRQ_CNG,
+    };
+    /* Optional: look up shared chardev "gpio-events" for GUI event streaming */
+    Chardev *gpio_chr = qemu_chr_find("gpio-events");
     for (int port = 0; port < PIC32MK_GPIO_NPORTS; port++) {
-        pic32mk_gpio_create(s, PIC32MK_GPIO_OFFSET
-                              + (hwaddr)port * PIC32MK_GPIO_PORT_SIZE);
+        pic32mk_gpio_create(s, machine, port,
+                            PIC32MK_GPIO_OFFSET
+                            + (hwaddr)port * PIC32MK_GPIO_PORT_SIZE,
+                            cn_irqs[port], gpio_chr);
     }
 
     /* SPI 1–6 */
@@ -546,6 +561,18 @@ static void pic32mk_machine_init(MachineState *machine)
     /* USB OTG 1–2 (Phase 4A — register-file stub) */
     pic32mk_usb_create(s, PIC32MK_USB1_OFFSET, PIC32MK_IRQ_USB1, "usbcdc");
     pic32mk_usb_create(s, PIC32MK_USB2_OFFSET, PIC32MK_IRQ_USB2, NULL);
+
+    /* WDT — register-file stub; absorbs WDTCON reads/writes and clear-key */
+    sfr_device_create(&s->sfr, TYPE_PIC32MK_WDT, PIC32MK_WDT_OFFSET,
+                      &error_fatal);
+
+    /* CFG / PMD / SYSKEY — register block at 0xBF800000 */
+    sfr_device_create(&s->sfr, TYPE_PIC32MK_CFG, PIC32MK_CFG_OFFSET,
+                      &error_fatal);
+
+    /* CRU — Clock Reference Unit at 0xBF801200 (includes RCON/RSWRST) */
+    sfr_device_create(&s->sfr, TYPE_PIC32MK_CRU, PIC32MK_CRU_OFFSET,
+                      &error_fatal);
 
     pic32mk_load_firmware(machine);
 }

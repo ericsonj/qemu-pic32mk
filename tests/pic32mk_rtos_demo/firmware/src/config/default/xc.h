@@ -1,0 +1,1954 @@
+/*
+ * xc.h — GCC/mipsel compatibility shim for Microchip XC32 built-ins.
+ *
+ * Provides CP0 access macros and PIC32MK SFR register definitions so that
+ * the FreeRTOS PIC32MK port (port.c / portmacro.h / port_asm.S) compiles
+ * with mipsel-linux-gnu-gcc.
+ *
+ * SFR base addresses come from pic32mk.h constants:
+ *   EVIC     0xBF810000  (SFR_BASE + EVIC_OFFSET = 0xBF800000 + 0x010000)
+ *   Timer1   0xBF820000  (SFR_BASE + T1_OFFSET   = 0xBF800000 + 0x020000)
+ *   UART1    0xBF828000  (SFR_BASE + UART1_OFFSET = 0xBF800000 + 0x028000)
+ */
+
+#ifndef XC_H
+#define XC_H
+
+/* ========================================================================
+ * Assembly context — define CP0 register names as GAS operand tokens
+ * ======================================================================== */
+#ifdef __ASSEMBLER__
+
+/* Register name aliases (zero, k0, k1, sp, gp, ra, s0-s7, t0-t9, etc.)
+ * GNU AS for MIPS requires the $ prefix; sys/regdef.h provides CPP macros
+ * that expand bare names (e.g. k0) to their $-prefixed form ($26). */
+#include <sys/regdef.h>
+
+#define _CP0_STATUS     $12, 0
+#define _CP0_CAUSE      $13, 0
+#define _CP0_EPC        $14, 0
+#define _CP0_COUNT      $9,  0
+#define _CP0_COMPARE    $11, 0
+#define _CP0_EBASE      $15, 1
+#define _CP0_INTCTL     $12, 1
+#define _CP0_SRSCTL     $12, 2
+
+/* SFR addresses used directly in assembly (e.g. "la reg, IFS0CLR")
+ * PIC32MK: CLR=+4, SET=+8 from each register base */
+#define IFS0CLR         0xBF810044
+#define IEC0SET         0xBF8100C8
+#define IEC0CLR         0xBF8100C4
+
+#else /* C context */
+
+#include <stdint.h>
+
+/* -----------------------------------------------------------------------
+ * CP0 access macros using GCC inline asm
+ * ----------------------------------------------------------------------- */
+
+#define _CP0_GET_STATUS() \
+    ({ uint32_t __r; __asm__ volatile("mfc0 %0,$12,0" : "=r"(__r)); __r; })
+
+#define _CP0_SET_STATUS(_v) \
+    __asm__ volatile("mtc0 %0,$12,0; ehb" : : "r"((uint32_t)(_v)))
+
+#define _CP0_GET_CAUSE() \
+    ({ uint32_t __r; __asm__ volatile("mfc0 %0,$13,0" : "=r"(__r)); __r; })
+
+#define _CP0_SET_CAUSE(_v) \
+    __asm__ volatile("mtc0 %0,$13,0; ehb" : : "r"((uint32_t)(_v)))
+
+#define _CP0_GET_EPC() \
+    ({ uint32_t __r; __asm__ volatile("mfc0 %0,$14,0" : "=r"(__r)); __r; })
+
+#define _CP0_GET_COUNT() \
+    ({ uint32_t __r; __asm__ volatile("mfc0 %0,$9,0" : "=r"(__r)); __r; })
+
+#define _CP0_SET_COMPARE(_v) \
+    __asm__ volatile("mtc0 %0,$11,0; ehb" : : "r"((uint32_t)(_v)))
+
+/* CLZ — count leading zeros */
+static inline unsigned int _clz(unsigned int x)
+{
+    return x ? __builtin_clz(x) : 32u;
+}
+
+/* Bit-set / bit-clear helpers for CP0 registers (XC32 built-ins) */
+#define _CP0_BIS_STATUS(_mask) \
+    _CP0_SET_STATUS(_CP0_GET_STATUS() | (uint32_t)(_mask))
+
+#define _CP0_BIC_STATUS(_mask) \
+    _CP0_SET_STATUS(_CP0_GET_STATUS() & ~(uint32_t)(_mask))
+
+#define _CP0_BIS_CAUSE(_mask) \
+    _CP0_SET_CAUSE(_CP0_GET_CAUSE() | (uint32_t)(_mask))
+
+#define _CP0_BIC_CAUSE(_mask) \
+    _CP0_SET_CAUSE(_CP0_GET_CAUSE() & ~(uint32_t)(_mask))
+
+/* XC32 built-in to disable interrupts — returns old CP0_Status (IE in bit 0) */
+static inline uint32_t __builtin_disable_interrupts(void)
+{
+    uint32_t status;
+    __asm__ volatile("di %0; ehb" : "=r"(status));
+    return status;
+}
+
+/* XC32 built-in to enable interrupts */
+static inline void __builtin_enable_interrupts(void)
+{
+    __asm__ volatile("ei; ehb" : : : "memory");
+}
+
+/* -----------------------------------------------------------------------
+ * EVIC registers  (base 0xBF810000)
+ * IFS/IEC/IPC each have SET (+4), CLR (+8), INV (+C) sub-registers.
+ * ----------------------------------------------------------------------- */
+
+#define _EVIC_BASE      0xBF810000u
+
+/* EVIC CLR/SET/INV convention (PIC32MK): CLR at +4, SET at +8, INV at +C */
+#define IFS0            (*(volatile uint32_t *)(_EVIC_BASE + 0x0040u))
+#define IFS0CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0044u))
+#define IFS0SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0048u))
+#define IFS0INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x004Cu))
+
+#define IFS1            (*(volatile uint32_t *)(_EVIC_BASE + 0x0050u))
+#define IFS1CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0054u))
+#define IFS1SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0058u))
+#define IFS1INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x005Cu))
+
+#define IEC0            (*(volatile uint32_t *)(_EVIC_BASE + 0x00C0u))
+#define IEC0CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x00C4u))
+#define IEC0SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x00C8u))
+#define IEC0INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x00CCu))
+
+#define IEC1            (*(volatile uint32_t *)(_EVIC_BASE + 0x00D0u))
+#define IEC1CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x00D4u))
+#define IEC1SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x00D8u))
+#define IEC1INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x00DCu))
+
+/* UART1 interrupt bit positions in IFS1/IEC1 (from p32mk1024mcm100.h):
+ *   U1E = bit 6, U1RX = bit 7, U1TX = bit 8 */
+#define _IFS1_U1EIF_MASK        0x00000040u
+#define _IFS1_U1RXIF_MASK       0x00000080u
+#define _IFS1_U1TXIF_MASK       0x00000100u
+#define _IEC1_U1EIE_MASK        0x00000040u
+#define _IEC1_U1RXIE_MASK       0x00000080u
+#define _IEC1_U1TXIE_MASK       0x00000100u
+
+#define IPC0            (*(volatile uint32_t *)(_EVIC_BASE + 0x0140u))
+#define IPC0CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0144u))
+#define IPC0SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0148u))
+#define IPC0INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x014Cu))
+
+/* IPC1 covers EVIC sources 4-7.  Timer1 is source 4 → byte 0 of IPC1.
+ * IP field at bits [4:2], IS field at bits [1:0]. */
+#define IPC1            (*(volatile uint32_t *)(_EVIC_BASE + 0x0150u))
+#define IPC1CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0154u))
+#define IPC1SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0158u))
+#define IPC1INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x015Cu))
+
+/* IPC1 bit-field struct for T1IP / T1IS access */
+typedef union {
+    struct {
+        uint32_t T1IS   : 2;   /* bits [1:0]  subpriority for Timer1 */
+        uint32_t T1IP   : 3;   /* bits [4:2]  priority    for Timer1 */
+        uint32_t        : 27;
+    };
+    uint32_t w;
+} __IPC1_T1_t;
+
+#define IPC1bits        (*(volatile __IPC1_T1_t *)(_EVIC_BASE + 0x0150u))
+
+/*
+ * IPC8 covers EVIC sources 32-35.  USB1 = source 34 → byte 2 of IPC8.
+ * IPC8 offset = 0x0140 + 8*0x10 = 0x01C0.
+ * USB1 priority bits = [18:16], subpriority [20:19].
+ */
+#define IPC8            (*(volatile uint32_t *)(_EVIC_BASE + 0x01C0u))
+#define IPC8CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x01C4u))
+#define IPC8SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x01C8u))
+#define IPC8INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x01CCu))
+#define _IPC8_USB1IP_POSITION   18u   /* USB1 priority bits [20:18] (EVIC shift+2) */
+#define _IPC8_USB1IP_MASK       (0x7u << 18u)
+#define _IPC8_USB1IS_POSITION   16u   /* USB1 subpriority bits [17:16] */
+#define _IPC8_USB1IS_MASK       (0x3u << 16u)
+
+/*
+ * IPC9 covers EVIC sources 36-39.  UART1 FAULT=38 (byte 2), RX=39 (byte 3).
+ * IPC9 offset = 0x0140 + 9*0x10 = 0x01D0.
+ */
+#define IPC9            (*(volatile uint32_t *)(_EVIC_BASE + 0x01D0u))
+#define IPC9CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x01D4u))
+#define IPC9SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x01D8u))
+#define IPC9INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x01DCu))
+
+/*
+ * IPC10 covers EVIC sources 40-43.  UART1 TX=40 → byte 0 of IPC10.
+ * IPC10 offset = 0x0140 + 10*0x10 = 0x01E0.
+ */
+#define IPC10           (*(volatile uint32_t *)(_EVIC_BASE + 0x01E0u))
+#define IPC10CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x01E4u))
+#define IPC10SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x01E8u))
+#define IPC10INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x01ECu))
+
+/* IPC11 offset = 0x0140 + 11*0x10 = 0x01F0 */
+#define IPC11           (*(volatile uint32_t *)(_EVIC_BASE + 0x01F0u))
+#define IPC11CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x01F4u))
+#define IPC11SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x01F8u))
+#define IPC11INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x01FCu))
+
+/* IPC12 offset = 0x0200 */
+#define IPC12           (*(volatile uint32_t *)(_EVIC_BASE + 0x0200u))
+#define IPC12CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0204u))
+#define IPC12SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0208u))
+#define IPC12INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x020Cu))
+
+/* IPC14 offset = 0x0220 */
+#define IPC14           (*(volatile uint32_t *)(_EVIC_BASE + 0x0220u))
+#define IPC14CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0224u))
+#define IPC14SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0228u))
+#define IPC14INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x022Cu))
+
+/* IPC19 offset = 0x0270 */
+#define IPC19           (*(volatile uint32_t *)(_EVIC_BASE + 0x0270u))
+#define IPC19CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0274u))
+#define IPC19SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0278u))
+#define IPC19INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x027Cu))
+
+/* IPC20 offset = 0x0280 */
+#define IPC20           (*(volatile uint32_t *)(_EVIC_BASE + 0x0280u))
+#define IPC20CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0284u))
+#define IPC20SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0288u))
+#define IPC20INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x028Cu))
+
+/* IPC21 offset = 0x0290 */
+#define IPC21           (*(volatile uint32_t *)(_EVIC_BASE + 0x0290u))
+#define IPC21CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0294u))
+#define IPC21SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0298u))
+#define IPC21INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x029Cu))
+
+/* IPC22 offset = 0x02A0 */
+#define IPC22           (*(volatile uint32_t *)(_EVIC_BASE + 0x02A0u))
+#define IPC22CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x02A4u))
+#define IPC22SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x02A8u))
+#define IPC22INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x02ACu))
+
+/* IPC41 offset = 0x0140 + 41*0x10 = 0x03F0 */
+#define IPC41           (*(volatile uint32_t *)(_EVIC_BASE + 0x03F0u))
+#define IPC41CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x03F4u))
+#define IPC41SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x03F8u))
+#define IPC41INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x03FCu))
+
+/* IPC42 offset = 0x0400 */
+#define IPC42           (*(volatile uint32_t *)(_EVIC_BASE + 0x0400u))
+#define IPC42CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0404u))
+#define IPC42SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0408u))
+#define IPC42INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x040Cu))
+
+/* IPC46 offset = 0x0440 */
+#define IPC46           (*(volatile uint32_t *)(_EVIC_BASE + 0x0440u))
+#define IPC46CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0444u))
+#define IPC46SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0448u))
+#define IPC46INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x044Cu))
+
+/* IPC47 offset = 0x0450 */
+#define IPC47           (*(volatile uint32_t *)(_EVIC_BASE + 0x0450u))
+#define IPC47CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0454u))
+#define IPC47SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0458u))
+#define IPC47INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x045Cu))
+
+/* IPC50 offset = 0x0480 */
+#define IPC50           (*(volatile uint32_t *)(_EVIC_BASE + 0x0480u))
+#define IPC50CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0484u))
+#define IPC50SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0488u))
+#define IPC50INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x048Cu))
+
+/* IPC51 offset = 0x0490 */
+#define IPC51           (*(volatile uint32_t *)(_EVIC_BASE + 0x0490u))
+#define IPC51CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x0494u))
+#define IPC51SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x0498u))
+#define IPC51INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x049Cu))
+
+/* IPC56 offset = 0x0140 + 56*0x10 = 0x04C0 */
+#define IPC56           (*(volatile uint32_t *)(_EVIC_BASE + 0x04C0u))
+#define IPC56CLR        (*(volatile uint32_t *)(_EVIC_BASE + 0x04C4u))
+#define IPC56SET        (*(volatile uint32_t *)(_EVIC_BASE + 0x04C8u))
+#define IPC56INV        (*(volatile uint32_t *)(_EVIC_BASE + 0x04CCu))
+
+/* INTCON register (multi-vector mode control) */
+#define INTCON          (*(volatile uint32_t *)(_EVIC_BASE + 0x0000u))
+#define INTCONCLR       (*(volatile uint32_t *)(_EVIC_BASE + 0x0004u))
+#define INTCONSET       (*(volatile uint32_t *)(_EVIC_BASE + 0x0008u))
+#define INTCONINV       (*(volatile uint32_t *)(_EVIC_BASE + 0x000Cu))
+#define _INTCON_MVEC_MASK   0x00001000u   /* bit 12: multi-vector mode */
+
+/* IPC2 offset = 0x0140 + 2*0x10 = 0x0160 */
+#define IPC2            (*(volatile uint32_t *)(_EVIC_BASE + 0x0160u))
+#define IPC2CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0164u))
+#define IPC2SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0168u))
+#define IPC2INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x016Cu))
+
+/* IPC3 offset = 0x0170 */
+#define IPC3            (*(volatile uint32_t *)(_EVIC_BASE + 0x0170u))
+#define IPC3CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0174u))
+#define IPC3SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0178u))
+#define IPC3INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x017Cu))
+
+/* IPC4 offset = 0x0180 */
+#define IPC4            (*(volatile uint32_t *)(_EVIC_BASE + 0x0180u))
+#define IPC4CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0184u))
+#define IPC4SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0188u))
+#define IPC4INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x018Cu))
+
+/* IPC6 offset = 0x01A0 */
+#define IPC6            (*(volatile uint32_t *)(_EVIC_BASE + 0x01A0u))
+#define IPC6CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x01A4u))
+#define IPC6SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x01A8u))
+#define IPC6INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x01ACu))
+
+/* IPC7 offset = 0x01B0 */
+#define IPC7            (*(volatile uint32_t *)(_EVIC_BASE + 0x01B0u))
+#define IPC7CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x01B4u))
+#define IPC7SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x01B8u))
+#define IPC7INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x01BCu))
+
+/* IFS0 / IEC0 named bit masks (source number = bit position) */
+#define _IFS0_T1IF_MASK         (1u << 4)   /* Timer1 = EVIC source 4  */
+#define _IEC0_T1IE_MASK         (1u << 4)   /* Timer1 = EVIC source 4  */
+#define _IFS0_T2IF_MASK         (1u << 9)   /* Timer2 = EVIC source 9  */
+#define _IEC0_T2IE_MASK         (1u << 9)
+#define _IFS0_T3IF_MASK         (1u << 14)  /* Timer3 = EVIC source 14 */
+#define _IEC0_T3IE_MASK         (1u << 14)
+#define _IFS0_T4IF_MASK         (1u << 19)  /* Timer4 = EVIC source 19 */
+#define _IEC0_T4IE_MASK         (1u << 19)
+#define _IFS0_T5IF_MASK         (1u << 24)  /* Timer5 = EVIC source 24 */
+#define _IEC0_T5IE_MASK         (1u << 24)
+#define _IFS0_T6IF_MASK         (1u << 28)  /* Timer6 = EVIC source 28 */
+#define _IEC0_T6IE_MASK         (1u << 28)
+
+/* IFS1 / IEC1 — EVIC sources 32-63 (IFS1 bit = source - 32) */
+#define _IFS1_T7IF_MASK         (1u << 0)   /* Timer7 = EVIC source 32 */
+#define _IEC1_T7IE_MASK         (1u << 0)
+#define _IFS1_T8IF_MASK         (1u << 4)   /* Timer8 = EVIC source 36 */
+#define _IEC1_T8IE_MASK         (1u << 4)
+#define _IFS1_T9IF_MASK         (1u << 8)   /* Timer9 = EVIC source 40 */
+#define _IEC1_T9IE_MASK         (1u << 8)
+
+#define _IFS0_CS0IF_MASK        (1u << 1)   /* CoreSW0 = EVIC source 1 */
+#define _IEC0_CS0IE_MASK        (1u << 1)
+#define _IEC0_CS0IE_POSITION    1
+#define _IPC0_CS0IP_MASK        (0x7u << 10)
+#define _IPC0_CS0IP_POSITION    10
+
+/* -----------------------------------------------------------------------
+ * Timer1 registers  (base 0xBF820000, stride 0x10)
+ * ----------------------------------------------------------------------- */
+
+#define _T1_BASE        0xBF820000u
+
+#define T1CON           (*(volatile uint32_t *)(_T1_BASE + 0x000u))
+#define T1CONCLR        (*(volatile uint32_t *)(_T1_BASE + 0x004u))
+#define T1CONSET        (*(volatile uint32_t *)(_T1_BASE + 0x008u))
+#define TMR1            (*(volatile uint32_t *)(_T1_BASE + 0x010u))
+#define PR1             (*(volatile uint32_t *)(_T1_BASE + 0x020u))
+
+/* T1CON bit-field struct */
+typedef union {
+    struct {
+        uint32_t            : 1;   /* bit 0  reserved */
+        uint32_t TCS        : 1;   /* bit 1  clock source */
+        uint32_t TSYNC      : 1;   /* bit 2  sync */
+        uint32_t            : 1;   /* bit 3  reserved */
+        uint32_t TCKPS      : 2;   /* bits [5:4]  prescaler: 0=1:1,1=1:8,2=1:64,3=1:256 */
+        uint32_t            : 1;   /* bit 6  reserved */
+        uint32_t TGATE      : 1;   /* bit 7  gated accumulation */
+        uint32_t            : 5;   /* bits [12:8] reserved */
+        uint32_t SIDL       : 1;   /* bit 13 stop-in-idle */
+        uint32_t            : 1;   /* bit 14 reserved */
+        uint32_t ON         : 1;   /* bit 15 timer on — Microchip also calls this TON */
+        uint32_t            : 16;
+    };
+    /* Alias so port.c's T1CONbits.TON works too */
+    struct {
+        uint32_t            : 15;
+        uint32_t TON        : 1;
+        uint32_t            : 16;
+    };
+    uint32_t w;
+} __T1CON_t;
+
+#define T1CONbits       (*(volatile __T1CON_t *)(_T1_BASE + 0x000u))
+
+#define _T1CON_ON_MASK  (1u << 15)  /* Timer ON bit */
+
+/* -----------------------------------------------------------------------
+ * Timer2-9 registers  (Type B: T2,T4,T6,T8 — Type C: T3,T5,T7,T9)
+ * Each block is 0x200 bytes apart from the previous.
+ * Register layout: TxCON+0x00, TMRx+0x10, PRx+0x20  (SET+4/CLR+8 each)
+ * ----------------------------------------------------------------------- */
+
+#define _T2_BASE   0xBF820200u
+#define T2CON      (*(volatile uint32_t *)(_T2_BASE + 0x000u))
+#define T2CONCLR   (*(volatile uint32_t *)(_T2_BASE + 0x004u))
+#define T2CONSET   (*(volatile uint32_t *)(_T2_BASE + 0x008u))
+#define TMR2       (*(volatile uint32_t *)(_T2_BASE + 0x010u))
+#define PR2        (*(volatile uint32_t *)(_T2_BASE + 0x020u))
+#define _T2CON_ON_MASK  (1u << 15)
+
+#define _T3_BASE   0xBF820400u
+#define T3CON      (*(volatile uint32_t *)(_T3_BASE + 0x000u))
+#define T3CONCLR   (*(volatile uint32_t *)(_T3_BASE + 0x004u))
+#define T3CONSET   (*(volatile uint32_t *)(_T3_BASE + 0x008u))
+#define TMR3       (*(volatile uint32_t *)(_T3_BASE + 0x010u))
+#define PR3        (*(volatile uint32_t *)(_T3_BASE + 0x020u))
+#define _T3CON_ON_MASK  (1u << 15)
+
+#define _T4_BASE   0xBF820600u
+#define T4CON      (*(volatile uint32_t *)(_T4_BASE + 0x000u))
+#define T4CONCLR   (*(volatile uint32_t *)(_T4_BASE + 0x004u))
+#define T4CONSET   (*(volatile uint32_t *)(_T4_BASE + 0x008u))
+#define TMR4       (*(volatile uint32_t *)(_T4_BASE + 0x010u))
+#define PR4        (*(volatile uint32_t *)(_T4_BASE + 0x020u))
+#define _T4CON_ON_MASK  (1u << 15)
+
+#define _T5_BASE   0xBF820800u
+#define T5CON      (*(volatile uint32_t *)(_T5_BASE + 0x000u))
+#define T5CONCLR   (*(volatile uint32_t *)(_T5_BASE + 0x004u))
+#define T5CONSET   (*(volatile uint32_t *)(_T5_BASE + 0x008u))
+#define TMR5       (*(volatile uint32_t *)(_T5_BASE + 0x010u))
+#define PR5        (*(volatile uint32_t *)(_T5_BASE + 0x020u))
+#define _T5CON_ON_MASK  (1u << 15)
+
+#define _T6_BASE   0xBF820A00u
+#define T6CON      (*(volatile uint32_t *)(_T6_BASE + 0x000u))
+#define T6CONCLR   (*(volatile uint32_t *)(_T6_BASE + 0x004u))
+#define T6CONSET   (*(volatile uint32_t *)(_T6_BASE + 0x008u))
+#define TMR6       (*(volatile uint32_t *)(_T6_BASE + 0x010u))
+#define PR6        (*(volatile uint32_t *)(_T6_BASE + 0x020u))
+#define _T6CON_ON_MASK  (1u << 15)
+
+#define _T7_BASE   0xBF820C00u
+#define T7CON      (*(volatile uint32_t *)(_T7_BASE + 0x000u))
+#define T7CONCLR   (*(volatile uint32_t *)(_T7_BASE + 0x004u))
+#define T7CONSET   (*(volatile uint32_t *)(_T7_BASE + 0x008u))
+#define TMR7       (*(volatile uint32_t *)(_T7_BASE + 0x010u))
+#define PR7        (*(volatile uint32_t *)(_T7_BASE + 0x020u))
+#define _T7CON_ON_MASK  (1u << 15)
+
+#define _T8_BASE   0xBF820E00u
+#define T8CON      (*(volatile uint32_t *)(_T8_BASE + 0x000u))
+#define T8CONCLR   (*(volatile uint32_t *)(_T8_BASE + 0x004u))
+#define T8CONSET   (*(volatile uint32_t *)(_T8_BASE + 0x008u))
+#define TMR8       (*(volatile uint32_t *)(_T8_BASE + 0x010u))
+#define PR8        (*(volatile uint32_t *)(_T8_BASE + 0x020u))
+#define _T8CON_ON_MASK  (1u << 15)
+
+#define _T9_BASE   0xBF821000u
+#define T9CON      (*(volatile uint32_t *)(_T9_BASE + 0x000u))
+#define T9CONCLR   (*(volatile uint32_t *)(_T9_BASE + 0x004u))
+#define T9CONSET   (*(volatile uint32_t *)(_T9_BASE + 0x008u))
+#define TMR9       (*(volatile uint32_t *)(_T9_BASE + 0x010u))
+#define PR9        (*(volatile uint32_t *)(_T9_BASE + 0x020u))
+#define _T9CON_ON_MASK  (1u << 15)
+
+/* -----------------------------------------------------------------------
+ * WDT registers  (base 0xBF800C00, DS60001519E §17, Register 17-1)
+ * WDTCON layout:
+ *   bits[31:16] WDTCLRKEY  — write 0x5743 (16-bit to WDTCON+2) to clear
+ *   bit  15     ON         — WDT enable
+ *   bits[14:13] unimplemented
+ *   bits[12:8]  RUNDIV[4:0]— read-only, post-scaler ratio (run mode)
+ *   bits[7:6]   unimplemented
+ *   bits[5:1]   SLPDIV[4:0]— read-only, post-scaler ratio (sleep mode)
+ *   bit  0      WDTWINEN   — windowed mode enable
+ * ----------------------------------------------------------------------- */
+
+#define _WDT_BASE       0xBF800C00u
+
+#define WDTCON          (*(volatile uint32_t *)(_WDT_BASE + 0x000u))
+#define WDTCONCLR       (*(volatile uint32_t *)(_WDT_BASE + 0x004u))
+#define WDTCONSET       (*(volatile uint32_t *)(_WDT_BASE + 0x008u))
+#define WDTCONINV       (*(volatile uint32_t *)(_WDT_BASE + 0x00Cu))
+
+typedef union {
+    struct {
+        uint32_t WDTWINEN   : 1;   /* bit 0:     windowed mode enable */
+        uint32_t SLPDIV     : 5;   /* bits[5:1]: sleep post-scaler (R/O) */
+        uint32_t            : 2;   /* bits[7:6]: unimplemented */
+        uint32_t RUNDIV     : 5;   /* bits[12:8]:run post-scaler (R/O) */
+        uint32_t            : 2;   /* bits[14:13]:unimplemented */
+        uint32_t ON         : 1;   /* bit 15:    WDT enable */
+        uint32_t WDTCLRKEY  : 16;  /* bits[31:16]:clear key (write 0x5743) */
+    };
+    uint32_t w;
+} __WDTCON_t;
+
+#define WDTCONbits      (*(volatile __WDTCON_t *)(_WDT_BASE + 0x000u))
+
+/* -----------------------------------------------------------------------
+ * CFG / PMD / SYSKEY registers (§6, DS60001519E)
+ * Base: 0xBF800000  (System Configuration)
+ * ----------------------------------------------------------------------- */
+
+#define _CFG_BASE       0xBF800000u
+
+/* CFGCON — Configuration Control */
+#define CFGCON          (*(volatile uint32_t *)(_CFG_BASE + 0x000u))
+#define CFGCONCLR       (*(volatile uint32_t *)(_CFG_BASE + 0x004u))
+#define CFGCONSET       (*(volatile uint32_t *)(_CFG_BASE + 0x008u))
+#define CFGCONINV       (*(volatile uint32_t *)(_CFG_BASE + 0x00Cu))
+
+typedef union {
+    struct {
+        uint32_t            : 28;  /* bits[27:0] */
+        uint32_t PGLOCK     : 1;   /* bit 28: Permission-group lock */
+        uint32_t PMDLOCK    : 1;   /* bit 29: PMD lock */
+        uint32_t IOLOCK     : 1;   /* bit 30: I/O lock */
+        uint32_t            : 1;   /* bit 31 */
+    };
+    uint32_t w;
+} __CFGCON_t;
+
+#define CFGCONbits      (*(volatile __CFGCON_t *)(_CFG_BASE + 0x000u))
+
+/* SYSKEY — System Unlock Key (always reads 0) */
+#define SYSKEY          (*(volatile uint32_t *)(_CFG_BASE + 0x030u))
+
+/* PMD1–PMD7 — Peripheral Module Disable */
+#define PMD1            (*(volatile uint32_t *)(_CFG_BASE + 0x040u))
+#define PMD1CLR         (*(volatile uint32_t *)(_CFG_BASE + 0x044u))
+#define PMD1SET         (*(volatile uint32_t *)(_CFG_BASE + 0x048u))
+#define PMD1INV         (*(volatile uint32_t *)(_CFG_BASE + 0x04Cu))
+
+#define PMD2            (*(volatile uint32_t *)(_CFG_BASE + 0x050u))
+#define PMD2CLR         (*(volatile uint32_t *)(_CFG_BASE + 0x054u))
+#define PMD2SET         (*(volatile uint32_t *)(_CFG_BASE + 0x058u))
+#define PMD2INV         (*(volatile uint32_t *)(_CFG_BASE + 0x05Cu))
+
+#define PMD3            (*(volatile uint32_t *)(_CFG_BASE + 0x060u))
+#define PMD3CLR         (*(volatile uint32_t *)(_CFG_BASE + 0x064u))
+#define PMD3SET         (*(volatile uint32_t *)(_CFG_BASE + 0x068u))
+#define PMD3INV         (*(volatile uint32_t *)(_CFG_BASE + 0x06Cu))
+
+#define PMD4            (*(volatile uint32_t *)(_CFG_BASE + 0x070u))
+#define PMD4CLR         (*(volatile uint32_t *)(_CFG_BASE + 0x074u))
+#define PMD4SET         (*(volatile uint32_t *)(_CFG_BASE + 0x078u))
+#define PMD4INV         (*(volatile uint32_t *)(_CFG_BASE + 0x07Cu))
+
+#define PMD5            (*(volatile uint32_t *)(_CFG_BASE + 0x080u))
+#define PMD5CLR         (*(volatile uint32_t *)(_CFG_BASE + 0x084u))
+#define PMD5SET         (*(volatile uint32_t *)(_CFG_BASE + 0x088u))
+#define PMD5INV         (*(volatile uint32_t *)(_CFG_BASE + 0x08Cu))
+
+#define PMD6            (*(volatile uint32_t *)(_CFG_BASE + 0x090u))
+#define PMD6CLR         (*(volatile uint32_t *)(_CFG_BASE + 0x094u))
+#define PMD6SET         (*(volatile uint32_t *)(_CFG_BASE + 0x098u))
+#define PMD6INV         (*(volatile uint32_t *)(_CFG_BASE + 0x09Cu))
+
+#define PMD7            (*(volatile uint32_t *)(_CFG_BASE + 0x0A0u))
+#define PMD7CLR         (*(volatile uint32_t *)(_CFG_BASE + 0x0A4u))
+#define PMD7SET         (*(volatile uint32_t *)(_CFG_BASE + 0x0A8u))
+#define PMD7INV         (*(volatile uint32_t *)(_CFG_BASE + 0x0ACu))
+
+/* -----------------------------------------------------------------------
+ * CRU — Clock Reference Unit registers (§9, DS60001519E)
+ * Base: 0xBF801200  (CRU offset from SFR base)
+ * ----------------------------------------------------------------------- */
+
+#define _CRU_BASE       0xBF801200u
+
+/* OSCCON — Oscillator Control */
+#define OSCCON          (*(volatile uint32_t *)(_CRU_BASE + 0x00u))
+#define OSCCONCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x04u))
+#define OSCCONSET       (*(volatile uint32_t *)(_CRU_BASE + 0x08u))
+#define OSCCONINV       (*(volatile uint32_t *)(_CRU_BASE + 0x0Cu))
+
+/* OSCTUN — Oscillator Tuning */
+#define OSCTUN          (*(volatile uint32_t *)(_CRU_BASE + 0x10u))
+#define OSCTUNCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x14u))
+#define OSCTUNSET       (*(volatile uint32_t *)(_CRU_BASE + 0x18u))
+#define OSCTUNINV       (*(volatile uint32_t *)(_CRU_BASE + 0x1Cu))
+
+/* SPLLCON — System PLL Control */
+#define SPLLCON         (*(volatile uint32_t *)(_CRU_BASE + 0x20u))
+#define SPLLCONCLR      (*(volatile uint32_t *)(_CRU_BASE + 0x24u))
+#define SPLLCONSET      (*(volatile uint32_t *)(_CRU_BASE + 0x28u))
+#define SPLLCONINV      (*(volatile uint32_t *)(_CRU_BASE + 0x2Cu))
+
+/* UPLLCON — USB PLL Control */
+#define UPLLCON         (*(volatile uint32_t *)(_CRU_BASE + 0x30u))
+#define UPLLCONCLR      (*(volatile uint32_t *)(_CRU_BASE + 0x34u))
+#define UPLLCONSET      (*(volatile uint32_t *)(_CRU_BASE + 0x38u))
+#define UPLLCONINV      (*(volatile uint32_t *)(_CRU_BASE + 0x3Cu))
+
+/* REFO1CON / REFO1TRIM — Reference Clock Output 1 */
+#define REFO1CON        (*(volatile uint32_t *)(_CRU_BASE + 0x80u))
+#define REFO1CONCLR     (*(volatile uint32_t *)(_CRU_BASE + 0x84u))
+#define REFO1CONSET     (*(volatile uint32_t *)(_CRU_BASE + 0x88u))
+#define REFO1CONINV     (*(volatile uint32_t *)(_CRU_BASE + 0x8Cu))
+#define REFO1TRIM       (*(volatile uint32_t *)(_CRU_BASE + 0x90u))
+#define REFO1TRIMCLR    (*(volatile uint32_t *)(_CRU_BASE + 0x94u))
+#define REFO1TRIMSET    (*(volatile uint32_t *)(_CRU_BASE + 0x98u))
+#define REFO1TRIMINV    (*(volatile uint32_t *)(_CRU_BASE + 0x9Cu))
+
+/* REFO2CON / REFO2TRIM — Reference Clock Output 2 */
+#define REFO2CON        (*(volatile uint32_t *)(_CRU_BASE + 0xA0u))
+#define REFO2CONCLR     (*(volatile uint32_t *)(_CRU_BASE + 0xA4u))
+#define REFO2CONSET     (*(volatile uint32_t *)(_CRU_BASE + 0xA8u))
+#define REFO2CONINV     (*(volatile uint32_t *)(_CRU_BASE + 0xACu))
+#define REFO2TRIM       (*(volatile uint32_t *)(_CRU_BASE + 0xB0u))
+#define REFO2TRIMCLR    (*(volatile uint32_t *)(_CRU_BASE + 0xB4u))
+#define REFO2TRIMSET    (*(volatile uint32_t *)(_CRU_BASE + 0xB8u))
+#define REFO2TRIMINV    (*(volatile uint32_t *)(_CRU_BASE + 0xBCu))
+
+/* REFO3CON / REFO3TRIM — Reference Clock Output 3 */
+#define REFO3CON        (*(volatile uint32_t *)(_CRU_BASE + 0xC0u))
+#define REFO3CONCLR     (*(volatile uint32_t *)(_CRU_BASE + 0xC4u))
+#define REFO3CONSET     (*(volatile uint32_t *)(_CRU_BASE + 0xC8u))
+#define REFO3CONINV     (*(volatile uint32_t *)(_CRU_BASE + 0xCCu))
+#define REFO3TRIM       (*(volatile uint32_t *)(_CRU_BASE + 0xD0u))
+#define REFO3TRIMCLR    (*(volatile uint32_t *)(_CRU_BASE + 0xD4u))
+#define REFO3TRIMSET    (*(volatile uint32_t *)(_CRU_BASE + 0xD8u))
+#define REFO3TRIMINV    (*(volatile uint32_t *)(_CRU_BASE + 0xDCu))
+
+/* REFO4CON / REFO4TRIM — Reference Clock Output 4 */
+#define REFO4CON        (*(volatile uint32_t *)(_CRU_BASE + 0xE0u))
+#define REFO4CONCLR     (*(volatile uint32_t *)(_CRU_BASE + 0xE4u))
+#define REFO4CONSET     (*(volatile uint32_t *)(_CRU_BASE + 0xE8u))
+#define REFO4CONINV     (*(volatile uint32_t *)(_CRU_BASE + 0xECu))
+#define REFO4TRIM       (*(volatile uint32_t *)(_CRU_BASE + 0xF0u))
+#define REFO4TRIMCLR    (*(volatile uint32_t *)(_CRU_BASE + 0xF4u))
+#define REFO4TRIMSET    (*(volatile uint32_t *)(_CRU_BASE + 0xF8u))
+#define REFO4TRIMINV    (*(volatile uint32_t *)(_CRU_BASE + 0xFCu))
+
+/* PB1DIV–PB7DIV — Peripheral Bus Clock Dividers */
+#define PB1DIV          (*(volatile uint32_t *)(_CRU_BASE + 0x100u))
+#define PB1DIVCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x104u))
+#define PB1DIVSET       (*(volatile uint32_t *)(_CRU_BASE + 0x108u))
+#define PB1DIVINV       (*(volatile uint32_t *)(_CRU_BASE + 0x10Cu))
+
+#define PB2DIV          (*(volatile uint32_t *)(_CRU_BASE + 0x110u))
+#define PB2DIVCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x114u))
+#define PB2DIVSET       (*(volatile uint32_t *)(_CRU_BASE + 0x118u))
+#define PB2DIVINV       (*(volatile uint32_t *)(_CRU_BASE + 0x11Cu))
+
+#define PB3DIV          (*(volatile uint32_t *)(_CRU_BASE + 0x120u))
+#define PB3DIVCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x124u))
+#define PB3DIVSET       (*(volatile uint32_t *)(_CRU_BASE + 0x128u))
+#define PB3DIVINV       (*(volatile uint32_t *)(_CRU_BASE + 0x12Cu))
+
+#define PB4DIV          (*(volatile uint32_t *)(_CRU_BASE + 0x130u))
+#define PB4DIVCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x134u))
+#define PB4DIVSET       (*(volatile uint32_t *)(_CRU_BASE + 0x138u))
+#define PB4DIVINV       (*(volatile uint32_t *)(_CRU_BASE + 0x13Cu))
+
+#define PB5DIV          (*(volatile uint32_t *)(_CRU_BASE + 0x140u))
+#define PB5DIVCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x144u))
+#define PB5DIVSET       (*(volatile uint32_t *)(_CRU_BASE + 0x148u))
+#define PB5DIVINV       (*(volatile uint32_t *)(_CRU_BASE + 0x14Cu))
+
+#define PB6DIV          (*(volatile uint32_t *)(_CRU_BASE + 0x150u))
+#define PB6DIVCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x154u))
+#define PB6DIVSET       (*(volatile uint32_t *)(_CRU_BASE + 0x158u))
+#define PB6DIVINV       (*(volatile uint32_t *)(_CRU_BASE + 0x15Cu))
+
+#define PB7DIV          (*(volatile uint32_t *)(_CRU_BASE + 0x160u))
+#define PB7DIVCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x164u))
+#define PB7DIVSET       (*(volatile uint32_t *)(_CRU_BASE + 0x168u))
+#define PB7DIVINV       (*(volatile uint32_t *)(_CRU_BASE + 0x16Cu))
+
+/* PBxDIV bitfield struct */
+typedef union {
+    struct {
+        uint32_t PBDIV      : 7;   /* bits[6:0]: divisor value */
+        uint32_t            : 4;   /* bits[10:7] */
+        uint32_t PBDIVRDY   : 1;   /* bit 11: divisor ready (R/O) */
+        uint32_t            : 3;   /* bits[14:12] */
+        uint32_t ON         : 1;   /* bit 15: clock enabled */
+        uint32_t            : 16;
+    };
+    uint32_t w;
+} __PBxDIV_t;
+
+#define PB1DIVbits      (*(volatile __PBxDIV_t *)(_CRU_BASE + 0x100u))
+#define PB2DIVbits      (*(volatile __PBxDIV_t *)(_CRU_BASE + 0x110u))
+#define PB3DIVbits      (*(volatile __PBxDIV_t *)(_CRU_BASE + 0x120u))
+#define PB4DIVbits      (*(volatile __PBxDIV_t *)(_CRU_BASE + 0x130u))
+#define PB5DIVbits      (*(volatile __PBxDIV_t *)(_CRU_BASE + 0x140u))
+#define PB6DIVbits      (*(volatile __PBxDIV_t *)(_CRU_BASE + 0x150u))
+#define PB7DIVbits      (*(volatile __PBxDIV_t *)(_CRU_BASE + 0x160u))
+
+/* CLKSTAT — Clock Status (read-only) */
+#define CLKSTAT         (*(volatile uint32_t *)(_CRU_BASE + 0x190u))
+
+/* IFS0 bit-field struct — EVIC sources 0-31 */
+typedef union {
+    struct {
+        uint32_t CTIF   : 1;   /* bit 0:  Core Timer          */
+        uint32_t CS0IF  : 1;   /* bit 1:  Core SW0            */
+        uint32_t CS1IF  : 1;   /* bit 2:  Core SW1            */
+        uint32_t INT0IF : 1;   /* bit 3:  External INT0       */
+        uint32_t T1IF   : 1;   /* bit 4:  Timer1 (src 4)      */
+        uint32_t        : 4;   /* bits 5-8                    */
+        uint32_t T2IF   : 1;   /* bit 9:  Timer2 (src 9)      */
+        uint32_t        : 4;   /* bits 10-13                  */
+        uint32_t T3IF   : 1;   /* bit 14: Timer3 (src 14)     */
+        uint32_t        : 4;   /* bits 15-18                  */
+        uint32_t T4IF   : 1;   /* bit 19: Timer4 (src 19)     */
+        uint32_t        : 4;   /* bits 20-23                  */
+        uint32_t T5IF   : 1;   /* bit 24: Timer5 (src 24)     */
+        uint32_t        : 3;   /* bits 25-27                  */
+        uint32_t T6IF   : 1;   /* bit 28: Timer6 (src 28)     */
+        uint32_t        : 3;   /* bits 29-31                  */
+    };
+    uint32_t w;
+} __IFS0_t;
+
+#define IFS0bits        (*(volatile __IFS0_t *)(_EVIC_BASE + 0x0040u))
+
+/* IFS1 bit-field struct — EVIC sources 32-63 (bit = source - 32) */
+typedef union {
+    struct {
+        uint32_t T7IF   : 1;   /* bit 0:  Timer7 (src 32)     */
+        uint32_t        : 3;   /* bits 1-3                    */
+        uint32_t T8IF   : 1;   /* bit 4:  Timer8 (src 36)     */
+        uint32_t        : 3;   /* bits 5-7                    */
+        uint32_t T9IF   : 1;   /* bit 8:  Timer9 (src 40)     */
+        uint32_t        : 23;  /* bits 9-31                   */
+    };
+    uint32_t w;
+} __IFS1_t;
+
+#define IFS1bits        (*(volatile __IFS1_t *)(_EVIC_BASE + 0x0050u))
+#define IFS1CLR         (*(volatile uint32_t  *)(_EVIC_BASE + 0x0054u))
+#define IFS1SET         (*(volatile uint32_t  *)(_EVIC_BASE + 0x0058u))
+
+/* IEC0 bit-field struct — EVIC sources 0-31 */
+typedef union {
+    struct {
+        uint32_t CTIE   : 1;   /* bit 0:  Core Timer          */
+        uint32_t CS0IE  : 1;   /* bit 1:  Core SW0            */
+        uint32_t CS1IE  : 1;   /* bit 2:  Core SW1            */
+        uint32_t INT0IE : 1;   /* bit 3:  External INT0       */
+        uint32_t T1IE   : 1;   /* bit 4:  Timer1 (src 4)      */
+        uint32_t        : 4;   /* bits 5-8                    */
+        uint32_t T2IE   : 1;   /* bit 9:  Timer2 (src 9)      */
+        uint32_t        : 4;   /* bits 10-13                  */
+        uint32_t T3IE   : 1;   /* bit 14: Timer3 (src 14)     */
+        uint32_t        : 4;   /* bits 15-18                  */
+        uint32_t T4IE   : 1;   /* bit 19: Timer4 (src 19)     */
+        uint32_t        : 4;   /* bits 20-23                  */
+        uint32_t T5IE   : 1;   /* bit 24: Timer5 (src 24)     */
+        uint32_t        : 3;   /* bits 25-27                  */
+        uint32_t T6IE   : 1;   /* bit 28: Timer6 (src 28)     */
+        uint32_t        : 3;   /* bits 29-31                  */
+    };
+    uint32_t w;
+} __IEC0_t;
+
+#define IEC0bits        (*(volatile __IEC0_t *)(_EVIC_BASE + 0x00C0u))
+
+/* IEC1 bit-field struct — EVIC sources 32-63 (bit = source - 32) */
+typedef union {
+    struct {
+        uint32_t T7IE   : 1;   /* bit 0:  Timer7 (src 32)     */
+        uint32_t        : 3;   /* bits 1-3                    */
+        uint32_t T8IE   : 1;   /* bit 4:  Timer8 (src 36)     */
+        uint32_t        : 3;   /* bits 5-7                    */
+        uint32_t T9IE   : 1;   /* bit 8:  Timer9 (src 40)     */
+        uint32_t        : 23;  /* bits 9-31                   */
+    };
+    uint32_t w;
+} __IEC1_t;
+
+#define IEC1bits        (*(volatile __IEC1_t *)(_EVIC_BASE + 0x00D0u))
+#define IEC1CLR         (*(volatile uint32_t  *)(_EVIC_BASE + 0x00D4u))
+#define IEC1SET         (*(volatile uint32_t  *)(_EVIC_BASE + 0x00D8u))
+
+/* -----------------------------------------------------------------------
+ * UART1 registers  (base 0xBF828000)
+ * ----------------------------------------------------------------------- */
+
+#define _U1_BASE        0xBF828000u
+
+#define U1MODE          (*(volatile uint32_t *)(_U1_BASE + 0x000u))
+#define U1MODECLR       (*(volatile uint32_t *)(_U1_BASE + 0x004u))
+#define U1MODESET       (*(volatile uint32_t *)(_U1_BASE + 0x008u))
+#define U1MODEINV       (*(volatile uint32_t *)(_U1_BASE + 0x00Cu))
+#define U1STA           (*(volatile uint32_t *)(_U1_BASE + 0x010u))
+#define U1STACLR        (*(volatile uint32_t *)(_U1_BASE + 0x014u))
+#define U1STASET        (*(volatile uint32_t *)(_U1_BASE + 0x018u))
+#define U1STAINV        (*(volatile uint32_t *)(_U1_BASE + 0x01Cu))
+#define U1TXREG         (*(volatile uint32_t *)(_U1_BASE + 0x020u))
+#define U1RXREG         (*(volatile uint32_t *)(_U1_BASE + 0x030u))
+#define U1BRG           (*(volatile uint32_t *)(_U1_BASE + 0x040u))
+#define U1BRGCLR        (*(volatile uint32_t *)(_U1_BASE + 0x044u))
+#define U1BRGSET        (*(volatile uint32_t *)(_U1_BASE + 0x048u))
+#define U1BRGINV        (*(volatile uint32_t *)(_U1_BASE + 0x04Cu))
+
+/* U1MODE bit masks (plib-compatible _MASK suffix) */
+#define _U1MODE_STSEL_MASK      0x00000001u
+#define _U1MODE_PDSEL0_MASK     0x00000002u
+#define _U1MODE_PDSEL1_MASK     0x00000004u
+#define _U1MODE_PDSEL_MASK      0x00000006u
+#define _U1MODE_BRGH_MASK       0x00000008u
+#define _U1MODE_RXINV_MASK      0x00000010u
+#define _U1MODE_ABAUD_MASK      0x00000020u
+#define _U1MODE_LPBACK_MASK     0x00000040u
+#define _U1MODE_WAKE_MASK       0x00000080u
+#define _U1MODE_SIDL_MASK       0x00002000u
+#define _U1MODE_ON_MASK         0x00008000u
+
+/* U1STA bit masks (plib-compatible _MASK suffix) */
+#define _U1STA_URXDA_MASK       0x00000001u
+#define _U1STA_OERR_MASK        0x00000002u
+#define _U1STA_FERR_MASK        0x00000004u
+#define _U1STA_PERR_MASK        0x00000008u
+#define _U1STA_RIDLE_MASK       0x00000010u
+#define _U1STA_ADDEN_MASK       0x00000020u
+#define _U1STA_TRMT_MASK        0x00000100u
+#define _U1STA_UTXBF_MASK       0x00000200u
+#define _U1STA_UTXEN_MASK       0x00000400u
+#define _U1STA_UTXBRK_MASK      0x00000800u
+#define _U1STA_URXEN_MASK       0x00001000u
+#define _U1STA_UTXISEL0_MASK    0x00004000u
+#define _U1STA_UTXISEL1_MASK    0x00008000u
+
+/* Legacy shorthand (backward compat) */
+#define _U1STA_UTXBF    _U1STA_UTXBF_MASK
+#define _U1STA_UTXEN    _U1STA_UTXEN_MASK
+#define _U1MODE_ON      _U1MODE_ON_MASK
+
+/* -----------------------------------------------------------------------
+ * IFS2 / IEC2  (sources 64–95)
+ * ----------------------------------------------------------------------- */
+
+#define IFS2            (*(volatile uint32_t *)(_EVIC_BASE + 0x0060u))
+#define IFS2CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0064u))
+#define IFS2SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0068u))
+#define IFS2INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x006Cu))
+
+#define IEC2            (*(volatile uint32_t *)(_EVIC_BASE + 0x00E0u))
+#define IEC2CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x00E4u))
+#define IEC2SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x00E8u))
+#define IEC2INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x00ECu))
+
+/* -----------------------------------------------------------------------
+ * IFS3 / IEC3  (sources 96–127)
+ * UART2: U2E=115 (bit 19), U2RX=116 (bit 20), U2TX=117 (bit 21)
+ * ----------------------------------------------------------------------- */
+
+#define IFS3            (*(volatile uint32_t *)(_EVIC_BASE + 0x0070u))
+#define IFS3CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0074u))
+#define IFS3SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0078u))
+#define IFS3INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x007Cu))
+
+#define IEC3            (*(volatile uint32_t *)(_EVIC_BASE + 0x00F0u))
+#define IEC3CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x00F4u))
+#define IEC3SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x00F8u))
+#define IEC3INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x00FCu))
+
+#define _IFS3_U2EIF_MASK        (1u << 19)   /* source 115 */
+#define _IFS3_U2RXIF_MASK       (1u << 20)   /* source 116 */
+#define _IFS3_U2TXIF_MASK       (1u << 21)   /* source 117 */
+#define _IEC3_U2EIE_MASK        (1u << 19)
+#define _IEC3_U2RXIE_MASK       (1u << 20)
+#define _IEC3_U2TXIE_MASK       (1u << 21)
+
+/* -----------------------------------------------------------------------
+ * UART2 registers  (base 0xBF828200)
+ * ----------------------------------------------------------------------- */
+
+#define _U2_BASE        0xBF828200u
+
+#define U2MODE          (*(volatile uint32_t *)(_U2_BASE + 0x000u))
+#define U2MODECLR       (*(volatile uint32_t *)(_U2_BASE + 0x004u))
+#define U2MODESET       (*(volatile uint32_t *)(_U2_BASE + 0x008u))
+#define U2MODEINV       (*(volatile uint32_t *)(_U2_BASE + 0x00Cu))
+#define U2STA           (*(volatile uint32_t *)(_U2_BASE + 0x010u))
+#define U2STACLR        (*(volatile uint32_t *)(_U2_BASE + 0x014u))
+#define U2STASET        (*(volatile uint32_t *)(_U2_BASE + 0x018u))
+#define U2STAINV        (*(volatile uint32_t *)(_U2_BASE + 0x01Cu))
+#define U2TXREG         (*(volatile uint32_t *)(_U2_BASE + 0x020u))
+#define U2RXREG         (*(volatile uint32_t *)(_U2_BASE + 0x030u))
+#define U2BRG           (*(volatile uint32_t *)(_U2_BASE + 0x040u))
+#define U2BRGCLR        (*(volatile uint32_t *)(_U2_BASE + 0x044u))
+#define U2BRGSET        (*(volatile uint32_t *)(_U2_BASE + 0x048u))
+#define U2BRGINV        (*(volatile uint32_t *)(_U2_BASE + 0x04Cu))
+
+/* U2MODE bit masks (same field layout as U1MODE) */
+#define _U2MODE_STSEL_MASK      0x00000001u
+#define _U2MODE_PDSEL0_MASK     0x00000002u
+#define _U2MODE_PDSEL1_MASK     0x00000004u
+#define _U2MODE_PDSEL_MASK      0x00000006u
+#define _U2MODE_BRGH_MASK       0x00000008u
+#define _U2MODE_RXINV_MASK      0x00000010u
+#define _U2MODE_ABAUD_MASK      0x00000020u
+#define _U2MODE_LPBACK_MASK     0x00000040u
+#define _U2MODE_WAKE_MASK       0x00000080u
+#define _U2MODE_SIDL_MASK       0x00002000u
+#define _U2MODE_ON_MASK         0x00008000u
+
+/* U2STA bit masks (same field layout as U1STA) */
+#define _U2STA_URXDA_MASK       0x00000001u
+#define _U2STA_OERR_MASK        0x00000002u
+#define _U2STA_FERR_MASK        0x00000004u
+#define _U2STA_PERR_MASK        0x00000008u
+#define _U2STA_RIDLE_MASK       0x00000010u
+#define _U2STA_ADDEN_MASK       0x00000020u
+#define _U2STA_TRMT_MASK        0x00000100u
+#define _U2STA_UTXBF_MASK       0x00000200u
+#define _U2STA_UTXEN_MASK       0x00000400u
+#define _U2STA_UTXBRK_MASK      0x00000800u
+#define _U2STA_URXEN_MASK       0x00001000u
+#define _U2STA_UTXISEL0_MASK    0x00004000u
+#define _U2STA_UTXISEL1_MASK    0x00008000u
+
+/* -----------------------------------------------------------------------
+ * IFS4 / IFS5  (sources 128–159, 160–191)
+ * IEC4 / IEC5
+ * CAN1 combined interrupt = EVIC source 167 → IFS5/IEC5 bit 7
+ * ----------------------------------------------------------------------- */
+
+#define IFS4            (*(volatile uint32_t *)(_EVIC_BASE + 0x0080u))
+#define IFS4CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0084u))
+#define IFS4SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0088u))
+#define IFS4INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x008Cu))
+
+#define IFS5            (*(volatile uint32_t *)(_EVIC_BASE + 0x0090u))
+#define IFS5CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0094u))
+#define IFS5SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0098u))
+#define IFS5INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x009Cu))
+
+#define IEC4            (*(volatile uint32_t *)(_EVIC_BASE + 0x0100u))
+#define IEC4CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0104u))
+#define IEC4SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0108u))
+#define IEC4INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x010Cu))
+
+#define IEC5            (*(volatile uint32_t *)(_EVIC_BASE + 0x0110u))
+#define IEC5CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0114u))
+#define IEC5SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0118u))
+#define IEC5INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x011Cu))
+
+/* CAN1 = EVIC source 167 = IFS5/IEC5 bit 7 */
+#define _IFS5_CAN1IF_MASK   0x00000080u
+#define _IEC5_CAN1IE_MASK   0x00000080u
+
+/* -----------------------------------------------------------------------
+ * CAN1 (CFD1*) SFR registers — base 0xBF880000
+ * Layout verified against XC32 p32mk1024mcm100.h device header.
+ * Each register block: +0 base, +4 SET, +8 CLR, +C INV
+ * ----------------------------------------------------------------------- */
+
+#define _CFD1_BASE      0xBF880000u
+
+/* CiCON */
+#define CFD1CON         (*(volatile uint32_t *)(_CFD1_BASE + 0x000u))
+#define CFD1CONSET      (*(volatile uint32_t *)(_CFD1_BASE + 0x004u))
+#define CFD1CONCLR      (*(volatile uint32_t *)(_CFD1_BASE + 0x008u))
+#define CFD1CONINV      (*(volatile uint32_t *)(_CFD1_BASE + 0x00Cu))
+
+#define _CFD1CON_CLKSEL0_POSITION   7
+#define _CFD1CON_CLKSEL0_MASK       0x00000080u
+#define _CFD1CON_ON_MASK            0x00008000u
+#define _CFD1CON_STEF_POSITION      19
+#define _CFD1CON_STEF_MASK          0x00080000u
+#define _CFD1CON_TXQEN_POSITION     20
+#define _CFD1CON_TXQEN_MASK         0x00100000u
+#define _CFD1CON_OPMOD_POSITION     21
+#define _CFD1CON_OPMOD_MASK         0x00E00000u
+#define _CFD1CON_REQOP_POSITION     24
+#define _CFD1CON_REQOP_MASK         0x07000000u
+
+/* CiNBTCFG */
+#define CFD1NBTCFG      (*(volatile uint32_t *)(_CFD1_BASE + 0x010u))
+
+#define _CFD1NBTCFG_SJW_POSITION    0
+#define _CFD1NBTCFG_SJW_MASK        0x0000007Fu
+#define _CFD1NBTCFG_TSEG2_POSITION  8
+#define _CFD1NBTCFG_TSEG2_MASK      0x00007F00u
+#define _CFD1NBTCFG_TSEG1_POSITION  16
+#define _CFD1NBTCFG_TSEG1_MASK      0x00FF0000u
+#define _CFD1NBTCFG_BRP_POSITION    24
+#define _CFD1NBTCFG_BRP_MASK        0xFF000000u
+
+/* CiDBTCFG */
+#define CFD1DBTCFG      (*(volatile uint32_t *)(_CFD1_BASE + 0x020u))
+
+#define _CFD1DBTCFG_SJW_POSITION    0
+#define _CFD1DBTCFG_SJW_MASK        0x0000000Fu
+#define _CFD1DBTCFG_TSEG2_POSITION  8
+#define _CFD1DBTCFG_TSEG2_MASK      0x00000F00u
+#define _CFD1DBTCFG_TSEG1_POSITION  16
+#define _CFD1DBTCFG_TSEG1_MASK      0x001F0000u
+#define _CFD1DBTCFG_BRP_POSITION    24
+#define _CFD1DBTCFG_BRP_MASK        0xFF000000u
+
+/* CiVEC */
+#define CFD1VEC         (*(volatile uint32_t *)(_CFD1_BASE + 0x060u))
+#define _CFD1VEC_ICODE_MASK         0x0000007Fu
+
+/* CiINT */
+#define CFD1INT         (*(volatile uint32_t *)(_CFD1_BASE + 0x070u))
+#define CFD1INTSET      (*(volatile uint32_t *)(_CFD1_BASE + 0x074u))
+#define CFD1INTCLR      (*(volatile uint32_t *)(_CFD1_BASE + 0x078u))
+
+/* CiINT status flags (lower 16 bits) */
+#define _CFD1INT_TXIF_MASK          0x00000001u   /* bit 0 */
+#define _CFD1INT_RXIF_MASK          0x00000002u   /* bit 1 */
+#define _CFD1INT_SERRIF_MASK        0x00001000u   /* bit 12 */
+#define _CFD1INT_CERRIF_MASK        0x00002000u   /* bit 13 */
+#define _CFD1INT_IVMIF_MASK         0x00008000u   /* bit 15 */
+/* CiINT interrupt enables (upper 16 bits) */
+#define _CFD1INT_TXIE_MASK          0x00010000u   /* bit 16 */
+#define _CFD1INT_RXIE_MASK          0x00020000u   /* bit 17 */
+#define _CFD1INT_SERRIE_MASK        0x10000000u   /* bit 28 */
+#define _CFD1INT_CERRIE_MASK        0x20000000u   /* bit 29 */
+#define _CFD1INT_IVMIE_MASK         0x80000000u   /* bit 31 */
+
+/* CiTREC */
+#define CFD1TREC        (*(volatile uint32_t *)(_CFD1_BASE + 0x0D0u))
+
+#define _CFD1TREC_TERRCNT_POSITION  0
+#define _CFD1TREC_TERRCNT_MASK      0x000000FFu
+#define _CFD1TREC_RERRCNT_MASK      0x0000FF00u
+#define _CFD1TREC_EWARN_MASK        0x00010000u
+#define _CFD1TREC_RXWARN_MASK       0x00020000u
+#define _CFD1TREC_TXWARN_MASK       0x00040000u
+#define _CFD1TREC_RXBP_MASK         0x00080000u
+#define _CFD1TREC_TXBP_MASK         0x00100000u
+#define _CFD1TREC_TXBO_MASK         0x00200000u
+
+/* CiTEFCON */
+#define CFD1TEFCON      (*(volatile uint32_t *)(_CFD1_BASE + 0x100u))
+
+#define _CFD1TEFCON_UINC_MASK       0x00000100u   /* bit 8 */
+#define _CFD1TEFCON_FSIZE_POSITION  24
+#define _CFD1TEFCON_FSIZE_MASK      0x1F000000u
+
+/* CiTEFSTA */
+#define CFD1TEFSTA      (*(volatile uint32_t *)(_CFD1_BASE + 0x110u))
+#define _CFD1TEFSTA_TEFNEIF_MASK    0x00000001u   /* TEF Not Empty flag, bit 0 */
+
+/* CiTEFUA */
+#define CFD1TEFUA       (*(volatile uint32_t *)(_CFD1_BASE + 0x120u))
+
+/* CiFIFOBA — message RAM base address (Phase 3C stub in emulator) */
+#define CFD1FIFOBA      (*(volatile uint32_t *)(_CFD1_BASE + 0x130u))
+
+/* CiTXQCON */
+#define CFD1TXQCON      (*(volatile uint32_t *)(_CFD1_BASE + 0x140u))
+#define CFD1TXQCONSET   (*(volatile uint32_t *)(_CFD1_BASE + 0x144u))
+#define CFD1TXQCONCLR   (*(volatile uint32_t *)(_CFD1_BASE + 0x148u))
+
+#define _CFD1TXQCON_TXQEIE_MASK     0x00000010u   /* TX Queue Empty IE, bit 4 */
+#define _CFD1TXQCON_UINC_MASK       0x00000100u   /* User Increment, bit 8 */
+#define _CFD1TXQCON_TXREQ_MASK      0x00000200u   /* TX Request, bit 9 */
+#define _CFD1TXQCON_TXPRI_POSITION  16
+#define _CFD1TXQCON_TXPRI_MASK      0x001F0000u
+#define _CFD1TXQCON_FSIZE_POSITION  24
+#define _CFD1TXQCON_FSIZE_MASK      0x1F000000u
+#define _CFD1TXQCON_PLSIZE_POSITION 29
+#define _CFD1TXQCON_PLSIZE_MASK     0xE0000000u
+
+/* CiTXQSTA */
+#define CFD1TXQSTA      (*(volatile uint32_t *)(_CFD1_BASE + 0x150u))
+#define _CFD1TXQSTA_TXQNIF_MASK     0x00000001u   /* TX Queue Not Full, bit 0 */
+
+/* CiTXQUA */
+#define CFD1TXQUA       (*(volatile uint32_t *)(_CFD1_BASE + 0x160u))
+
+/* CiFIFOCON1 / CiFIFOCON2 (FIFO 2 = FIFO 1 base + 0x30) */
+#define CFD1FIFOCON1    (*(volatile uint32_t *)(_CFD1_BASE + 0x170u))
+#define CFD1FIFOCON1SET (*(volatile uint32_t *)(_CFD1_BASE + 0x174u))
+#define CFD1FIFOCON1CLR (*(volatile uint32_t *)(_CFD1_BASE + 0x178u))
+
+#define _CFD1FIFOCON1_TFNRFNIE_MASK  0x00000001u  /* Not Empty IE, bit 0 */
+#define _CFD1FIFOCON1_TFERFFIE_MASK  0x00000010u  /* TX Empty IE, bit 4 */
+#define _CFD1FIFOCON1_RTREN_POSITION 6
+#define _CFD1FIFOCON1_RTREN_MASK     0x00000040u
+#define _CFD1FIFOCON1_TXEN_MASK      0x00000080u  /* TX enable, bit 7 */
+#define _CFD1FIFOCON1_UINC_MASK      0x00000100u  /* User Increment, bit 8 */
+#define _CFD1FIFOCON1_TXREQ_MASK     0x00000200u  /* TX Request, bit 9 */
+#define _CFD1FIFOCON1_TXPRI_POSITION 16
+#define _CFD1FIFOCON1_TXPRI_MASK     0x001F0000u
+#define _CFD1FIFOCON1_FSIZE_POSITION 24
+#define _CFD1FIFOCON1_FSIZE_MASK     0x1F000000u
+#define _CFD1FIFOCON1_PLSIZE_POSITION 29
+#define _CFD1FIFOCON1_PLSIZE_MASK    0xE0000000u
+
+#define CFD1FIFOCON2    (*(volatile uint32_t *)(_CFD1_BASE + 0x1A0u))
+
+#define _CFD1FIFOCON2_FSIZE_POSITION 24
+#define _CFD1FIFOCON2_FSIZE_MASK     0x1F000000u
+#define _CFD1FIFOCON2_PLSIZE_POSITION 29
+#define _CFD1FIFOCON2_PLSIZE_MASK    0xE0000000u
+
+/* CiFIFOSTA1 (FIFOSTA2 = FIFOSTA1 + 0x30 via pointer arithmetic in plib) */
+#define CFD1FIFOSTA1    (*(volatile uint32_t *)(_CFD1_BASE + 0x180u))
+#define _CFD1FIFOSTA1_TFNRFNIF_MASK  0x00000001u  /* Not Empty flag, bit 0 */
+#define _CFD1FIFOSTA1_TXATIF_MASK    0x00000010u  /* TX Attempts exhausted, bit 4 */
+
+/* CiFIFOUA1 */
+#define CFD1FIFOUA1     (*(volatile uint32_t *)(_CFD1_BASE + 0x190u))
+
+/* CiFLTCON0 */
+#define CFD1FLTCON0     (*(volatile uint32_t *)(_CFD1_BASE + 0x740u))
+#define CFD1FLTCON0SET  (*(volatile uint32_t *)(_CFD1_BASE + 0x744u))
+
+#define _CFD1FLTCON0_F0BP_POSITION   0
+#define _CFD1FLTCON0_F0BP_MASK       0x0000001Fu
+#define _CFD1FLTCON0_FLTEN0_POSITION 7
+#define _CFD1FLTCON0_FLTEN0_MASK     0x00000080u
+
+/* CiFLTOBJ0 (stride 0x20 per pair via pointer arithmetic in plib) */
+#define CFD1FLTOBJ0     (*(volatile uint32_t *)(_CFD1_BASE + 0x7C0u))
+#define _CFD1FLTOBJ0_EXIDE_MASK      0x20000000u  /* Extended ID enable, bit 29 */
+
+/* CiMASK0 */
+#define CFD1MASK0       (*(volatile uint32_t *)(_CFD1_BASE + 0x7D0u))
+#define _CFD1MASK0_MIDE_MASK         0x20000000u  /* Match IDE bit, bit 29 */
+
+/* -----------------------------------------------------------------------
+ * CAN2 = EVIC source 168 = IFS5/IEC5 bit 8
+ * ----------------------------------------------------------------------- */
+#define _IFS5_CAN2IF_MASK   0x00000100u
+#define _IEC5_CAN2IE_MASK   0x00000100u
+
+/* -----------------------------------------------------------------------
+ * CAN2 (CFD2*) SFR registers — base 0xBF881000
+ * Same layout as CFD1; only the base address differs.
+ * ----------------------------------------------------------------------- */
+
+#define _CFD2_BASE      0xBF881000u
+
+/* CiCON */
+#define CFD2CON         (*(volatile uint32_t *)(_CFD2_BASE + 0x000u))
+#define CFD2CONSET      (*(volatile uint32_t *)(_CFD2_BASE + 0x004u))
+#define CFD2CONCLR      (*(volatile uint32_t *)(_CFD2_BASE + 0x008u))
+#define CFD2CONINV      (*(volatile uint32_t *)(_CFD2_BASE + 0x00Cu))
+
+#define _CFD2CON_CLKSEL0_POSITION   7
+#define _CFD2CON_CLKSEL0_MASK       0x00000080u
+#define _CFD2CON_ON_MASK            0x00008000u
+#define _CFD2CON_STEF_POSITION      19
+#define _CFD2CON_STEF_MASK          0x00080000u
+#define _CFD2CON_TXQEN_POSITION     20
+#define _CFD2CON_TXQEN_MASK         0x00100000u
+#define _CFD2CON_OPMOD_POSITION     21
+#define _CFD2CON_OPMOD_MASK         0x00E00000u
+#define _CFD2CON_REQOP_POSITION     24
+#define _CFD2CON_REQOP_MASK         0x07000000u
+
+/* CiNBTCFG */
+#define CFD2NBTCFG      (*(volatile uint32_t *)(_CFD2_BASE + 0x010u))
+
+#define _CFD2NBTCFG_SJW_POSITION    0
+#define _CFD2NBTCFG_SJW_MASK        0x0000007Fu
+#define _CFD2NBTCFG_TSEG2_POSITION  8
+#define _CFD2NBTCFG_TSEG2_MASK      0x00007F00u
+#define _CFD2NBTCFG_TSEG1_POSITION  16
+#define _CFD2NBTCFG_TSEG1_MASK      0x00FF0000u
+#define _CFD2NBTCFG_BRP_POSITION    24
+#define _CFD2NBTCFG_BRP_MASK        0xFF000000u
+
+/* CiDBTCFG */
+#define CFD2DBTCFG      (*(volatile uint32_t *)(_CFD2_BASE + 0x020u))
+
+#define _CFD2DBTCFG_SJW_POSITION    0
+#define _CFD2DBTCFG_SJW_MASK        0x0000000Fu
+#define _CFD2DBTCFG_TSEG2_POSITION  8
+#define _CFD2DBTCFG_TSEG2_MASK      0x00000F00u
+#define _CFD2DBTCFG_TSEG1_POSITION  16
+#define _CFD2DBTCFG_TSEG1_MASK      0x001F0000u
+#define _CFD2DBTCFG_BRP_POSITION    24
+#define _CFD2DBTCFG_BRP_MASK        0xFF000000u
+
+/* CiTBC */
+#define CFD2TBC         (*(volatile uint32_t *)(_CFD2_BASE + 0x040u))
+
+/* CiVEC */
+#define CFD2VEC         (*(volatile uint32_t *)(_CFD2_BASE + 0x060u))
+#define _CFD2VEC_ICODE_MASK         0x0000007Fu
+
+/* CiINT */
+#define CFD2INT         (*(volatile uint32_t *)(_CFD2_BASE + 0x070u))
+#define CFD2INTSET      (*(volatile uint32_t *)(_CFD2_BASE + 0x074u))
+#define CFD2INTCLR      (*(volatile uint32_t *)(_CFD2_BASE + 0x078u))
+
+#define _CFD2INT_TXIF_MASK          0x00000001u
+#define _CFD2INT_RXIF_MASK          0x00000002u
+#define _CFD2INT_MODIF_MASK         0x00000008u
+#define _CFD2INT_SERRIF_MASK        0x00001000u
+#define _CFD2INT_CERRIF_MASK        0x00002000u
+#define _CFD2INT_IVMIF_MASK         0x00008000u
+#define _CFD2INT_TXIE_MASK          0x00010000u
+#define _CFD2INT_RXIE_MASK          0x00020000u
+#define _CFD2INT_MODIE_MASK         0x00080000u
+#define _CFD2INT_SERRIE_MASK        0x10000000u
+#define _CFD2INT_CERRIE_MASK        0x20000000u
+#define _CFD2INT_IVMIE_MASK         0x80000000u
+
+/* CiRXIF / CiTXIF / CiRXOVIF / CiTXATIF */
+#define CFD2RXIF        (*(volatile uint32_t *)(_CFD2_BASE + 0x080u))
+#define CFD2TXIF        (*(volatile uint32_t *)(_CFD2_BASE + 0x090u))
+#define CFD2RXOVIF      (*(volatile uint32_t *)(_CFD2_BASE + 0x0A0u))
+#define CFD2TXATIF      (*(volatile uint32_t *)(_CFD2_BASE + 0x0B0u))
+
+/* CiTREC */
+#define CFD2TREC        (*(volatile uint32_t *)(_CFD2_BASE + 0x0D0u))
+
+#define _CFD2TREC_TERRCNT_POSITION  0
+#define _CFD2TREC_TERRCNT_MASK      0x000000FFu
+#define _CFD2TREC_RERRCNT_MASK      0x0000FF00u
+#define _CFD2TREC_EWARN_MASK        0x00010000u
+#define _CFD2TREC_RXWARN_MASK       0x00020000u
+#define _CFD2TREC_TXWARN_MASK       0x00040000u
+#define _CFD2TREC_RXBP_MASK         0x00080000u
+#define _CFD2TREC_TXBP_MASK         0x00100000u
+#define _CFD2TREC_TXBO_MASK         0x00200000u
+
+/* CiTEFCON */
+#define CFD2TEFCON      (*(volatile uint32_t *)(_CFD2_BASE + 0x100u))
+#define CFD2TEFCONSET   (*(volatile uint32_t *)(_CFD2_BASE + 0x104u))
+#define CFD2TEFCONCLR   (*(volatile uint32_t *)(_CFD2_BASE + 0x108u))
+
+#define _CFD2TEFCON_UINC_MASK       0x00000100u
+#define _CFD2TEFCON_FSIZE_POSITION  24
+#define _CFD2TEFCON_FSIZE_MASK      0x1F000000u
+
+/* CiTEFSTA */
+#define CFD2TEFSTA      (*(volatile uint32_t *)(_CFD2_BASE + 0x110u))
+#define _CFD2TEFSTA_TEFNEIF_MASK    0x00000001u
+
+/* CiTEFUA */
+#define CFD2TEFUA       (*(volatile uint32_t *)(_CFD2_BASE + 0x120u))
+
+/* CiFIFOBA */
+#define CFD2FIFOBA      (*(volatile uint32_t *)(_CFD2_BASE + 0x130u))
+
+/* CiTXQCON */
+#define CFD2TXQCON      (*(volatile uint32_t *)(_CFD2_BASE + 0x140u))
+#define CFD2TXQCONSET   (*(volatile uint32_t *)(_CFD2_BASE + 0x144u))
+#define CFD2TXQCONCLR   (*(volatile uint32_t *)(_CFD2_BASE + 0x148u))
+
+#define _CFD2TXQCON_TXQEIE_MASK     0x00000010u
+#define _CFD2TXQCON_UINC_MASK       0x00000100u
+#define _CFD2TXQCON_TXREQ_MASK      0x00000200u
+#define _CFD2TXQCON_TXPRI_POSITION  16
+#define _CFD2TXQCON_TXPRI_MASK      0x001F0000u
+#define _CFD2TXQCON_FSIZE_POSITION  24
+#define _CFD2TXQCON_FSIZE_MASK      0x1F000000u
+#define _CFD2TXQCON_PLSIZE_POSITION 29
+#define _CFD2TXQCON_PLSIZE_MASK     0xE0000000u
+
+/* CiTXQSTA */
+#define CFD2TXQSTA      (*(volatile uint32_t *)(_CFD2_BASE + 0x150u))
+#define _CFD2TXQSTA_TXQNIF_MASK     0x00000001u
+
+/* CiTXQUA */
+#define CFD2TXQUA       (*(volatile uint32_t *)(_CFD2_BASE + 0x160u))
+
+/* CiFIFOCON1 */
+#define CFD2FIFOCON1    (*(volatile uint32_t *)(_CFD2_BASE + 0x170u))
+#define CFD2FIFOCON1SET (*(volatile uint32_t *)(_CFD2_BASE + 0x174u))
+#define CFD2FIFOCON1CLR (*(volatile uint32_t *)(_CFD2_BASE + 0x178u))
+
+#define _CFD2FIFOCON1_TFNRFNIE_MASK  0x00000001u
+#define _CFD2FIFOCON1_TFERFFIE_MASK  0x00000010u
+#define _CFD2FIFOCON1_RTREN_POSITION 6
+#define _CFD2FIFOCON1_RTREN_MASK     0x00000040u
+#define _CFD2FIFOCON1_TXEN_MASK      0x00000080u
+#define _CFD2FIFOCON1_UINC_MASK      0x00000100u
+#define _CFD2FIFOCON1_TXREQ_MASK     0x00000200u
+#define _CFD2FIFOCON1_TXPRI_POSITION 16
+#define _CFD2FIFOCON1_TXPRI_MASK     0x001F0000u
+#define _CFD2FIFOCON1_FSIZE_POSITION 24
+#define _CFD2FIFOCON1_FSIZE_MASK     0x1F000000u
+#define _CFD2FIFOCON1_PLSIZE_POSITION 29
+#define _CFD2FIFOCON1_PLSIZE_MASK    0xE0000000u
+
+/* CiFIFOSTA1 */
+#define CFD2FIFOSTA1    (*(volatile uint32_t *)(_CFD2_BASE + 0x180u))
+#define _CFD2FIFOSTA1_TFNRFNIF_MASK  0x00000001u
+#define _CFD2FIFOSTA1_TXATIF_MASK    0x00000010u
+
+/* CiFIFOUA1 */
+#define CFD2FIFOUA1     (*(volatile uint32_t *)(_CFD2_BASE + 0x190u))
+
+/* CiFIFOCON2 (FIFO2 = RX FIFO in plib_canfd2) */
+#define CFD2FIFOCON2    (*(volatile uint32_t *)(_CFD2_BASE + 0x1A0u))
+#define CFD2FIFOCON2SET (*(volatile uint32_t *)(_CFD2_BASE + 0x1A4u))
+#define CFD2FIFOCON2CLR (*(volatile uint32_t *)(_CFD2_BASE + 0x1A8u))
+
+#define _CFD2FIFOCON2_FSIZE_POSITION 24
+#define _CFD2FIFOCON2_FSIZE_MASK     0x1F000000u
+#define _CFD2FIFOCON2_PLSIZE_POSITION 29
+#define _CFD2FIFOCON2_PLSIZE_MASK    0xE0000000u
+
+/* CiFIFOSTA2 */
+#define CFD2FIFOSTA2    (*(volatile uint32_t *)(_CFD2_BASE + 0x1B0u))
+#define _CFD2FIFOSTA2_TFNRFNIF_MASK  0x00000001u
+
+/* CiFIFOUA2 */
+#define CFD2FIFOUA2     (*(volatile uint32_t *)(_CFD2_BASE + 0x1C0u))
+
+/* CiFLTCON0 */
+#define CFD2FLTCON0     (*(volatile uint32_t *)(_CFD2_BASE + 0x740u))
+#define CFD2FLTCON0SET  (*(volatile uint32_t *)(_CFD2_BASE + 0x744u))
+
+#define _CFD2FLTCON0_F0BP_POSITION   0
+#define _CFD2FLTCON0_F0BP_MASK       0x0000001Fu
+#define _CFD2FLTCON0_FLTEN0_POSITION 7
+#define _CFD2FLTCON0_FLTEN0_MASK     0x00000080u
+
+/* CiFLTOBJ0 */
+#define CFD2FLTOBJ0     (*(volatile uint32_t *)(_CFD2_BASE + 0x7C0u))
+#define _CFD2FLTOBJ0_EXIDE_MASK      0x20000000u
+
+/* CiMASK0 */
+#define CFD2MASK0       (*(volatile uint32_t *)(_CFD2_BASE + 0x7D0u))
+#define _CFD2MASK0_MIDE_MASK         0x20000000u
+
+/* -----------------------------------------------------------------------
+ * IFS7 / IEC7  (sources 224–255)
+ * USB2 = EVIC source 244 → IFS7/IEC7 bit 20
+ * IFS7 at EVIC+0x00B0, IEC7 at EVIC+0x0130
+ * ----------------------------------------------------------------------- */
+
+#define IFS7            (*(volatile uint32_t *)(_EVIC_BASE + 0x00B0u))
+#define IFS7CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x00B4u))
+#define IFS7SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x00B8u))
+#define IFS7INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x00BCu))
+
+#define IEC7            (*(volatile uint32_t *)(_EVIC_BASE + 0x0130u))
+#define IEC7CLR         (*(volatile uint32_t *)(_EVIC_BASE + 0x0134u))
+#define IEC7SET         (*(volatile uint32_t *)(_EVIC_BASE + 0x0138u))
+#define IEC7INV         (*(volatile uint32_t *)(_EVIC_BASE + 0x013Cu))
+
+#define _IFS7_USB2IF_MASK   (1u << 20)   /* source 244 = IFS7 bit 20 */
+#define _IEC7_USB2IE_MASK   (1u << 20)
+
+/* USB1 interrupt: source 34 = IFS1 bit 2 */
+#define _IFS1_USB1IF_MASK   (1u << 2)
+#define _IEC1_USB1IE_MASK   (1u << 2)
+
+/* -----------------------------------------------------------------------
+ * USB1 registers  (base 0xBF889000, first user register at +0x040)
+ * USB2 registers  (base 0xBF88A000, first user register at +0x040)
+ *
+ * _USB_BASE_ADDRESS / _USB2_BASE_ADDRESS match XC32 p32mk1024mcm100.h:
+ *   USB1 = 0xBF889040,  USB2 = 0xBF88A040
+ * USB_MODULE_ID is a typedef uint32_t (peripheral identified by base addr).
+ * ----------------------------------------------------------------------- */
+
+#define _USB_BASE_ADDRESS   0xBF889040u
+#define _USB2_BASE_ADDRESS  0xBF88A040u
+#define USB_NUMBER_OF_MODULES 2U
+
+/* -----------------------------------------------------------------------
+ * Vector numbers (used in configTICK_INTERRUPT_VECTOR)
+ * ----------------------------------------------------------------------- */
+
+#define _TIMER_1_VECTOR         4
+#define _CORE_TIMER_VECTOR      0
+#define _USB_1_VECTOR           34U
+#define _USB_2_VECTOR           244U
+
+/* -----------------------------------------------------------------------
+ * USB register bit-field typedef structs
+ * Extracted from XC32 p32mk1024mcm100.h (extern declarations omitted —
+ * we use our own volatile-pointer macros for register access).
+ * Required by driver/usb/usbfs/src/templates/usbfs_registers.h which
+ * does #include <xc.h> and uses these types directly.
+ * ----------------------------------------------------------------------- */
+
+typedef struct {
+  uint32_t VBUSVDIF:1;
+  uint32_t :1;
+  uint32_t SESENDIF:1;
+  uint32_t SESVDIF:1;
+  uint32_t ACTVIF:1;
+  uint32_t LSTATEIF:1;
+  uint32_t T1MSECIF:1;
+  uint32_t IDIF:1;
+} __U1OTGIRbits_t;
+
+typedef struct {
+  uint32_t VBUSVDIE:1;
+  uint32_t :1;
+  uint32_t SESENDIE:1;
+  uint32_t SESVDIE:1;
+  uint32_t ACTVIE:1;
+  uint32_t LSTATEIE:1;
+  uint32_t T1MSECIE:1;
+  uint32_t IDIE:1;
+} __U1OTGIEbits_t;
+
+typedef struct {
+  uint32_t VBUSVD:1;
+  uint32_t :1;
+  uint32_t SESEND:1;
+  uint32_t SESVD:1;
+  uint32_t :1;
+  uint32_t LSTATE:1;
+  uint32_t :1;
+  uint32_t ID:1;
+} __U1OTGSTATbits_t;
+
+typedef struct {
+  uint32_t VBUSDIS:1;
+  uint32_t VBUSCHG:1;
+  uint32_t OTGEN:1;
+  uint32_t VBUSON:1;
+  uint32_t DMPULDWN:1;
+  uint32_t DPPULDWN:1;
+  uint32_t DMPULUP:1;
+  uint32_t DPPULUP:1;
+} __U1OTGCONbits_t;
+
+typedef struct {
+  uint32_t USBPWR:1;
+  uint32_t USUSPEND:1;
+  uint32_t :1;
+  uint32_t USBBUSY:1;
+  uint32_t USLPGRD:1;
+  uint32_t :2;
+  uint32_t UACTPND:1;
+} __U1PWRCbits_t;
+
+typedef union {
+  struct {
+    uint32_t URSTIF_DETACHIF:1;
+    uint32_t UERRIF:1;
+    uint32_t SOFIF:1;
+    uint32_t TRNIF:1;
+    uint32_t IDLEIF:1;
+    uint32_t RESUMEIF:1;
+    uint32_t ATTACHIF:1;
+    uint32_t STALLIF:1;
+  };
+  struct {
+    uint32_t DETACHIF:1;
+  };
+  struct {
+    uint32_t URSTIF:1;
+  };
+} __U1IRbits_t;
+
+typedef union {
+  struct {
+    uint32_t URSTIE_DETACHIE:1;
+    uint32_t UERRIE:1;
+    uint32_t SOFIE:1;
+    uint32_t TRNIE:1;
+    uint32_t IDLEIE:1;
+    uint32_t RESUMEIE:1;
+    uint32_t ATTACHIE:1;
+    uint32_t STALLIE:1;
+  };
+  struct {
+    uint32_t DETACHIE:1;
+  };
+  struct {
+    uint32_t URSTIE:1;
+  };
+} __U1IEbits_t;
+
+typedef union {
+  struct {
+    uint32_t PIDEF:1;
+    uint32_t CRC5EF_EOFEF:1;
+    uint32_t CRC16EF:1;
+    uint32_t DFN8EF:1;
+    uint32_t BTOEF:1;
+    uint32_t DMAEF:1;
+    uint32_t BMXEF:1;
+    uint32_t BTSEF:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t CRC5EF:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t EOFEF:1;
+  };
+} __U1EIRbits_t;
+
+typedef union {
+  struct {
+    uint32_t PIDEE:1;
+    uint32_t CRC5EE_EOFEE:1;
+    uint32_t CRC16EE:1;
+    uint32_t DFN8EE:1;
+    uint32_t BTOEE:1;
+    uint32_t DMAEE:1;
+    uint32_t BMXEE:1;
+    uint32_t BTSEE:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t CRC5EE:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t EOFEE:1;
+  };
+} __U1EIEbits_t;
+
+typedef union {
+  struct {
+    uint32_t :2;
+    uint32_t PPBI:1;
+    uint32_t DIR:1;
+    uint32_t ENDPT:4;
+  };
+  struct {
+    uint32_t :4;
+    uint32_t ENDPT0:1;
+    uint32_t ENDPT1:1;
+    uint32_t ENDPT2:1;
+    uint32_t ENDPT3:1;
+  };
+} __U1STATbits_t;
+
+typedef union {
+  struct {
+    uint32_t USBEN_SOFEN:1;
+    uint32_t PPBRST:1;
+    uint32_t RESUME:1;
+    uint32_t HOSTEN:1;
+    uint32_t USBRST:1;
+    uint32_t PKTDIS_TOKBUSY:1;
+    uint32_t SE0:1;
+    uint32_t JSTATE:1;
+  };
+  struct {
+    uint32_t USBEN:1;
+  };
+  struct {
+    uint32_t SOFEN:1;
+    uint32_t :4;
+    uint32_t PKTDIS:1;
+  };
+  struct {
+    uint32_t :5;
+    uint32_t TOKBUSY:1;
+  };
+} __U1CONbits_t;
+
+typedef union {
+  struct {
+    uint32_t DEVADDR:7;
+    uint32_t LSPDEN:1;
+  };
+  struct {
+    uint32_t DEVADDR0:1;
+    uint32_t DEVADDR1:1;
+    uint32_t DEVADDR2:1;
+    uint32_t DEVADDR3:1;
+    uint32_t DEVADDR4:1;
+    uint32_t DEVADDR5:1;
+    uint32_t DEVADDR6:1;
+  };
+} __U1ADDRbits_t;
+
+typedef struct {
+  uint32_t :1;
+  uint32_t BDTPTRL:7;
+} __U1BDTP1bits_t;
+
+typedef union {
+  struct {
+    uint32_t FRML:8;
+  };
+  struct {
+    uint32_t FRM0:1;
+    uint32_t FRM1:1;
+    uint32_t FRM2:1;
+    uint32_t FRM3:1;
+    uint32_t FRM4:1;
+    uint32_t FRM5:1;
+    uint32_t FRM6:1;
+    uint32_t FRM7:1;
+  };
+} __U1FRMLbits_t;
+
+typedef union {
+  struct {
+    uint32_t FRMH:3;
+  };
+  struct {
+    uint32_t FRM8:1;
+    uint32_t FRM9:1;
+    uint32_t FRM10:1;
+  };
+} __U1FRMHbits_t;
+
+typedef union {
+  struct {
+    uint32_t EP:4;
+    uint32_t PID:4;
+  };
+  struct {
+    uint32_t EP0:1;
+  };
+  struct {
+    uint32_t :1;
+    uint32_t EP1:1;
+    uint32_t EP2:1;
+    uint32_t EP3:1;
+    uint32_t PID0:1;
+  };
+  struct {
+    uint32_t :5;
+    uint32_t PID1:1;
+    uint32_t PID2:1;
+    uint32_t PID3:1;
+  };
+} __U1TOKbits_t;
+
+typedef struct {
+  uint32_t CNT:8;
+} __U1SOFbits_t;
+
+typedef struct {
+  uint32_t BDTPTRH:8;
+} __U1BDTP2bits_t;
+
+typedef struct {
+  uint32_t BDTPTRU:8;
+} __U1BDTP3bits_t;
+
+typedef struct {
+  uint32_t UASUSPND:1;
+  uint32_t :2;
+  uint32_t LSDEV:1;
+  uint32_t USBSIDL:1;
+  uint32_t :1;
+  uint32_t UOEMON:1;
+  uint32_t UTEYE:1;
+} __U1CNFG1bits_t;
+
+typedef struct {
+  uint32_t EPHSHK:1;
+  uint32_t EPSTALL:1;
+  uint32_t EPTXEN:1;
+  uint32_t EPRXEN:1;
+  uint32_t EPCONDIS:1;
+  uint32_t :1;
+  uint32_t RETRYDIS:1;
+  uint32_t LSPD:1;
+} __U1EP0bits_t;
+
+/* EP1–EP15 share the same layout (no RETRYDIS/LSPD fields) */
+typedef struct {
+  uint32_t EPHSHK:1;
+  uint32_t EPSTALL:1;
+  uint32_t EPTXEN:1;
+  uint32_t EPRXEN:1;
+  uint32_t EPCONDIS:1;
+} __U1EP1bits_t, __U1EP2bits_t, __U1EP3bits_t, __U1EP4bits_t,
+  __U1EP5bits_t, __U1EP6bits_t, __U1EP7bits_t, __U1EP8bits_t,
+  __U1EP9bits_t, __U1EP10bits_t, __U1EP11bits_t, __U1EP12bits_t,
+  __U1EP13bits_t, __U1EP14bits_t, __U1EP15bits_t;
+
+/* -----------------------------------------------------------------------
+ * USB register bit-mask and position constants
+ * Extracted from XC32 p32mk1024mcm100.h for usbfs_registers.h compatibility.
+ * ----------------------------------------------------------------------- */
+#define _U1ADDR_DEVADDR_MASK                     0x0000007Fu
+#define _U1ADDR_LSPDEN_MASK                      0x00000080u
+#define _U1CNFG1_UASUSPND_MASK                   0x00000001u
+#define _U1CNFG1_USBSIDL_MASK                    0x00000010u
+#define _U1CNFG1_UTEYE_MASK                      0x00000080u
+#define _U1CNFG1_UTEYE_POSITION                  0x00000007u
+#define _U1CON_HOSTEN_MASK                       0x00000008u
+#define _U1CON_PKTDIS_TOKBUSY_MASK               0x00000020u
+#define _U1CON_PPBRST_MASK                       0x00000002u
+#define _U1CON_RESUME_MASK                       0x00000004u
+#define _U1CON_USBEN_SOFEN_MASK                  0x00000001u
+#define _U1CON_USBEN_SOFEN_POSITION              0x00000000u
+#define _U1CON_USBRST_MASK                       0x00000010u
+#define _U1EP0_EPCONDIS_MASK                     0x00000010u
+#define _U1EP0_EPCONDIS_POSITION                 0x00000004u
+#define _U1EP0_EPHSHK_MASK                       0x00000001u
+#define _U1EP0_EPHSHK_POSITION                   0x00000000u
+#define _U1EP0_EPRXEN_MASK                       0x00000008u
+#define _U1EP0_EPSTALL_MASK                      0x00000002u
+#define _U1EP0_EPSTALL_POSITION                  0x00000001u
+#define _U1EP0_EPTXEN_MASK                       0x00000004u
+#define _U1EP0_LSPD_MASK                         0x00000080u
+#define _U1EP0_RETRYDIS_MASK                     0x00000040u
+#define _U1EP1_EPCONDIS_POSITION                 0x00000004u
+#define _U1EP1_EPHSHK_POSITION                   0x00000000u
+#define _U1EP1_EPSTALL_POSITION                  0x00000001u
+#define _U1OTGCON_DMPULDWN_MASK                  0x00000010u
+#define _U1OTGCON_DMPULUP_MASK                   0x00000040u
+#define _U1OTGCON_DPPULDWN_MASK                  0x00000020u
+#define _U1OTGCON_DPPULUP_MASK                   0x00000080u
+#define _U1OTGCON_OTGEN_MASK                     0x00000004u
+#define _U1OTGCON_VBUSCHG_MASK                   0x00000002u
+#define _U1OTGCON_VBUSDIS_MASK                   0x00000001u
+#define _U1OTGCON_VBUSON_MASK                    0x00000008u
+#define _U1PWRC_USBPWR_MASK                      0x00000001u
+#define _U1PWRC_USLPGRD_MASK                     0x00000010u
+#define _U1PWRC_USUSPEND_MASK                    0x00000002u
+#define _U1TOK_EP_MASK                           0x0000000Fu
+#define _U1TOK_PID_POSITION                      0x00000004u
+
+/* -----------------------------------------------------------------------
+ * GPIO PORTA–PORTG SFR definitions
+ * Base: 0xBF860000; each port occupies 0x100 bytes.
+ * Offsets per port block (§12, DS60001519E):
+ *   ANSEL +0x00/04/08/0C  TRIS  +0x10/14/18/1C  PORT  +0x20
+ *   LAT   +0x30/34/38/3C  CNCON +0x70/74/78/7C
+ *   CNEN0 +0x80/84/88/8C  (plib: CNENA/CLR/SET)
+ *   CNSTAT+0x90           CNEN1 +0xA0/A4/A8/AC (plib: CNNEA/CLR/SET)
+ * ----------------------------------------------------------------------- */
+#define _GPIO_BASE_A    0xBF860000u
+#define _GPIO_BASE_B    0xBF860100u
+#define _GPIO_BASE_C    0xBF860200u
+#define _GPIO_BASE_D    0xBF860300u
+#define _GPIO_BASE_E    0xBF860400u
+#define _GPIO_BASE_F    0xBF860500u
+#define _GPIO_BASE_G    0xBF860600u
+
+/* Expands all register names for one port given its letter and base address */
+#define _GPIO_PORT_REGS(L, BASE) \
+    static volatile uint32_t * const _gpio_dummy_##L = (volatile uint32_t *)(BASE); \
+    (void)_gpio_dummy_##L; /* suppress unused warning if any */
+
+/* Instead of the above approach, define each register directly: */
+
+/* PORTA */
+#define ANSELA          (*(volatile uint32_t *)(_GPIO_BASE_A + 0x00u))
+#define ANSELACLR       (*(volatile uint32_t *)(_GPIO_BASE_A + 0x04u))
+#define ANSELASET       (*(volatile uint32_t *)(_GPIO_BASE_A + 0x08u))
+#define ANSELAINV       (*(volatile uint32_t *)(_GPIO_BASE_A + 0x0Cu))
+#define TRISA           (*(volatile uint32_t *)(_GPIO_BASE_A + 0x10u))
+#define TRISACLR        (*(volatile uint32_t *)(_GPIO_BASE_A + 0x14u))
+#define TRISASET        (*(volatile uint32_t *)(_GPIO_BASE_A + 0x18u))
+#define TRISAINV        (*(volatile uint32_t *)(_GPIO_BASE_A + 0x1Cu))
+#define PORTA           (*(volatile uint32_t *)(_GPIO_BASE_A + 0x20u))
+#define LATA            (*(volatile uint32_t *)(_GPIO_BASE_A + 0x30u))
+#define LATACLR         (*(volatile uint32_t *)(_GPIO_BASE_A + 0x34u))
+#define LATASET         (*(volatile uint32_t *)(_GPIO_BASE_A + 0x38u))
+#define LATAINV         (*(volatile uint32_t *)(_GPIO_BASE_A + 0x3Cu))
+#define CNCONA          (*(volatile uint32_t *)(_GPIO_BASE_A + 0x70u))
+#define CNCONACLR       (*(volatile uint32_t *)(_GPIO_BASE_A + 0x74u))
+#define CNCONASET       (*(volatile uint32_t *)(_GPIO_BASE_A + 0x78u))
+#define CNCONAINV       (*(volatile uint32_t *)(_GPIO_BASE_A + 0x7Cu))
+#define CNENA           (*(volatile uint32_t *)(_GPIO_BASE_A + 0x80u))  /* CNEN0A */
+#define CNENACLR        (*(volatile uint32_t *)(_GPIO_BASE_A + 0x84u))
+#define CNENASET        (*(volatile uint32_t *)(_GPIO_BASE_A + 0x88u))
+#define CNENAINV        (*(volatile uint32_t *)(_GPIO_BASE_A + 0x8Cu))
+#define CNSTATA         (*(volatile uint32_t *)(_GPIO_BASE_A + 0x90u))
+#define CNSTATACLR      (*(volatile uint32_t *)(_GPIO_BASE_A + 0x94u))
+#define CNNEA           (*(volatile uint32_t *)(_GPIO_BASE_A + 0xA0u))  /* CNEN1A */
+#define CNNEACLR        (*(volatile uint32_t *)(_GPIO_BASE_A + 0xA4u))
+#define CNNEASET        (*(volatile uint32_t *)(_GPIO_BASE_A + 0xA8u))
+
+/* PORTB */
+#define ANSELB          (*(volatile uint32_t *)(_GPIO_BASE_B + 0x00u))
+#define ANSELBCLR       (*(volatile uint32_t *)(_GPIO_BASE_B + 0x04u))
+#define ANSELBSET       (*(volatile uint32_t *)(_GPIO_BASE_B + 0x08u))
+#define ANSELB_INV      (*(volatile uint32_t *)(_GPIO_BASE_B + 0x0Cu))
+#define TRISB           (*(volatile uint32_t *)(_GPIO_BASE_B + 0x10u))
+#define TRISBCLR        (*(volatile uint32_t *)(_GPIO_BASE_B + 0x14u))
+#define TRISBSET        (*(volatile uint32_t *)(_GPIO_BASE_B + 0x18u))
+#define PORTB           (*(volatile uint32_t *)(_GPIO_BASE_B + 0x20u))
+#define LATB            (*(volatile uint32_t *)(_GPIO_BASE_B + 0x30u))
+#define LATBCLR         (*(volatile uint32_t *)(_GPIO_BASE_B + 0x34u))
+#define LATBSET         (*(volatile uint32_t *)(_GPIO_BASE_B + 0x38u))
+#define LATBINV         (*(volatile uint32_t *)(_GPIO_BASE_B + 0x3Cu))
+#define CNCONB          (*(volatile uint32_t *)(_GPIO_BASE_B + 0x70u))
+#define CNCONBCLR       (*(volatile uint32_t *)(_GPIO_BASE_B + 0x74u))
+#define CNCONBSET       (*(volatile uint32_t *)(_GPIO_BASE_B + 0x78u))
+#define CNENB           (*(volatile uint32_t *)(_GPIO_BASE_B + 0x80u))
+#define CNENBCLR        (*(volatile uint32_t *)(_GPIO_BASE_B + 0x84u))
+#define CNENBSET        (*(volatile uint32_t *)(_GPIO_BASE_B + 0x88u))
+#define CNSTATB         (*(volatile uint32_t *)(_GPIO_BASE_B + 0x90u))
+#define CNSTATBCLR      (*(volatile uint32_t *)(_GPIO_BASE_B + 0x94u))
+#define CNNEB           (*(volatile uint32_t *)(_GPIO_BASE_B + 0xA0u))
+#define CNNEBCLR        (*(volatile uint32_t *)(_GPIO_BASE_B + 0xA4u))
+#define CNNEBSET        (*(volatile uint32_t *)(_GPIO_BASE_B + 0xA8u))
+
+/* PORTC */
+#define ANSELC          (*(volatile uint32_t *)(_GPIO_BASE_C + 0x00u))
+#define ANSELCCLR       (*(volatile uint32_t *)(_GPIO_BASE_C + 0x04u))
+#define ANSELCSET       (*(volatile uint32_t *)(_GPIO_BASE_C + 0x08u))
+#define TRISC           (*(volatile uint32_t *)(_GPIO_BASE_C + 0x10u))
+#define TRISCCLR        (*(volatile uint32_t *)(_GPIO_BASE_C + 0x14u))
+#define TRISCSET        (*(volatile uint32_t *)(_GPIO_BASE_C + 0x18u))
+#define PORTC           (*(volatile uint32_t *)(_GPIO_BASE_C + 0x20u))
+#define LATC            (*(volatile uint32_t *)(_GPIO_BASE_C + 0x30u))
+#define LATCCLR         (*(volatile uint32_t *)(_GPIO_BASE_C + 0x34u))
+#define LATCSET         (*(volatile uint32_t *)(_GPIO_BASE_C + 0x38u))
+#define LATCINV         (*(volatile uint32_t *)(_GPIO_BASE_C + 0x3Cu))
+#define CNCONC          (*(volatile uint32_t *)(_GPIO_BASE_C + 0x70u))
+#define CNCONCCLR       (*(volatile uint32_t *)(_GPIO_BASE_C + 0x74u))
+#define CNCONCSET       (*(volatile uint32_t *)(_GPIO_BASE_C + 0x78u))
+#define CNENC           (*(volatile uint32_t *)(_GPIO_BASE_C + 0x80u))
+#define CNENCCLR        (*(volatile uint32_t *)(_GPIO_BASE_C + 0x84u))
+#define CNENCSET        (*(volatile uint32_t *)(_GPIO_BASE_C + 0x88u))
+#define CNSTATC         (*(volatile uint32_t *)(_GPIO_BASE_C + 0x90u))
+#define CNSTATCCLR      (*(volatile uint32_t *)(_GPIO_BASE_C + 0x94u))
+#define CNNEC           (*(volatile uint32_t *)(_GPIO_BASE_C + 0xA0u))
+#define CNNECCLR        (*(volatile uint32_t *)(_GPIO_BASE_C + 0xA4u))
+#define CNNECSET        (*(volatile uint32_t *)(_GPIO_BASE_C + 0xA8u))
+
+/* PORTD */
+#define ANSELD          (*(volatile uint32_t *)(_GPIO_BASE_D + 0x00u))
+#define ANSELDCLR       (*(volatile uint32_t *)(_GPIO_BASE_D + 0x04u))
+#define ANSELDSET       (*(volatile uint32_t *)(_GPIO_BASE_D + 0x08u))
+#define TRISD           (*(volatile uint32_t *)(_GPIO_BASE_D + 0x10u))
+#define TRISDCLR        (*(volatile uint32_t *)(_GPIO_BASE_D + 0x14u))
+#define TRISDSET        (*(volatile uint32_t *)(_GPIO_BASE_D + 0x18u))
+#define PORTD           (*(volatile uint32_t *)(_GPIO_BASE_D + 0x20u))
+#define LATD            (*(volatile uint32_t *)(_GPIO_BASE_D + 0x30u))
+#define LATDCLR         (*(volatile uint32_t *)(_GPIO_BASE_D + 0x34u))
+#define LATDSET         (*(volatile uint32_t *)(_GPIO_BASE_D + 0x38u))
+#define LATDINV         (*(volatile uint32_t *)(_GPIO_BASE_D + 0x3Cu))
+#define CNCOND          (*(volatile uint32_t *)(_GPIO_BASE_D + 0x70u))
+#define CNCONDCLR       (*(volatile uint32_t *)(_GPIO_BASE_D + 0x74u))
+#define CNCONDSET       (*(volatile uint32_t *)(_GPIO_BASE_D + 0x78u))
+#define CNEND           (*(volatile uint32_t *)(_GPIO_BASE_D + 0x80u))
+#define CNENDCLR        (*(volatile uint32_t *)(_GPIO_BASE_D + 0x84u))
+#define CNENDSET        (*(volatile uint32_t *)(_GPIO_BASE_D + 0x88u))
+#define CNSTATD         (*(volatile uint32_t *)(_GPIO_BASE_D + 0x90u))
+#define CNSTATDCLR      (*(volatile uint32_t *)(_GPIO_BASE_D + 0x94u))
+#define CNNED           (*(volatile uint32_t *)(_GPIO_BASE_D + 0xA0u))
+#define CNNEDCLR        (*(volatile uint32_t *)(_GPIO_BASE_D + 0xA4u))
+#define CNNEDSET        (*(volatile uint32_t *)(_GPIO_BASE_D + 0xA8u))
+
+/* PORTE */
+#define ANSELE          (*(volatile uint32_t *)(_GPIO_BASE_E + 0x00u))
+#define ANSELECLR       (*(volatile uint32_t *)(_GPIO_BASE_E + 0x04u))
+#define ANSELESET       (*(volatile uint32_t *)(_GPIO_BASE_E + 0x08u))
+#define TRISE           (*(volatile uint32_t *)(_GPIO_BASE_E + 0x10u))
+#define TRISECLR        (*(volatile uint32_t *)(_GPIO_BASE_E + 0x14u))
+#define TRISESET        (*(volatile uint32_t *)(_GPIO_BASE_E + 0x18u))
+#define PORTE           (*(volatile uint32_t *)(_GPIO_BASE_E + 0x20u))
+#define LATE            (*(volatile uint32_t *)(_GPIO_BASE_E + 0x30u))
+#define LATECLR         (*(volatile uint32_t *)(_GPIO_BASE_E + 0x34u))
+#define LATESET         (*(volatile uint32_t *)(_GPIO_BASE_E + 0x38u))
+#define LATEINV         (*(volatile uint32_t *)(_GPIO_BASE_E + 0x3Cu))
+#define CNCONE          (*(volatile uint32_t *)(_GPIO_BASE_E + 0x70u))
+#define CNCONECLR       (*(volatile uint32_t *)(_GPIO_BASE_E + 0x74u))
+#define CNCONESET       (*(volatile uint32_t *)(_GPIO_BASE_E + 0x78u))
+#define CNENE           (*(volatile uint32_t *)(_GPIO_BASE_E + 0x80u))
+#define CNENECLR        (*(volatile uint32_t *)(_GPIO_BASE_E + 0x84u))
+#define CNENESET        (*(volatile uint32_t *)(_GPIO_BASE_E + 0x88u))
+#define CNSTATE         (*(volatile uint32_t *)(_GPIO_BASE_E + 0x90u))
+#define CNSTATECLR      (*(volatile uint32_t *)(_GPIO_BASE_E + 0x94u))
+#define CNNEE           (*(volatile uint32_t *)(_GPIO_BASE_E + 0xA0u))
+#define CNNEECLR        (*(volatile uint32_t *)(_GPIO_BASE_E + 0xA4u))
+#define CNNEESET        (*(volatile uint32_t *)(_GPIO_BASE_E + 0xA8u))
+
+/* PORTF */
+#define ANSELF          (*(volatile uint32_t *)(_GPIO_BASE_F + 0x00u))
+#define ANSELFCLR       (*(volatile uint32_t *)(_GPIO_BASE_F + 0x04u))
+#define ANSELFSET       (*(volatile uint32_t *)(_GPIO_BASE_F + 0x08u))
+#define TRISF           (*(volatile uint32_t *)(_GPIO_BASE_F + 0x10u))
+#define TRISFCLR        (*(volatile uint32_t *)(_GPIO_BASE_F + 0x14u))
+#define TRISFSET        (*(volatile uint32_t *)(_GPIO_BASE_F + 0x18u))
+#define PORTF           (*(volatile uint32_t *)(_GPIO_BASE_F + 0x20u))
+#define LATF            (*(volatile uint32_t *)(_GPIO_BASE_F + 0x30u))
+#define LATFCLR         (*(volatile uint32_t *)(_GPIO_BASE_F + 0x34u))
+#define LATFSET         (*(volatile uint32_t *)(_GPIO_BASE_F + 0x38u))
+#define LATFINV         (*(volatile uint32_t *)(_GPIO_BASE_F + 0x3Cu))
+#define CNCONF          (*(volatile uint32_t *)(_GPIO_BASE_F + 0x70u))
+#define CNCONFCLR       (*(volatile uint32_t *)(_GPIO_BASE_F + 0x74u))
+#define CNCONFSET       (*(volatile uint32_t *)(_GPIO_BASE_F + 0x78u))
+#define CNENF           (*(volatile uint32_t *)(_GPIO_BASE_F + 0x80u))
+#define CNENFCLR        (*(volatile uint32_t *)(_GPIO_BASE_F + 0x84u))
+#define CNENFSET        (*(volatile uint32_t *)(_GPIO_BASE_F + 0x88u))
+#define CNSTATF         (*(volatile uint32_t *)(_GPIO_BASE_F + 0x90u))
+#define CNSTATFCLR      (*(volatile uint32_t *)(_GPIO_BASE_F + 0x94u))
+#define CNNEF           (*(volatile uint32_t *)(_GPIO_BASE_F + 0xA0u))
+#define CNNEFCLR        (*(volatile uint32_t *)(_GPIO_BASE_F + 0xA4u))
+#define CNNEFSET        (*(volatile uint32_t *)(_GPIO_BASE_F + 0xA8u))
+
+/* PORTG */
+#define ANSELG          (*(volatile uint32_t *)(_GPIO_BASE_G + 0x00u))
+#define ANSELGCLR       (*(volatile uint32_t *)(_GPIO_BASE_G + 0x04u))
+#define ANSELGSET       (*(volatile uint32_t *)(_GPIO_BASE_G + 0x08u))
+#define ANSELGINV       (*(volatile uint32_t *)(_GPIO_BASE_G + 0x0Cu))
+#define TRISG           (*(volatile uint32_t *)(_GPIO_BASE_G + 0x10u))
+#define TRISGCLR        (*(volatile uint32_t *)(_GPIO_BASE_G + 0x14u))
+#define TRISGSET        (*(volatile uint32_t *)(_GPIO_BASE_G + 0x18u))
+#define TRISGCLR        (*(volatile uint32_t *)(_GPIO_BASE_G + 0x14u))
+#define PORTG           (*(volatile uint32_t *)(_GPIO_BASE_G + 0x20u))
+#define LATG            (*(volatile uint32_t *)(_GPIO_BASE_G + 0x30u))
+#define LATGCLR         (*(volatile uint32_t *)(_GPIO_BASE_G + 0x34u))
+#define LATGSET         (*(volatile uint32_t *)(_GPIO_BASE_G + 0x38u))
+#define LATGINV         (*(volatile uint32_t *)(_GPIO_BASE_G + 0x3Cu))
+#define CNCONG          (*(volatile uint32_t *)(_GPIO_BASE_G + 0x70u))
+#define CNCONGCLR       (*(volatile uint32_t *)(_GPIO_BASE_G + 0x74u))
+#define CNCONGSET       (*(volatile uint32_t *)(_GPIO_BASE_G + 0x78u))
+#define CNENG           (*(volatile uint32_t *)(_GPIO_BASE_G + 0x80u))
+#define CNENGCLR        (*(volatile uint32_t *)(_GPIO_BASE_G + 0x84u))
+#define CNENGSET        (*(volatile uint32_t *)(_GPIO_BASE_G + 0x88u))
+#define CNSTATG         (*(volatile uint32_t *)(_GPIO_BASE_G + 0x90u))
+#define CNSTATGCLR      (*(volatile uint32_t *)(_GPIO_BASE_G + 0x94u))
+#define CNNEG           (*(volatile uint32_t *)(_GPIO_BASE_G + 0xA0u))
+#define CNNEGCLR        (*(volatile uint32_t *)(_GPIO_BASE_G + 0xA4u))
+#define CNNEGSET        (*(volatile uint32_t *)(_GPIO_BASE_G + 0xA8u))
+
+/* CNCON.ON bit (bit 15) — same for all ports */
+#define _CNCONA_ON_MASK     0x00008000u
+#define _CNCONB_ON_MASK     0x00008000u
+#define _CNCONC_ON_MASK     0x00008000u
+#define _CNCOND_ON_MASK     0x00008000u
+#define _CNCONE_ON_MASK     0x00008000u
+#define _CNCONF_ON_MASK     0x00008000u
+#define _CNCONG_ON_MASK     0x00008000u
+
+/* IFS1 / IEC1 — Change-Notice interrupt flag/enable bits (§8, DS60001519E)
+ * IFS1 bit position = vector_number - 32:  CNA=44→bit12, CNB=45→bit13 … CNG=50→bit18 */
+#define _IFS1_CNAIF_MASK    0x00001000u
+#define _IFS1_CNBIF_MASK    0x00002000u
+#define _IFS1_CNCIF_MASK    0x00004000u
+#define _IFS1_CNDIF_MASK    0x00008000u
+#define _IFS1_CNEIF_MASK    0x00010000u
+#define _IFS1_CNFIF_MASK    0x00020000u
+#define _IFS1_CNGIF_MASK    0x00040000u
+
+#define _IEC1_CNAIE_MASK    0x00001000u
+#define _IEC1_CNBIE_MASK    0x00002000u
+#define _IEC1_CNCIE_MASK    0x00004000u
+#define _IEC1_CNDIE_MASK    0x00008000u
+#define _IEC1_CNEIE_MASK    0x00010000u
+#define _IEC1_CNFIE_MASK    0x00020000u
+#define _IEC1_CNGIE_MASK    0x00040000u
+
+/* -----------------------------------------------------------------------
+ * PPS (Peripheral Pin Select) registers used by plib_gpio.c GPIO_Initialize()
+ * Base addresses from DS60001519E Table 14-2 / p32mk1024mcm100.h
+ * ----------------------------------------------------------------------- */
+/* Input remapping */
+#define C1RXR       (*(volatile uint32_t *)0xBF8014C4u)
+#define C2RXR       (*(volatile uint32_t *)0xBF8014C8u)
+#define IC11R       (*(volatile uint32_t *)0xBF8014FCu)
+#define IC12R       (*(volatile uint32_t *)0xBF801500u)
+#define SCK5R       (*(volatile uint32_t *)0xBF801514u)
+#define SDI5R       (*(volatile uint32_t *)0xBF801518u)
+#define SS5R        (*(volatile uint32_t *)0xBF80151Cu)
+#define C3RXR       (*(volatile uint32_t *)0xBF80152Cu)
+#define C4RXR       (*(volatile uint32_t *)0xBF801530u)
+#define U2RXR       (*(volatile uint32_t *)0xBF801540u)
+/* Output remapping */
+#define RPA12R      (*(volatile uint32_t *)0xBF801630u)
+#define RPB0R       (*(volatile uint32_t *)0xBF801640u)
+#define RPC7R       (*(volatile uint32_t *)0xBF80169Cu)
+#define RPC9R       (*(volatile uint32_t *)0xBF8016A4u)
+#define RPF0R       (*(volatile uint32_t *)0xBF801740u)
+#define RPG0R       (*(volatile uint32_t *)0xBF801780u)
+
+#endif /* __ASSEMBLER__ */
+#endif /* XC_H */

@@ -23,6 +23,9 @@ mips_ss.add(when: 'CONFIG_PIC32MK', if_true: files(
   'pic32mk_dma.c',
   'pic32mk_canfd.c',
   'pic32mk_usb.c',
+  'pic32mk_wdt.c',
+  'pic32mk_cru.c',
+  'pic32mk_cfg.c',
 ))
 
 hw_arch += {'mips': mips_ss}

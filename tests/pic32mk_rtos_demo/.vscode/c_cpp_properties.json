@@ -1,0 +1,63 @@
+{
+    "configurations": [
+        {
+            "name": "pymaketool",
+            "defines": [],
+            "compilerPath": "mipsel-linux-gnu-gcc",
+            "intelliSenseMode": "linux-gcc-x86",
+            "cStandard": "gnu11",
+            "cppStandard": "c++17",
+            "includePath": [
+                "/usr/lib/gcc-cross/mipsel-linux-gnu/14/include",
+                "/usr/mipsel-linux-gnu/include",
+                "firmware/src",
+                "firmware/src/third_party/rtos/FreeRTOS/Source/include",
+                "firmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MK",
+                "firmware/src/config/default",
+                "firmware/src/config/default/driver",
+                "firmware/src/config/default/driver/usb",
+                "firmware/src/config/default/driver/usb/usbfs",
+                "firmware/src/config/default/driver/usb/usbfs/src",
+                "firmware/src/config/default/driver/usb/usbfs/src/templates",
+                "firmware/src/config/default/osal",
+                "firmware/src/config/default/sys",
+                "firmware/src/config/default/gnu",
+                "firmware/src/config/default/system",
+                "firmware/src/config/default/system/debug",
+                "firmware/src/config/default/system/int",
+                "firmware/src/config/default/system/reset",
+                "firmware/src/config/default/peripheral/uart",
+                "firmware/src/config/default/peripheral/evic",
+                "firmware/src/config/default/peripheral/tmr",
+                "firmware/src/config/default/peripheral/clk",
+                "firmware/src/config/default/peripheral/tmr1",
+                "firmware/src/config/default/peripheral/gpio",
+                "firmware/src/config/default/peripheral/wdt",
+                "firmware/src/config/default/peripheral/canfd",
+                "firmware/src/config/default/usb",
+                "firmware/src/config/default/usb/src"
+            ],
+            "browse": {
+                "path": [
+                    "/usr/mipsel-linux-gnu",
+                    "firmware/src/third_party/rtos/FreeRTOS/Source",
+                    "firmware/src/config/default/driver",
+                    "firmware/src/config/default/peripheral",
+                    "firmware",
+                    "firmware/src/config/default/driver/usb/usbfs",
+                    "firmware/src/config/default/driver/usb/usbfs/src",
+                    "firmware/src/config/default",
+                    "firmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB",
+                    "/usr/lib/gcc-cross/mipsel-linux-gnu/14",
+                    "firmware/src/config",
+                    "firmware/src/config/default/driver/usb",
+                    "firmware/src/config/default/system",
+                    "firmware/src/config/default/usb"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db"
+            }
+        }
+    ],
+    "version": 4
+}

@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "pic32mk-rtos-demo"
+version = "0.1.0"
+description = "PIC32MK1024MCM100 FreeRTOS demo for QEMU emulator testing"
+authors = []
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+pymaketool = {path = "/home/ericson/PROJECTS/PYTHON/pymaketool", develop = true}
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
