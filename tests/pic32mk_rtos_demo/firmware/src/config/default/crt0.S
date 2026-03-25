@@ -8,7 +8,7 @@
  *   offset 0x000  _start         (reset entry, also EBASE+0x000)
  *   offset 0x180  _gen_exception (EBASE+0x180, general exception)
  *   offset 0x200  _int_handler   (EBASE+0x200, interrupt exception)
- *   offset 0x400  _crt_init      (BSS zero, data copy, call main)
+ *   offset 0x600  _crt_init      (BSS zero, data copy, call main)
  *
  * Copyright (c) 2026 QEMU contributors
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -178,27 +178,63 @@ _int_handler:
     bnez    $27, _uart2_fault_int
     nop
 
-    /* --- Check CAN1 interrupt in IFS5/IEC5 ---
-     * CAN1 = EVIC source 167 = IFS5 bit 7
+    /* --- Check SPI5 interrupts in IFS5/IEC5 ---
+     * SPI5: FAULT=169 (bit 9), RX=170 (bit 10), TX=171 (bit 11)
      * IFS5 at EVIC+0x0090, IEC5 at EVIC+0x0110 */
     lui     $26, 0xBF81             /* reload EVIC base */
     lw      $27, 0x0090($26)        /* $27 = IFS5 */
     lw      $26, 0x0110($26)        /* $26 = IEC5 */
     and     $26, $27, $26           /* pending5 = IFS5 & IEC5 */
 
+    andi    $27, $26, 0x400          /* bit 10 = 0x00000400 (SPI5RXIF) */
+    bnez    $27, _spi5_rx_int
+    nop
+
+    andi    $27, $26, 0x800          /* bit 11 = 0x00000800 (SPI5TXIF) */
+    bnez    $27, _spi5_tx_int
+    nop
+
+    andi    $27, $26, 0x200          /* bit 9 = 0x00000200 (SPI5EIF) */
+    bnez    $27, _spi5_fault_int
+    nop
+
+    /* --- Check CAN1 interrupt in IFS5/IEC5 ---
+     * CAN1 = EVIC source 167 = IFS5 bit 7 */
     andi    $27, $26, 0x80          /* CAN1IF (bit 7) */
     bnez    $27, _can1_int
     nop
 
     /* --- Check CAN2 interrupt in IFS5/IEC5 ---
      * CAN2 = EVIC source 168 = IFS5 bit 8 */
-    lui     $26, 0xBF81             /* reload EVIC base */
-    lw      $27, 0x0090($26)        /* $27 = IFS5 */
-    lw      $26, 0x0110($26)        /* $26 = IEC5 */
-    and     $26, $27, $26           /* pending5 = IFS5 & IEC5 */
-
     andi    $27, $26, 0x100         /* CAN2IF (bit 8) */
     bnez    $27, _can2_int
+    nop
+
+    /* --- Check IC2 capture/error interrupts in IFS0/IEC0 ---
+     * IC2E = EVIC source 10 = IFS0 bit 10 = 0x400
+     * IC2  = EVIC source 11 = IFS0 bit 11 = 0x800 */
+    lui     $26, 0xBF81             /* reload EVIC base */
+    lw      $27, 0x0040($26)        /* $27 = IFS0 */
+    lw      $26, 0x00C0($26)        /* $26 = IEC0 */
+    and     $26, $27, $26           /* pending0 = IFS0 & IEC0 */
+
+    andi    $27, $26, 0x400         /* IC2EIF (bit 10) */
+    bnez    $27, _ic2_error_int
+    nop
+
+    andi    $27, $26, 0x800         /* IC2IF (bit 11) */
+    bnez    $27, _ic2_capture_int
+    nop
+
+    /* --- Check NVM / Flash Control interrupt in IFS0/IEC0 ---
+     * NVM = EVIC source 31 = IFS0 bit 31 */
+    lui     $26, 0xBF81             /* reload EVIC base */
+    lw      $27, 0x0040($26)        /* $27 = IFS0 */
+    lw      $26, 0x00C0($26)        /* $26 = IEC0 */
+    and     $26, $27, $26           /* pending0 = IFS0 & IEC0 */
+    lui     $27, 0x8000             /* bit 31 mask = 0x80000000 */
+    and     $27, $26, $27
+    bnez    $27, _nvm_int
     nop
 
     /* --- Default: Timer1 tick or other hardware interrupt --- */
@@ -281,17 +317,54 @@ _can2_int:
     jr      $26
     nop
 
+_spi5_rx_int:
+    .extern vSPI5RXInterruptWrapper
+    la      $26, vSPI5RXInterruptWrapper
+    jr      $26
+    nop
+
+_spi5_tx_int:
+    .extern vSPI5TXInterruptWrapper
+    la      $26, vSPI5TXInterruptWrapper
+    jr      $26
+    nop
+
+_spi5_fault_int:
+    .extern vSPI5FaultInterruptWrapper
+    la      $26, vSPI5FaultInterruptWrapper
+    jr      $26
+    nop
+
 _adc_eos_int:
     .extern vADCEOSInterruptWrapper
     la      $26, vADCEOSInterruptWrapper
     jr      $26
     nop
+
+_nvm_int:
+    .extern vNVMInterruptWrapper
+    la      $26, vNVMInterruptWrapper
+    jr      $26
+    nop
+
+_ic2_error_int:
+    .extern vIC2ErrorInterruptWrapper
+    la      $26, vIC2ErrorInterruptWrapper
+    jr      $26
+    nop
+
+_ic2_capture_int:
+    .extern vIC2CaptureInterruptWrapper
+    la      $26, vIC2CaptureInterruptWrapper
+    jr      $26
+    nop
     .end    _int_handler
 
 /* ----------------------------------------------------------
- * EBASE + 0x400 — C runtime initialisation
+ * EBASE + 0x600 — C runtime initialisation
+ * (moved from 0x400 to make room for growing interrupt dispatch)
  * ---------------------------------------------------------- */
-    .org    0x400
+    .org    0x600
     .global _crt_init
     .ent    _crt_init
 _crt_init:

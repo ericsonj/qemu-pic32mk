@@ -101,6 +101,14 @@ static inline void __builtin_enable_interrupts(void)
     __asm__ volatile("ei; ehb" : : : "memory");
 }
 
+/* XC32 built-in to write CP0 register — used by Harmony plib_eeprom.c */
+static inline void __builtin_mtc0(unsigned reg, unsigned sel, uint32_t val)
+{
+    if (reg == 12 && sel == 0) {
+        _CP0_SET_STATUS(val);
+    }
+}
+
 /* -----------------------------------------------------------------------
  * EVIC registers  (base 0xBF810000)
  * IFS/IEC/IPC each have SET (+4), CLR (+8), INV (+C) sub-registers.
@@ -346,6 +354,16 @@ typedef union {
 #define _IFS0_CS0IF_MASK        (1u << 1)   /* CoreSW0 = EVIC source 1 */
 #define _IEC0_CS0IE_MASK        (1u << 1)
 #define _IEC0_CS0IE_POSITION    1
+
+/* IC1/IC2 IFS0/IEC0 masks (IC1E=5, IC1=6, IC2E=10, IC2=11) */
+#define _IFS0_IC1EIF_MASK       (1u << 5)   /* IC1 error  = EVIC source 5  */
+#define _IEC0_IC1EIE_MASK       (1u << 5)
+#define _IFS0_IC1IF_MASK        (1u << 6)   /* IC1 capture = EVIC source 6 */
+#define _IEC0_IC1IE_MASK        (1u << 6)
+#define _IFS0_IC2EIF_MASK       (1u << 10)  /* IC2 error  = EVIC source 10 */
+#define _IEC0_IC2EIE_MASK       (1u << 10)
+#define _IFS0_IC2IF_MASK        (1u << 11)  /* IC2 capture = EVIC source 11 */
+#define _IEC0_IC2IE_MASK        (1u << 11)
 #define _IPC0_CS0IP_MASK        (0x7u << 10)
 #define _IPC0_CS0IP_POSITION    10
 
@@ -459,6 +477,66 @@ typedef union {
 #define TMR9       (*(volatile uint32_t *)(_T9_BASE + 0x010u))
 #define PR9        (*(volatile uint32_t *)(_T9_BASE + 0x020u))
 #define _T9CON_ON_MASK  (1u << 15)
+
+/* -----------------------------------------------------------------------
+ * Input Capture IC1–IC2 registers  (§18, DS60001519E)
+ * IC1: 0xBF822000, IC2: 0xBF822200 (0x200 stride)
+ * Register layout: ICxCON+0x00, ICxBUF+0x10 (CLR+4/SET+8/INV+C)
+ * ----------------------------------------------------------------------- */
+
+#define _IC1_BASE   0xBF822000u
+#define IC1CON      (*(volatile uint32_t *)(_IC1_BASE + 0x000u))
+#define IC1CONCLR   (*(volatile uint32_t *)(_IC1_BASE + 0x004u))
+#define IC1CONSET   (*(volatile uint32_t *)(_IC1_BASE + 0x008u))
+#define IC1CONINV   (*(volatile uint32_t *)(_IC1_BASE + 0x00Cu))
+#define IC1BUF      (*(volatile uint32_t *)(_IC1_BASE + 0x010u))
+#define _IC1CON_ON_MASK     (1u << 15)
+#define _IC1CON_ON_POSITION 15
+
+#define _IC2_BASE   0xBF822200u
+#define IC2CON      (*(volatile uint32_t *)(_IC2_BASE + 0x000u))
+#define IC2CONCLR   (*(volatile uint32_t *)(_IC2_BASE + 0x004u))
+#define IC2CONSET   (*(volatile uint32_t *)(_IC2_BASE + 0x008u))
+#define IC2CONINV   (*(volatile uint32_t *)(_IC2_BASE + 0x00Cu))
+#define IC2BUF      (*(volatile uint32_t *)(_IC2_BASE + 0x010u))
+#define _IC2CON_ON_MASK     (1u << 15)
+#define _IC2CON_ON_POSITION 15
+
+/* -----------------------------------------------------------------------
+ * Output Compare OC1–OC3 registers  (§19, DS60001519E)
+ * OC1: 0xBF824000, OC2: 0xBF824200, OC3: 0xBF824400 (0x200 stride)
+ * Register layout: OCxCON+0x00, OCxR+0x10, OCxRS+0x20 (CLR+4/SET+8/INV+C)
+ * ----------------------------------------------------------------------- */
+
+#define _OC1_BASE   0xBF824000u
+#define OC1CON      (*(volatile uint32_t *)(_OC1_BASE + 0x000u))
+#define OC1CONCLR   (*(volatile uint32_t *)(_OC1_BASE + 0x004u))
+#define OC1CONSET   (*(volatile uint32_t *)(_OC1_BASE + 0x008u))
+#define OC1CONINV   (*(volatile uint32_t *)(_OC1_BASE + 0x00Cu))
+#define OC1R        (*(volatile uint32_t *)(_OC1_BASE + 0x010u))
+#define OC1RS       (*(volatile uint32_t *)(_OC1_BASE + 0x020u))
+#define _OC1CON_ON_MASK     (1u << 15)
+#define _OC1CON_ON_POSITION 15
+
+#define _OC2_BASE   0xBF824200u
+#define OC2CON      (*(volatile uint32_t *)(_OC2_BASE + 0x000u))
+#define OC2CONCLR   (*(volatile uint32_t *)(_OC2_BASE + 0x004u))
+#define OC2CONSET   (*(volatile uint32_t *)(_OC2_BASE + 0x008u))
+#define OC2CONINV   (*(volatile uint32_t *)(_OC2_BASE + 0x00Cu))
+#define OC2R        (*(volatile uint32_t *)(_OC2_BASE + 0x010u))
+#define OC2RS       (*(volatile uint32_t *)(_OC2_BASE + 0x020u))
+#define _OC2CON_ON_MASK     (1u << 15)
+#define _OC2CON_ON_POSITION 15
+
+#define _OC3_BASE   0xBF824400u
+#define OC3CON      (*(volatile uint32_t *)(_OC3_BASE + 0x000u))
+#define OC3CONCLR   (*(volatile uint32_t *)(_OC3_BASE + 0x004u))
+#define OC3CONSET   (*(volatile uint32_t *)(_OC3_BASE + 0x008u))
+#define OC3CONINV   (*(volatile uint32_t *)(_OC3_BASE + 0x00Cu))
+#define OC3R        (*(volatile uint32_t *)(_OC3_BASE + 0x010u))
+#define OC3RS       (*(volatile uint32_t *)(_OC3_BASE + 0x020u))
+#define _OC3CON_ON_MASK     (1u << 15)
+#define _OC3CON_ON_POSITION 15
 
 /* -----------------------------------------------------------------------
  * WDT registers  (base 0xBF800C00, DS60001519E §17, Register 17-1)
@@ -1356,6 +1434,65 @@ typedef union {
 #define USB_NUMBER_OF_MODULES 2U
 
 /* -----------------------------------------------------------------------
+ * SPI5 registers (base 0xBF840C00)
+ * ----------------------------------------------------------------------- */
+
+#define SPI5CON         (*(volatile uint32_t *)(0xBF840C00u))
+#define SPI5CONCLR      (*(volatile uint32_t *)(0xBF840C04u))
+#define SPI5CONSET      (*(volatile uint32_t *)(0xBF840C08u))
+#define SPI5CONINV      (*(volatile uint32_t *)(0xBF840C0Cu))
+
+#define SPI5STAT        (*(volatile uint32_t *)(0xBF840C10u))
+#define SPI5STATCLR     (*(volatile uint32_t *)(0xBF840C14u))
+#define SPI5STATSET     (*(volatile uint32_t *)(0xBF840C18u))
+#define SPI5STATINV     (*(volatile uint32_t *)(0xBF840C1Cu))
+
+#define SPI5BUF         (*(volatile uint32_t *)(0xBF840C20u))
+#define SPI5BRG         (*(volatile uint32_t *)(0xBF840C30u))
+
+#define SPI5CON2        (*(volatile uint32_t *)(0xBF840C40u))
+#define SPI5CON2CLR     (*(volatile uint32_t *)(0xBF840C44u))
+#define SPI5CON2SET     (*(volatile uint32_t *)(0xBF840C48u))
+#define SPI5CON2INV     (*(volatile uint32_t *)(0xBF840C4Cu))
+
+/* SPI5CON bit positions and masks (subset needed by Harmony plib) */
+#define _SPI5CON_SRXISEL_POSITION  0u
+#define _SPI5CON_STXISEL_POSITION  2u
+#define _SPI5CON_MSTEN_POSITION    5u
+#define _SPI5CON_CKP_POSITION      6u
+#define _SPI5CON_SSEN_POSITION     7u
+#define _SPI5CON_CKE_POSITION      8u
+#define _SPI5CON_SMP_POSITION      9u
+#define _SPI5CON_MODE16_POSITION   10u
+#define _SPI5CON_MODE32_POSITION   11u
+#define _SPI5CON_ENHBUF_POSITION   16u
+#define _SPI5CON_MCLKSEL_POSITION  23u
+#define _SPI5CON_MSSEN_POSITION    28u
+
+#define _SPI5CON_SRXISEL_MASK      (0x3u << _SPI5CON_SRXISEL_POSITION)
+#define _SPI5CON_STXISEL_MASK      (0x3u << _SPI5CON_STXISEL_POSITION)
+#define _SPI5CON_MODE16_MASK       (1u << _SPI5CON_MODE16_POSITION)
+#define _SPI5CON_MODE32_MASK       (1u << _SPI5CON_MODE32_POSITION)
+#define _SPI5CON_ON_MASK           (1u << 15u)
+
+/* SPI5STAT masks (subset needed by Harmony plib) */
+#define _SPI5STAT_SPITBF_MASK      (1u << 1u)
+#define _SPI5STAT_SPIRBE_MASK      (1u << 5u)
+#define _SPI5STAT_SPIROV_MASK      (1u << 6u)
+#define _SPI5STAT_SRMT_MASK        (1u << 11u)
+
+/* SPI5CON2 masks */
+#define _SPI5CON2_SPIROVEN_MASK    (1u << 0u)
+
+/* SPI5 interrupt masks (IEC5/IFS5 bits 9..11) */
+#define _IFS5_SPI5EIF_MASK         (1u << 9u)
+#define _IFS5_SPI5RXIF_MASK        (1u << 10u)
+#define _IFS5_SPI5TXIF_MASK        (1u << 11u)
+#define _IEC5_SPI5EIE_MASK         (1u << 9u)
+#define _IEC5_SPI5RXIE_MASK        (1u << 10u)
+#define _IEC5_SPI5TXIE_MASK        (1u << 11u)
+
+/* -----------------------------------------------------------------------
  * Vector numbers (used in configTICK_INTERRUPT_VECTOR)
  * ----------------------------------------------------------------------- */
 
@@ -1363,6 +1500,17 @@ typedef union {
 #define _CORE_TIMER_VECTOR      0
 #define _USB_1_VECTOR           34U
 #define _USB_2_VECTOR           244U
+
+/* SPI4-6 vectors */
+#define _SPI4_FAULT_VECTOR      166U
+#define _SPI4_RX_VECTOR         167U
+#define _SPI4_TX_VECTOR         168U
+#define _SPI5_FAULT_VECTOR      169U
+#define _SPI5_RX_VECTOR         170U
+#define _SPI5_TX_VECTOR         171U
+#define _SPI6_FAULT_VECTOR      172U
+#define _SPI6_RX_VECTOR         173U
+#define _SPI6_TX_VECTOR         174U
 
 /* -----------------------------------------------------------------------
  * USB register bit-field typedef structs
@@ -2234,6 +2382,166 @@ typedef union {
 /* ADC End-of-Scan interrupt masks in IEC3/IFS3 */
 #define _IFS3_AD1EOSIF_MASK     0x00000020u
 #define _IEC3_AD1EOSIE_MASK     0x00000020u
+
+/* -----------------------------------------------------------------------
+ * CFGCON2 — Configuration Control Register 2 (offset 0x110 from _CFG_BASE)
+ * Needed by plib_eeprom.c for EEWS (EEPROM Wait States) field.
+ * ----------------------------------------------------------------------- */
+#define CFGCON2         (*(volatile uint32_t *)(_CFG_BASE + 0x110u))
+#define CFGCON2CLR      (*(volatile uint32_t *)(_CFG_BASE + 0x114u))
+#define CFGCON2SET      (*(volatile uint32_t *)(_CFG_BASE + 0x118u))
+#define CFGCON2INV      (*(volatile uint32_t *)(_CFG_BASE + 0x11Cu))
+
+typedef union {
+    struct {
+        uint32_t            : 8;   /* bits[7:0] */
+        uint32_t EEWS       : 4;   /* bits[11:8]: EEPROM Wait States */
+        uint32_t            : 20;  /* bits[31:12] */
+    };
+    uint32_t w;
+} __CFGCON2_t;
+
+#define CFGCON2bits     (*(volatile __CFGCON2_t *)(_CFG_BASE + 0x110u))
+
+/* -----------------------------------------------------------------------
+ * Data EEPROM registers  (base 0xBF829000)
+ * ----------------------------------------------------------------------- */
+
+#define _DATAEE_BASE    0xBF829000u
+
+#define EECON           (*(volatile uint32_t *)(_DATAEE_BASE + 0x00u))
+#define EECONCLR        (*(volatile uint32_t *)(_DATAEE_BASE + 0x04u))
+#define EECONSET        (*(volatile uint32_t *)(_DATAEE_BASE + 0x08u))
+#define EECONINV        (*(volatile uint32_t *)(_DATAEE_BASE + 0x0Cu))
+
+typedef union {
+    struct {
+        uint32_t CMD    : 3;   /* bits[2:0]: Command */
+        uint32_t ILW    : 1;   /* bit 3: Internal Long Write */
+        uint32_t ERR    : 2;   /* bits[5:4]: Error status */
+        uint32_t WREN   : 1;   /* bit 6: Write Enable */
+        uint32_t RW     : 1;   /* bit 7: Read/Write start */
+        uint32_t        : 4;   /* bits[11:8] */
+        uint32_t ABORT  : 1;   /* bit 12: Abort operation */
+        uint32_t SIDL   : 1;   /* bit 13: Stop in idle */
+        uint32_t RDY    : 1;   /* bit 14: Module ready */
+        uint32_t ON     : 1;   /* bit 15: Module enable */
+        uint32_t        : 16;  /* bits[31:16] */
+    };
+    uint32_t w;
+} __EECON_t;
+
+#define EECONbits       (*(volatile __EECON_t *)(_DATAEE_BASE + 0x00u))
+
+/* EECON bit masks */
+#define _EECON_CMD_MASK         0x00000007u
+#define _EECON_ERR_MASK         0x00000030u
+#define _EECON_WREN_MASK        0x00000040u
+#define _EECON_RW_MASK          0x00000080u
+#define _EECON_ON_MASK          0x00008000u
+#define _EECON_RDY_MASK         0x00004000u
+
+#define EEKEY           (*(volatile uint32_t *)(_DATAEE_BASE + 0x10u))
+
+#define EEADDR          (*(volatile uint32_t *)(_DATAEE_BASE + 0x20u))
+#define EEADDRCLR       (*(volatile uint32_t *)(_DATAEE_BASE + 0x24u))
+#define EEADDRSET       (*(volatile uint32_t *)(_DATAEE_BASE + 0x28u))
+
+#define EEDATA          (*(volatile uint32_t *)(_DATAEE_BASE + 0x30u))
+#define EEDATACLR       (*(volatile uint32_t *)(_DATAEE_BASE + 0x34u))
+#define EEDATASET       (*(volatile uint32_t *)(_DATAEE_BASE + 0x38u))
+
+/* DEVEE0–DEVEE3 — Device EEPROM Configuration Words in Boot Flash */
+#define DEVEE0          (*(volatile uint32_t *)0xBFC45030u)
+#define DEVEE1          (*(volatile uint32_t *)0xBFC45034u)
+#define DEVEE2          (*(volatile uint32_t *)0xBFC45038u)
+#define DEVEE3          (*(volatile uint32_t *)0xBFC4503Cu)
+
+/* -----------------------------------------------------------------------
+ * NVM / Flash Controller — 0xBF800A00
+ * ----------------------------------------------------------------------- */
+#define _NVM_BASE           0xBF800A00u
+
+#define NVMCON              (*(volatile uint32_t *)(_NVM_BASE + 0x00u))
+#define NVMCONCLR           (*(volatile uint32_t *)(_NVM_BASE + 0x04u))
+#define NVMCONSET           (*(volatile uint32_t *)(_NVM_BASE + 0x08u))
+#define NVMCONINV           (*(volatile uint32_t *)(_NVM_BASE + 0x0Cu))
+
+typedef struct {
+    uint32_t NVMOP   :4;
+    uint32_t         :2;
+    uint32_t BFSWAP  :1;
+    uint32_t PFSWAP  :1;
+    uint32_t         :4;
+    uint32_t LVDERR  :1;
+    uint32_t WRERR   :1;
+    uint32_t WREN    :1;
+    uint32_t WR      :1;
+    uint32_t         :16;
+} __NVMCON_t;
+
+#define NVMCONbits          (*(volatile __NVMCON_t *)(_NVM_BASE + 0x00u))
+
+/* NVMCON bit masks and positions */
+#define _NVMCON_NVMOP_MASK      0x000Fu
+#define _NVMCON_NVMOP_POSITION  0
+#define _NVMCON_BFSWAP_MASK     (1u << 6)
+#define _NVMCON_PFSWAP_MASK     (1u << 7)
+#define _NVMCON_LVDERR_MASK     (1u << 12)
+#define _NVMCON_WRERR_MASK      (1u << 13)
+#define _NVMCON_WREN_MASK       (1u << 14)
+#define _NVMCON_WR_MASK         (1u << 15)
+
+#define NVMKEY              (*(volatile uint32_t *)(_NVM_BASE + 0x10u))
+
+#define NVMADDR             (*(volatile uint32_t *)(_NVM_BASE + 0x20u))
+#define NVMADDRCLR          (*(volatile uint32_t *)(_NVM_BASE + 0x24u))
+#define NVMADDRSET          (*(volatile uint32_t *)(_NVM_BASE + 0x28u))
+#define NVMADDRINV          (*(volatile uint32_t *)(_NVM_BASE + 0x2Cu))
+
+#define NVMDATA0            (*(volatile uint32_t *)(_NVM_BASE + 0x30u))
+#define NVMDATA0CLR         (*(volatile uint32_t *)(_NVM_BASE + 0x34u))
+#define NVMDATA0SET         (*(volatile uint32_t *)(_NVM_BASE + 0x38u))
+#define NVMDATA0INV         (*(volatile uint32_t *)(_NVM_BASE + 0x3Cu))
+
+#define NVMDATA1            (*(volatile uint32_t *)(_NVM_BASE + 0x40u))
+#define NVMDATA1CLR         (*(volatile uint32_t *)(_NVM_BASE + 0x44u))
+#define NVMDATA1SET         (*(volatile uint32_t *)(_NVM_BASE + 0x48u))
+#define NVMDATA1INV         (*(volatile uint32_t *)(_NVM_BASE + 0x4Cu))
+
+#define NVMDATA2            (*(volatile uint32_t *)(_NVM_BASE + 0x50u))
+#define NVMDATA2CLR         (*(volatile uint32_t *)(_NVM_BASE + 0x54u))
+#define NVMDATA2SET         (*(volatile uint32_t *)(_NVM_BASE + 0x58u))
+#define NVMDATA2INV         (*(volatile uint32_t *)(_NVM_BASE + 0x5Cu))
+
+#define NVMDATA3            (*(volatile uint32_t *)(_NVM_BASE + 0x60u))
+#define NVMDATA3CLR         (*(volatile uint32_t *)(_NVM_BASE + 0x64u))
+#define NVMDATA3SET         (*(volatile uint32_t *)(_NVM_BASE + 0x68u))
+#define NVMDATA3INV         (*(volatile uint32_t *)(_NVM_BASE + 0x6Cu))
+
+#define NVMSRCADDR          (*(volatile uint32_t *)(_NVM_BASE + 0x70u))
+#define NVMSRCADDRCLR       (*(volatile uint32_t *)(_NVM_BASE + 0x74u))
+#define NVMSRCADDRSET       (*(volatile uint32_t *)(_NVM_BASE + 0x78u))
+#define NVMSRCADDRINV       (*(volatile uint32_t *)(_NVM_BASE + 0x7Cu))
+
+#define NVMPWP              (*(volatile uint32_t *)(_NVM_BASE + 0x80u))
+#define NVMPWPCLR           (*(volatile uint32_t *)(_NVM_BASE + 0x84u))
+#define NVMPWPSET           (*(volatile uint32_t *)(_NVM_BASE + 0x88u))
+#define NVMPWPINV           (*(volatile uint32_t *)(_NVM_BASE + 0x8Cu))
+
+/* NVMPWP bit masks */
+#define _NVMPWP_PWP_MASK        0x00FFFFFFu
+#define _NVMPWP_PWPULOCK_MASK   (1u << 31)
+
+#define NVMBWP              (*(volatile uint32_t *)(_NVM_BASE + 0x90u))
+#define NVMBWPCLR           (*(volatile uint32_t *)(_NVM_BASE + 0x94u))
+#define NVMBWPSET           (*(volatile uint32_t *)(_NVM_BASE + 0x98u))
+#define NVMBWPINV           (*(volatile uint32_t *)(_NVM_BASE + 0x9Cu))
+
+#define NVMCON2             (*(volatile uint32_t *)(_NVM_BASE + 0xA0u))
+#define NVMCON2CLR          (*(volatile uint32_t *)(_NVM_BASE + 0xA4u))
+#define NVMCON2SET          (*(volatile uint32_t *)(_NVM_BASE + 0xA8u))
+#define NVMCON2INV          (*(volatile uint32_t *)(_NVM_BASE + 0xACu))
 
 #endif /* __ASSEMBLER__ */
 #endif /* XC_H */

@@ -83,9 +83,9 @@ void EVIC_Initialize(void) {
     IPC47SET = 0x4U | 0x0U;  /* CAN4:  Priority 1 / Subpriority 0 */
     IPC50SET = 0x400U | 0x0U;  /* INPUT_CAPTURE_11:  Priority 1 / Subpriority 0 */
     IPC51SET = 0x4U | 0x0U;  /* INPUT_CAPTURE_12:  Priority 1 / Subpriority 0 */
-    IPC56SET = 0x10U | 0x0U;  /* SPI5_FAULT:  Priority 4 / Subpriority 0 */
-    IPC56SET = 0x1000U | 0x0U;  /* SPI5_RX:  Priority 4 / Subpriority 0 */
-    IPC56SET = 0x100000U | 0x0U;  /* SPI5_TX:  Priority 4 / Subpriority 0 */
+    IPC42SET = 0x10U | 0x0U;  /* SPI5_FAULT:  Priority 4 / Subpriority 0 */
+    IPC42SET = 0x1000U | 0x0U;  /* SPI5_RX:  Priority 4 / Subpriority 0 */
+    IPC42SET = 0x100000U | 0x0U;  /* SPI5_TX:  Priority 4 / Subpriority 0 */
 }
 
 void EVIC_SourceEnable(INT_SOURCE source) {

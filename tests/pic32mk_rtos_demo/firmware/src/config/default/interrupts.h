@@ -39,4 +39,18 @@ void TIMER_7_InterruptHandler(void);
 void TIMER_8_InterruptHandler(void);
 void TIMER_9_InterruptHandler(void);
 
+/* NVM / Flash Control ISR — clears IFS0[31] and invokes registered callback */
+void NVM_InterruptHandler(void);
+
+/* IC2 capture ISR — clears IFS0[11] and invokes registered callback */
+void INPUT_CAPTURE_2_InterruptHandler(void);
+
+/* IC2 error ISR — clears IFS0[10] and invokes registered callback */
+void INPUT_CAPTURE_2_ERROR_InterruptHandler(void);
+
+/* SPI5 ISRs (RX/TX/FAULT) */
+void SPI5_RX_InterruptHandler(void);
+void SPI5_TX_InterruptHandler(void);
+void SPI5_FAULT_InterruptHandler(void);
+
 #endif /* INTERRUPTS_H */

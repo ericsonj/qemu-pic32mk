@@ -41,6 +41,13 @@
 #define TYPE_PIC32MK_CRU    "pic32mk-cru"
 #define TYPE_PIC32MK_CFG    "pic32mk-cfg"
 #define TYPE_PIC32MK_ADCHS  "pic32mk-adchs"
+#define TYPE_PIC32MK_NVM    "pic32mk-nvm"
+#define TYPE_PIC32MK_DATAEE "pic32mk-dataee"
+#define TYPE_PIC32MK_OC     "pic32mk-oc"
+#define TYPE_PIC32MK_IC     "pic32mk-ic"
+
+/* Forward declaration — implemented in pic32mk_oc.c */
+void pic32mk_oc_set_chardev(DeviceState *dev, Chardev *chr);
 
 /*
  * Board state.
@@ -121,8 +128,8 @@ static void pic32mk_memory_init(PIC32MKState *s, MachineState *machine)
     /* 256 KB SRAM */
     memory_region_add_subregion(sys_mem, PIC32MK_RAM_BASE, machine->ram);
 
-    /* 1 MB Program Flash */
-    memory_region_init_rom(&s->pflash, NULL, "pic32mk.pflash",
+    /* 1 MB Program Flash — RAM-backed so NVM controller can write */
+    memory_region_init_ram(&s->pflash, NULL, "pic32mk.pflash",
                            PIC32MK_PFLASH_SIZE, &error_fatal);
     memory_region_add_subregion(sys_mem, PIC32MK_PFLASH_BASE, &s->pflash);
 
@@ -304,6 +311,51 @@ static void pic32mk_timer_create(PIC32MKState *s,
                        qdev_get_gpio_in(s->evic, irq_src));
 }
 
+static void pic32mk_oc_create(PIC32MKState *s, int index,
+                              hwaddr sfr_offset, int irq_src)
+{
+    DeviceState *dev = qdev_new(TYPE_PIC32MK_OC);
+    qdev_prop_set_uint8(dev, "index", (uint8_t)index);
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+    memory_region_add_subregion_overlap(&s->sfr, sfr_offset,
+        sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 1);
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
+                       qdev_get_gpio_in(s->evic, irq_src));
+    /* Optional chardev for waveform event streaming */
+    Chardev *chr = qemu_chr_find("oc-events");
+    if (chr) {
+        pic32mk_oc_set_chardev(dev, chr);
+    }
+}
+
+/*
+ * pic32mk_ic_create — instantiate one IC peripheral and map it into the SFR
+ * window.  irq_cap = capture IRQ index, irq_err = error IRQ index (Table 8-3).
+ * The optional chardev "ic-events" is used to inject capture events from the
+ * host; must be set before sysbus_realize_and_unref.
+ */
+static void pic32mk_ic_create(PIC32MKState *s, int index,
+                              hwaddr sfr_offset, int irq_cap, int irq_err)
+{
+    DeviceState *dev = qdev_new(TYPE_PIC32MK_IC);
+    qdev_prop_set_uint8(dev, "index", (uint8_t)index);
+    /* Only IC1 owns the "ic-events" chardev; it dispatches to all instances
+     * via a global routing table registered during realize. */
+    if (index == 1) {
+        Chardev *chr = qemu_chr_find("ic-events");
+        if (chr) {
+            qdev_prop_set_chr(dev, "chardev", chr);
+        }
+    }
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+    memory_region_add_subregion_overlap(&s->sfr, sfr_offset,
+        sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 1);
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
+                       qdev_get_gpio_in(s->evic, irq_cap));
+    sysbus_connect_irq(SYS_BUS_DEVICE(dev), 1,
+                       qdev_get_gpio_in(s->evic, irq_err));
+}
+
 static const char * const pic32mk_gpio_port_names[PIC32MK_GPIO_NPORTS] = {
     "gpio-portA", "gpio-portB", "gpio-portC", "gpio-portD",
     "gpio-portE", "gpio-portF", "gpio-portG",
@@ -349,9 +401,36 @@ static void pic32mk_gpio_create(PIC32MKState *s, MachineState *machine,
 /*
  * Create a SPI instance, map into the SFR window.
  */
-static void pic32mk_spi_create(PIC32MKState *s, hwaddr sfr_offset)
+static void pic32mk_spi_create(PIC32MKState *s, int index, hwaddr sfr_offset,
+                               int irq_rx, int irq_tx, int irq_err)
 {
-    sfr_device_create(&s->sfr, TYPE_PIC32MK_SPI, sfr_offset, &error_fatal);
+    DeviceState *dev = qdev_new(TYPE_PIC32MK_SPI);
+    char chr_name[16];
+
+    qdev_prop_set_uint8(dev, "spi-index", (uint8_t)index);
+    snprintf(chr_name, sizeof(chr_name), "spi%d", index);
+    Chardev *chr = qemu_chr_find(chr_name);
+    if (chr) {
+        qdev_prop_set_chr(dev, "chardev", chr);
+    }
+
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+
+    MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0);
+    memory_region_add_subregion_overlap(&s->sfr, sfr_offset, mr, 1);
+
+    if (irq_rx >= 0) {
+        sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
+                           qdev_get_gpio_in(s->evic, irq_rx));
+    }
+    if (irq_tx >= 0) {
+        sysbus_connect_irq(SYS_BUS_DEVICE(dev), 1,
+                           qdev_get_gpio_in(s->evic, irq_tx));
+    }
+    if (irq_err >= 0) {
+        sysbus_connect_irq(SYS_BUS_DEVICE(dev), 2,
+                           qdev_get_gpio_in(s->evic, irq_err));
+    }
 }
 
 /*
@@ -517,6 +596,42 @@ static void pic32mk_machine_init(MachineState *machine)
     pic32mk_timer_create(s, PIC32MK_T8_OFFSET, PIC32MK_IRQ_T8, false);
     pic32mk_timer_create(s, PIC32MK_T9_OFFSET, PIC32MK_IRQ_T9, false);
 
+    /* Output Compare OC1–OC16 (diagnostic emulation) */
+    pic32mk_oc_create(s, 1,  PIC32MK_OC1_OFFSET,  PIC32MK_IRQ_OC1);
+    pic32mk_oc_create(s, 2,  PIC32MK_OC2_OFFSET,  PIC32MK_IRQ_OC2);
+    pic32mk_oc_create(s, 3,  PIC32MK_OC3_OFFSET,  PIC32MK_IRQ_OC3);
+    pic32mk_oc_create(s, 4,  PIC32MK_OC4_OFFSET,  PIC32MK_IRQ_OC4);
+    pic32mk_oc_create(s, 5,  PIC32MK_OC5_OFFSET,  PIC32MK_IRQ_OC5);
+    pic32mk_oc_create(s, 6,  PIC32MK_OC6_OFFSET,  PIC32MK_IRQ_OC6);
+    pic32mk_oc_create(s, 7,  PIC32MK_OC7_OFFSET,  PIC32MK_IRQ_OC7);
+    pic32mk_oc_create(s, 8,  PIC32MK_OC8_OFFSET,  PIC32MK_IRQ_OC8);
+    pic32mk_oc_create(s, 9,  PIC32MK_OC9_OFFSET,  PIC32MK_IRQ_OC9);
+    pic32mk_oc_create(s, 10, PIC32MK_OC10_OFFSET, PIC32MK_IRQ_OC10);
+    pic32mk_oc_create(s, 11, PIC32MK_OC11_OFFSET, PIC32MK_IRQ_OC11);
+    pic32mk_oc_create(s, 12, PIC32MK_OC12_OFFSET, PIC32MK_IRQ_OC12);
+    pic32mk_oc_create(s, 13, PIC32MK_OC13_OFFSET, PIC32MK_IRQ_OC13);
+    pic32mk_oc_create(s, 14, PIC32MK_OC14_OFFSET, PIC32MK_IRQ_OC14);
+    pic32mk_oc_create(s, 15, PIC32MK_OC15_OFFSET, PIC32MK_IRQ_OC15);
+    pic32mk_oc_create(s, 16, PIC32MK_OC16_OFFSET, PIC32MK_IRQ_OC16);
+
+    /* Input Capture IC1–IC16 (full register model with FIFO) */
+    pic32mk_ic_create(s, 1,  PIC32MK_IC1_OFFSET,  PIC32MK_IRQ_IC1,  PIC32MK_IRQ_IC1E);
+    pic32mk_ic_create(s, 2,  PIC32MK_IC2_OFFSET,  PIC32MK_IRQ_IC2,  PIC32MK_IRQ_IC2E);
+    pic32mk_ic_create(s, 3,  PIC32MK_IC3_OFFSET,  PIC32MK_IRQ_IC3,  PIC32MK_IRQ_IC3E);
+    pic32mk_ic_create(s, 4,  PIC32MK_IC4_OFFSET,  PIC32MK_IRQ_IC4,  PIC32MK_IRQ_IC4E);
+    pic32mk_ic_create(s, 5,  PIC32MK_IC5_OFFSET,  PIC32MK_IRQ_IC5,  PIC32MK_IRQ_IC5E);
+    pic32mk_ic_create(s, 6,  PIC32MK_IC6_OFFSET,  PIC32MK_IRQ_IC6,  PIC32MK_IRQ_IC6E);
+    pic32mk_ic_create(s, 7,  PIC32MK_IC7_OFFSET,  PIC32MK_IRQ_IC7,  PIC32MK_IRQ_IC7E);
+    pic32mk_ic_create(s, 8,  PIC32MK_IC8_OFFSET,  PIC32MK_IRQ_IC8,  PIC32MK_IRQ_IC8E);
+    pic32mk_ic_create(s, 9,  PIC32MK_IC9_OFFSET,  PIC32MK_IRQ_IC9,  PIC32MK_IRQ_IC9E);
+    pic32mk_ic_create(s, 10, PIC32MK_IC10_OFFSET, PIC32MK_IRQ_IC10, PIC32MK_IRQ_IC10E);
+    pic32mk_ic_create(s, 11, PIC32MK_IC11_OFFSET, PIC32MK_IRQ_IC11, PIC32MK_IRQ_IC11E);
+    pic32mk_ic_create(s, 12, PIC32MK_IC12_OFFSET, PIC32MK_IRQ_IC12, PIC32MK_IRQ_IC12E);
+    pic32mk_ic_create(s, 13, PIC32MK_IC13_OFFSET, PIC32MK_IRQ_IC13, PIC32MK_IRQ_IC13E);
+    pic32mk_ic_create(s, 14, PIC32MK_IC14_OFFSET, PIC32MK_IRQ_IC14, PIC32MK_IRQ_IC14E);
+    pic32mk_ic_create(s, 15, PIC32MK_IC15_OFFSET, PIC32MK_IRQ_IC15, PIC32MK_IRQ_IC15E);
+    pic32mk_ic_create(s, 16, PIC32MK_IC16_OFFSET, PIC32MK_IRQ_IC16, PIC32MK_IRQ_IC16E);
+
     /* GPIO ports A–G: CN interrupt vectors 44–50 (_CHANGE_NOTICE_x_VECTOR) */
     static const int cn_irqs[PIC32MK_GPIO_NPORTS] = {
         PIC32MK_IRQ_CNA, PIC32MK_IRQ_CNB, PIC32MK_IRQ_CNC, PIC32MK_IRQ_CND,
@@ -532,12 +647,30 @@ static void pic32mk_machine_init(MachineState *machine)
     }
 
     /* SPI 1–6 */
-    pic32mk_spi_create(s, PIC32MK_SPI1_OFFSET);
-    pic32mk_spi_create(s, PIC32MK_SPI2_OFFSET);
-    pic32mk_spi_create(s, PIC32MK_SPI3_OFFSET);
-    pic32mk_spi_create(s, PIC32MK_SPI4_OFFSET);
-    pic32mk_spi_create(s, PIC32MK_SPI5_OFFSET);
-    pic32mk_spi_create(s, PIC32MK_SPI6_OFFSET);
+    pic32mk_spi_create(s, 1, PIC32MK_SPI1_OFFSET,
+                       PIC32MK_IRQ_SPI1_RX,
+                       PIC32MK_IRQ_SPI1_TX,
+                       PIC32MK_IRQ_SPI1_FAULT);
+    pic32mk_spi_create(s, 2, PIC32MK_SPI2_OFFSET,
+                       PIC32MK_IRQ_SPI2_RX,
+                       PIC32MK_IRQ_SPI2_TX,
+                       PIC32MK_IRQ_SPI2_FAULT);
+    pic32mk_spi_create(s, 3, PIC32MK_SPI3_OFFSET,
+                       PIC32MK_IRQ_SPI3_RX,
+                       PIC32MK_IRQ_SPI3_TX,
+                       PIC32MK_IRQ_SPI3_FAULT);
+    pic32mk_spi_create(s, 4, PIC32MK_SPI4_OFFSET,
+                       PIC32MK_IRQ_SPI4_RX,
+                       PIC32MK_IRQ_SPI4_TX,
+                       PIC32MK_IRQ_SPI4_FAULT);
+    pic32mk_spi_create(s, 5, PIC32MK_SPI5_OFFSET,
+                       PIC32MK_IRQ_SPI5_RX,
+                       PIC32MK_IRQ_SPI5_TX,
+                       PIC32MK_IRQ_SPI5_FAULT);
+    pic32mk_spi_create(s, 6, PIC32MK_SPI6_OFFSET,
+                       PIC32MK_IRQ_SPI6_RX,
+                       PIC32MK_IRQ_SPI6_TX,
+                       PIC32MK_IRQ_SPI6_FAULT);
 
     /* I2C 1–4 */
     pic32mk_i2c_create(s, PIC32MK_I2C1_OFFSET);
@@ -589,6 +722,31 @@ static void pic32mk_machine_init(MachineState *machine)
     /* CRU — Clock Reference Unit at 0xBF801200 (includes RCON/RSWRST) */
     sfr_device_create(&s->sfr, TYPE_PIC32MK_CRU, PIC32MK_CRU_OFFSET,
                       &error_fatal);
+
+    /* NVM / Flash Controller at 0xBF800A00 */
+    {
+        DeviceState *nvm = qdev_new(TYPE_PIC32MK_NVM);
+        object_property_set_link(OBJECT(nvm), "pflash",
+                                 OBJECT(&s->pflash), &error_fatal);
+        sysbus_realize_and_unref(SYS_BUS_DEVICE(nvm), &error_fatal);
+        MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(nvm), 0);
+        memory_region_add_subregion_overlap(&s->sfr, PIC32MK_NVM_OFFSET,
+                                            mr, 1);
+        sysbus_connect_irq(SYS_BUS_DEVICE(nvm), 0,
+                           qdev_get_gpio_in(s->evic, PIC32MK_IRQ_FCE));
+    }
+
+    /* Data EEPROM at 0xBF829000 — 4 KB, optionally backed by host file */
+    {
+        DeviceState *ee = qdev_new(TYPE_PIC32MK_DATAEE);
+        /* Backing file: use -global pic32mk-dataee.filename=<path> */
+        sysbus_realize_and_unref(SYS_BUS_DEVICE(ee), &error_fatal);
+        MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(ee), 0);
+        memory_region_add_subregion_overlap(&s->sfr, PIC32MK_DATAEE_OFFSET,
+                                            mr, 1);
+        sysbus_connect_irq(SYS_BUS_DEVICE(ee), 0,
+                           qdev_get_gpio_in(s->evic, PIC32MK_IRQ_DATAEE));
+    }
 
     pic32mk_load_firmware(machine);
 }

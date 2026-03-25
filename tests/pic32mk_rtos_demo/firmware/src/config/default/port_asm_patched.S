@@ -841,6 +841,37 @@ vUART2FaultInterruptWrapper:
     portRESTORE_CONTEXT
     .end    vUART2FaultInterruptWrapper
 
+    .extern SPI5_RX_InterruptHandler
+    .extern SPI5_TX_InterruptHandler
+    .extern SPI5_FAULT_InterruptHandler
+
+    .global vSPI5RXInterruptWrapper
+    .ent    vSPI5RXInterruptWrapper
+vSPI5RXInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     SPI5_RX_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vSPI5RXInterruptWrapper
+
+    .global vSPI5TXInterruptWrapper
+    .ent    vSPI5TXInterruptWrapper
+vSPI5TXInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     SPI5_TX_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vSPI5TXInterruptWrapper
+
+    .global vSPI5FaultInterruptWrapper
+    .ent    vSPI5FaultInterruptWrapper
+vSPI5FaultInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     SPI5_FAULT_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vSPI5FaultInterruptWrapper
+
     .extern CAN1_InterruptHandler
 
     .global vCAN1InterruptWrapper
@@ -898,3 +929,39 @@ vADCEOSInterruptWrapper:
     nop
     portRESTORE_CONTEXT
     .end    vADCEOSInterruptWrapper
+
+    /* NVM / Flash Control interrupt wrapper (source 31, IFS0 bit 31) */
+    .extern NVM_InterruptHandler
+
+    .global vNVMInterruptWrapper
+    .ent    vNVMInterruptWrapper
+vNVMInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     NVM_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vNVMInterruptWrapper
+
+    /* IC2 capture interrupt wrapper (source 11, IFS0 bit 11) */
+    .extern INPUT_CAPTURE_2_InterruptHandler
+
+    .global vIC2CaptureInterruptWrapper
+    .ent    vIC2CaptureInterruptWrapper
+vIC2CaptureInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     INPUT_CAPTURE_2_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vIC2CaptureInterruptWrapper
+
+    /* IC2 error interrupt wrapper (source 10, IFS0 bit 10) */
+    .extern INPUT_CAPTURE_2_ERROR_InterruptHandler
+
+    .global vIC2ErrorInterruptWrapper
+    .ent    vIC2ErrorInterruptWrapper
+vIC2ErrorInterruptWrapper:
+    portSAVE_CONTEXT
+    jal     INPUT_CAPTURE_2_ERROR_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vIC2ErrorInterruptWrapper

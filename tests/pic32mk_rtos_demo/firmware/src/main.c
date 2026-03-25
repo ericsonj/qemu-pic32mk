@@ -9,6 +9,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -24,6 +25,13 @@
 #include "usb_init.h"
 #include "plib_gpio.h"
 #include "plib_adchs.h"
+#include "plib_eeprom.h"
+#include "plib_nvm.h"
+#include "plib_ocmp1.h"
+#include "plib_ocmp2.h"
+#include "plib_ocmp3.h"
+#include "plib_icap2.h"
+#include "plib_spi5_slave.h"
 
 /* -----------------------------------------------------------------------
  * UART1 TX helpers — thin wrappers around plib UART1_Write()
@@ -589,6 +597,374 @@ static void vAdcMonitorTask(void *pvParam)
 }
 
 /* -----------------------------------------------------------------------
+ * EEPROM Test task — exercises Data EEPROM via Harmony plib
+ *
+ * Sequence: init -> write 4 words -> read back & verify -> page erase ->
+ *           verify erased -> bulk erase -> done.
+ * Prints PASS/FAIL for each step.
+ * ----------------------------------------------------------------------- */
+
+static void uart1_puthex32(uint32_t v)
+{
+    int i;
+    for (i = 28; i >= 0; i -= 4) {
+        uart1_puthex((uint8_t)((v >> i) & 0xFu));
+    }
+}
+
+static void vEepromTestTask(void *pvParam)
+{
+    (void)pvParam;
+
+    uart1_puts("[EE] EEPROM test starting...\r\n");
+
+    /* --- Write 4 words at addresses 0x000, 0x004, 0x008, 0x00C --- */
+    static const uint32_t test_addr[] = { 0x000, 0x004, 0x008, 0x00C };
+    static const uint32_t test_data[] = { 0xDEADBEEF, 0xCAFEBABE, 0x12345678, 0xA5A5A5A5 };
+    uint32_t i;
+    bool ok;
+
+    for (i = 0; i < 4; i++) {
+        ok = EEPROM_WordWrite(test_addr[i], test_data[i]);
+        if (!ok) {
+            uart1_puts("[EE] FAIL: WordWrite addr=0x");
+            uart1_puthex32(test_addr[i]);
+            uart1_puts("\r\n");
+        }
+    }
+
+    EEPROM_ERROR err = EEPROM_ErrorGet();
+    if (err != EEPROM_ERROR_NONE) {
+        uart1_puts("[EE] FAIL: ErrorGet after writes = 0x");
+        uart1_puthex32(err);
+        uart1_puts("\r\n");
+    }
+
+    /* --- Read back and verify --- */
+    uint32_t pass_count = 0;
+    for (i = 0; i < 4; i++) {
+        uint32_t readback = 0;
+        ok = EEPROM_WordRead(test_addr[i], &readback);
+        if (!ok) {
+            uart1_puts("[EE] FAIL: WordRead addr=0x");
+            uart1_puthex32(test_addr[i]);
+            uart1_puts("\r\n");
+        } else if (readback != test_data[i]) {
+            uart1_puts("[EE] FAIL: addr=0x");
+            uart1_puthex32(test_addr[i]);
+            uart1_puts(" expected=0x");
+            uart1_puthex32(test_data[i]);
+            uart1_puts(" got=0x");
+            uart1_puthex32(readback);
+            uart1_puts("\r\n");
+        } else {
+            pass_count++;
+        }
+    }
+    uart1_puts("[EE] Write/Read: ");
+    uart1_putu(pass_count);
+    uart1_puts("/4 PASS\r\n");
+
+
+    /* --- Page erase (page 0 = addresses 0x000..0x07C) --- */
+    ok = EEPROM_PageErase(0x000);
+    if (!ok) {
+        uart1_puts("[EE] FAIL: PageErase\r\n");
+    }
+    /* Verify erased (should read 0xFFFFFFFF) */
+    pass_count = 0;
+    for (i = 0; i < 4; i++) {
+        uint32_t readback = 0;
+        ok = EEPROM_WordRead(test_addr[i], &readback);
+        if (ok && readback == 0xFFFFFFFFu) {
+            pass_count++;
+        } else {
+            uart1_puts("[EE] FAIL: post-erase addr=0x");
+            uart1_puthex32(test_addr[i]);
+            uart1_puts(" got=0x");
+            uart1_puthex32(readback);
+            uart1_puts("\r\n");
+        }
+    }
+    uart1_puts("[EE] PageErase: ");
+    uart1_putu(pass_count);
+    uart1_puts("/4 PASS\r\n");
+
+    /* --- Bulk erase test: write one word, bulk erase, verify --- */
+    EEPROM_WordWrite(0x100, 0xBAADF00Du);
+    ok = EEPROM_BulkErase();
+    if (!ok) {
+        uart1_puts("[EE] FAIL: BulkErase\r\n");
+    }
+    {
+        uint32_t readback = 0;
+        EEPROM_WordRead(0x100, &readback);
+        if (readback == 0xFFFFFFFFu) {
+            uart1_puts("[EE] BulkErase: PASS\r\n");
+        } else {
+            uart1_puts("[EE] BulkErase: FAIL got=0x");
+            uart1_puthex32(readback);
+            uart1_puts("\r\n");
+        }
+    }
+
+    uart1_puts("[EE] EEPROM test complete.\r\n");
+
+    /* Task done — suspend forever */
+    vTaskSuspend(NULL);
+}
+
+/* -----------------------------------------------------------------------
+ * NVM (Program Flash) Test task — uses Harmony plib API
+ *
+ * Exercises the QEMU NVM controller via the unmodified Harmony plib
+ * (NVM_WordWrite, NVM_QuadWordWrite, NVM_PageErase, NVM_Read).
+ * The plib enables IEC0[31] after each operation; the NVM ISR
+ * (NVM_InterruptHandler) clears IFS0[31] so FreeRTOS keeps running.
+ *
+ * Test sequence: word write ×4 -> read back -> quad-word write ->
+ *                read back -> page erase -> verify erased.
+ * Uses the last page of program flash (NVM_FLASH_START_ADDRESS + 0xFF000).
+ * ----------------------------------------------------------------------- */
+
+static void vNvmTestTask(void *pvParam)
+{
+    (void)pvParam;
+
+    const uint32_t test_base = NVM_FLASH_START_ADDRESS + 0xFF000u;
+
+    uart1_puts("[NVM] NVM test starting...\r\n");
+
+    /* --- Word write ×4 --- */
+    static const uint32_t test_data[] = {
+        0xDEADBEEFu, 0xCAFEBABEu, 0x12345678u, 0xA5A5A5A5u
+    };
+    uint32_t i;
+
+    for (i = 0; i < 4; i++) {
+        NVM_WordWrite(test_data[i], test_base + i * 4u);
+        while (NVM_IsBusy()) { }
+    }
+
+    if (NVM_ErrorGet() != NVM_ERROR_NONE) {
+        uart1_puts("[NVM] FAIL: error after writes = 0x");
+        uart1_puthex32(NVM_ErrorGet());
+        uart1_puts("\r\n");
+    }
+
+    /* --- Read back via NVM_Read and verify --- */
+    uint32_t rbuf[4];
+    NVM_Read(rbuf, sizeof(rbuf), test_base);
+
+    uint32_t pass_count = 0;
+    for (i = 0; i < 4; i++) {
+        if (rbuf[i] != test_data[i]) {
+            uart1_puts("[NVM] FAIL: word[");
+            uart1_putu(i);
+            uart1_puts("] expected=0x");
+            uart1_puthex32(test_data[i]);
+            uart1_puts(" got=0x");
+            uart1_puthex32(rbuf[i]);
+            uart1_puts("\r\n");
+        } else {
+            pass_count++;
+        }
+    }
+    uart1_puts("[NVM] Write/Read: ");
+    uart1_putu(pass_count);
+    uart1_puts("/4 PASS\r\n");
+
+    /* --- Quad-word write at offset 0x10 (16-byte aligned) --- */
+    {
+        static const uint32_t qw_data[4] = {
+            0x11223344u, 0x55667788u, 0x99AABBCCu, 0xDDEEFF00u
+        };
+        NVM_QuadWordWrite((uint32_t *)qw_data, test_base + 0x10u);
+        while (NVM_IsBusy()) { }
+
+        uint32_t qbuf[4];
+        NVM_Read(qbuf, sizeof(qbuf), test_base + 0x10u);
+
+        if (qbuf[0] == qw_data[0] && qbuf[1] == qw_data[1] &&
+            qbuf[2] == qw_data[2] && qbuf[3] == qw_data[3]) {
+            uart1_puts("[NVM] QuadWord: PASS\r\n");
+        } else {
+            uart1_puts("[NVM] QuadWord: FAIL got=0x");
+            uart1_puthex32(qbuf[0]);
+            uart1_puts(" 0x");
+            uart1_puthex32(qbuf[1]);
+            uart1_puts(" 0x");
+            uart1_puthex32(qbuf[2]);
+            uart1_puts(" 0x");
+            uart1_puthex32(qbuf[3]);
+            uart1_puts("\r\n");
+        }
+    }
+
+    /* --- Page erase (erases 4 KB at test_base) --- */
+    NVM_PageErase(test_base);
+    while (NVM_IsBusy()) { }
+
+    /* Verify erased (should read 0xFFFFFFFF) */
+    NVM_Read(rbuf, sizeof(rbuf), test_base);
+
+    pass_count = 0;
+    for (i = 0; i < 4; i++) {
+        if (rbuf[i] == 0xFFFFFFFFu) {
+            pass_count++;
+        } else {
+            uart1_puts("[NVM] FAIL: post-erase word[");
+            uart1_putu(i);
+            uart1_puts("] got=0x");
+            uart1_puthex32(rbuf[i]);
+            uart1_puts("\r\n");
+        }
+    }
+    uart1_puts("[NVM] PageErase: ");
+    uart1_putu(pass_count);
+    uart1_puts("/4 PASS\r\n");
+
+    uart1_puts("[NVM] NVM test complete.\r\n");
+
+    /* Task done — suspend forever */
+    vTaskSuspend(NULL);
+}
+
+/* -----------------------------------------------------------------------
+ * Output Compare demo task — exercises OC1 (PWM), OC2 (single pulse),
+ * OC3 (continuous pulses) via Harmony OCMP plib API.
+ * ----------------------------------------------------------------------- */
+
+static void vOcDemoTask(void *pvParam)
+{
+    (void)pvParam;
+    vTaskDelay(pdMS_TO_TICKS(2000));  /* Let other init messages print first */
+
+    uart1_puts("[OC] Output Compare demo starting...\r\n");
+
+    /* --- OC1: PWM mode (OCM=110, default from OCMP1_Initialize) --- */
+    OCMP1_Initialize();                      /* Sets OC1CON=0x6 (PWM no fault) */
+    OCMP1_CompareSecondaryValueSet(0x7FFF);  /* 50% duty: OCxRS = PR2/2 = 0xFFFF/2 */
+    OCMP1_Enable();                          /* OC1CONSET = ON */
+    uart1_puts("[OC] OC1: PWM mode (plib), duty=50%\r\n");
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    /* --- OC2: Single pulse (OCM=100) ---
+     * OCMP2_Initialize() sets OCM=6 (PWM) by default, so we override
+     * to mode 4 (single pulse) via direct register write after init. */
+    OCMP2_Initialize();
+    OC2CON = 0x0004;                          /* OCM=100 (single pulse) */
+    OC2R   = 0x0100;                          /* Primary compare */
+    OCMP2_CompareSecondaryValueSet(0x0500);   /* Secondary compare */
+    OCMP2_Enable();
+    uart1_puts("[OC] OC2: Single pulse mode, R=0x100 RS=0x500\r\n");
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    /* --- OC3: Continuous pulses (OCM=101) --- */
+    OCMP3_Initialize();
+    OC3CON = 0x0005;                          /* OCM=101 (continuous pulses) */
+    OC3R   = 0x0200;
+    OCMP3_CompareSecondaryValueSet(0x0800);
+    OCMP3_Enable();
+    uart1_puts("[OC] OC3: Continuous pulse mode\r\n");
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    /* --- Disable all via plib --- */
+    OCMP1_Disable();
+    OCMP2_Disable();
+    OCMP3_Disable();
+    uart1_puts("[OC] All OC modules disabled\r\n");
+    uart1_puts("[OC] Output Compare demo complete.\r\n");
+
+    vTaskSuspend(NULL);
+}
+
+/* -----------------------------------------------------------------------
+ * Input Capture demo task — exercises IC2 via Harmony ICAP2 plib
+ *
+ * ICAP2_Initialize() enables IEC0 IC2IE + IC2EIE; the capture ISR
+ * (INPUT_CAPTURE_2_InterruptHandler) calls the registered callback which
+ * signals this task via semaphore.  Inject captures using the QEMU
+ * ic-events chardev: write 8-byte packets as described in pic32mk_ic.c.
+ * ----------------------------------------------------------------------- */
+
+static SemaphoreHandle_t xIc2Semaphore;
+static volatile uint16_t ic2_last_capture;
+
+static void ic2_capture_callback(uintptr_t context)
+{
+    (void)context;
+    ic2_last_capture = ICAP2_CaptureBufferRead();
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(xIc2Semaphore, &xHigherPriorityTaskWoken);
+}
+
+static void vIcapDemoTask(void *pvParam)
+{
+    (void)pvParam;
+
+    xIc2Semaphore = xSemaphoreCreateBinary();
+
+    ICAP2_CallbackRegister(ic2_capture_callback, 0);
+    ICAP2_Initialize();   /* IC2CON = 0x1, enables IEC0 IC2IE + IC2EIE */
+    ICAP2_Enable();       /* IC2CONSET = ON */
+
+    uart1_puts("[ICAP] IC2 armed (IRQ mode, ICM=1 every edge)\r\n");
+
+    for (;;)
+    {
+        xSemaphoreTake(xIc2Semaphore, portMAX_DELAY);
+        uint16_t val = ic2_last_capture;
+        uart1_puts("[ICAP] IC2 captured 0x");
+        uart1_puthex((uint8_t)(val >> 8));
+        uart1_puthex((uint8_t)(val));
+        uart1_puts("\r\n");
+    }
+}
+
+/* -----------------------------------------------------------------------
+ * SPI5 Slave demo — receive HELLO from host and reply with WORLD
+ * ----------------------------------------------------------------------- */
+
+static void vSpi5SlaveTask(void *pvParam)
+{
+    (void)pvParam;
+    static const uint8_t reply[] = "WORLD";
+    uint8_t buf[64];
+
+    uart1_puts("[SPI5] Slave demo ready (send HELLO over socket)\r\n");
+
+    /* Preload the response buffer for MISO */
+    (void)SPI5_Write((void *)(uintptr_t)reply, sizeof(reply) - 1U);
+
+    for (;;)
+    {
+        size_t count = SPI5_ReadCountGet();
+        if (count > 0U)
+        {
+            if (count > sizeof(buf))
+            {
+                count = sizeof(buf);
+            }
+            (void)SPI5_Read(buf, count);
+            uart1_puts("[SPI5] RX '");
+            for (size_t i = 0; i < count; i++)
+            {
+                uart1_putc((char)buf[i]);
+            }
+            uart1_puts("'\r\n");
+
+            /* Refill reply buffer after each transfer */
+            (void)SPI5_Write((void *)(uintptr_t)reply, sizeof(reply) - 1U);
+        }
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+
+/* -----------------------------------------------------------------------
  * main
  * ----------------------------------------------------------------------- */
 
@@ -603,10 +979,14 @@ int main(void)
     USB1_Initialize();
     GPIO_Initialize();
     ADCHS_Initialize();
+    EEPROM_Initialize();
+    NVM_Initialize();
     WDT_Enable();
+    SPI5_Initialize();
 
     uart1_puts("PIC32MK QEMU booting FreeRTOS...\r\n");
     uart1_puts("UART2 RX -> FreeRTOS queue -> consumer task\r\n");
+    uart1_puts("SPI5 slave ready on chardev 'spi5'\r\n");
 
     /* Queue for CAN1 RX frames (depth = 16) */
     xCan1RxQueue = xQueueCreate(16, sizeof(CAN1Frame_t));
@@ -649,6 +1029,16 @@ int main(void)
     xTaskCreate(vGpioMonitorTask, "GpioMon", configMINIMAL_STACK_SIZE,
                 NULL, tskIDLE_PRIORITY + 2, NULL);
     xTaskCreate(vAdcMonitorTask, "ADC", configMINIMAL_STACK_SIZE,
+                NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(vEepromTestTask, "EE", configMINIMAL_STACK_SIZE * 2,
+                NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(vNvmTestTask, "NVM", configMINIMAL_STACK_SIZE * 2,
+                NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(vOcDemoTask, "OC", configMINIMAL_STACK_SIZE,
+                NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(vIcapDemoTask, "ICAP", configMINIMAL_STACK_SIZE,
+                NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(vSpi5SlaveTask, "SPI5", configMINIMAL_STACK_SIZE,
                 NULL, tskIDLE_PRIORITY + 1, NULL);
 
     vTaskStartScheduler();

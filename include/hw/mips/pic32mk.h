@@ -379,6 +379,156 @@
 #define PIC32MK_TCON_TCKPS_SHIFT    4
 
 /* -----------------------------------------------------------------------
+ * OC (Output Compare) register offsets from SFR base (§19, DS60001519E)
+ * OC1-OC9:  0xBF824000..0xBF825000 (0x200 stride)
+ * OC10-OC16: 0xBF845200..0xBF845E00 (0x200 stride)
+ * ----------------------------------------------------------------------- */
+#define PIC32MK_OC1_OFFSET      0x024000u
+#define PIC32MK_OC2_OFFSET      0x024200u
+#define PIC32MK_OC3_OFFSET      0x024400u
+#define PIC32MK_OC4_OFFSET      0x024600u
+#define PIC32MK_OC5_OFFSET      0x024800u
+#define PIC32MK_OC6_OFFSET      0x024A00u
+#define PIC32MK_OC7_OFFSET      0x024C00u
+#define PIC32MK_OC8_OFFSET      0x024E00u
+#define PIC32MK_OC9_OFFSET      0x025000u
+#define PIC32MK_OC10_OFFSET     0x045200u
+#define PIC32MK_OC11_OFFSET     0x045400u
+#define PIC32MK_OC12_OFFSET     0x045600u
+#define PIC32MK_OC13_OFFSET     0x045800u
+#define PIC32MK_OC14_OFFSET     0x045A00u
+#define PIC32MK_OC15_OFFSET     0x045C00u
+#define PIC32MK_OC16_OFFSET     0x045E00u
+
+#define PIC32MK_OC_BLOCK_SIZE   0x200u
+
+/* OC register offsets within each 0x200-byte block */
+#define PIC32MK_OCxCON          0x00u   /* Control */
+#define PIC32MK_OCxR            0x10u   /* Primary compare value */
+#define PIC32MK_OCxRS           0x20u   /* Secondary compare value */
+
+/* OCxCON bits (Register 19-1) */
+#define PIC32MK_OCCON_ON        (1u << 15)
+#define PIC32MK_OCCON_SIDL      (1u << 13)
+#define PIC32MK_OCCON_OC32      (1u << 5)
+#define PIC32MK_OCCON_OCFLT     (1u << 4)
+#define PIC32MK_OCCON_OCTSEL    (1u << 3)
+#define PIC32MK_OCCON_OCM_MASK  0x0007u
+#define PIC32MK_OCCON_OCM_SHIFT 0
+
+/* OC interrupt vector numbers */
+#define PIC32MK_IRQ_OC1         7
+#define PIC32MK_IRQ_OC2         12
+#define PIC32MK_IRQ_OC3         17
+#define PIC32MK_IRQ_OC4         22
+#define PIC32MK_IRQ_OC5         27
+#define PIC32MK_IRQ_OC6         79
+#define PIC32MK_IRQ_OC7         83
+#define PIC32MK_IRQ_OC8         87
+#define PIC32MK_IRQ_OC9         91
+#define PIC32MK_IRQ_OC10        199
+#define PIC32MK_IRQ_OC11        202
+#define PIC32MK_IRQ_OC12        205
+#define PIC32MK_IRQ_OC13        208
+#define PIC32MK_IRQ_OC14        211
+#define PIC32MK_IRQ_OC15        214
+#define PIC32MK_IRQ_OC16        217
+
+/* -----------------------------------------------------------------------
+ * Input Capture (IC1–IC16) — §18, DS60001519E
+ * IC1–IC9:   SFR bank 1, base 0xBF822000, stride 0x200
+ * IC10–IC16: SFR bank 2, base 0xBF843200, stride 0x200
+ * ----------------------------------------------------------------------- */
+#define PIC32MK_IC1_OFFSET      0x022000u
+#define PIC32MK_IC2_OFFSET      0x022200u
+#define PIC32MK_IC3_OFFSET      0x022400u
+#define PIC32MK_IC4_OFFSET      0x022600u
+#define PIC32MK_IC5_OFFSET      0x022800u
+#define PIC32MK_IC6_OFFSET      0x022A00u
+#define PIC32MK_IC7_OFFSET      0x022C00u
+#define PIC32MK_IC8_OFFSET      0x022E00u
+#define PIC32MK_IC9_OFFSET      0x023000u
+#define PIC32MK_IC10_OFFSET     0x043200u
+#define PIC32MK_IC11_OFFSET     0x043400u
+#define PIC32MK_IC12_OFFSET     0x043600u
+#define PIC32MK_IC13_OFFSET     0x043800u
+#define PIC32MK_IC14_OFFSET     0x043A00u
+#define PIC32MK_IC15_OFFSET     0x043C00u
+#define PIC32MK_IC16_OFFSET     0x043E00u
+
+#define PIC32MK_IC_BLOCK_SIZE   0x200u
+
+/* IC register offsets within each block */
+#define PIC32MK_ICxCON          0x00u   /* Control (+ SET/CLR/INV at +4/+8/+C) */
+#define PIC32MK_ICxBUF          0x10u   /* Capture buffer (read-only FIFO pop) */
+
+/* ICxCON bits (Register 18-1, DS60001519E) */
+#define PIC32MK_ICCON_ON        (1u << 15)  /* Module enable */
+#define PIC32MK_ICCON_SIDL      (1u << 13)  /* Stop in idle */
+#define PIC32MK_ICCON_FEDGE     (1u << 9)   /* First edge select */
+#define PIC32MK_ICCON_C32       (1u << 8)   /* 32-bit capture mode */
+#define PIC32MK_ICCON_ICTMR     (1u << 7)   /* Timer source select */
+#define PIC32MK_ICCON_ICI_MASK  0x0060u     /* Interrupt on every Nth capture [6:5] */
+#define PIC32MK_ICCON_ICI_SHIFT 5
+#define PIC32MK_ICCON_ICOV      (1u << 4)   /* Overflow (buffer full) */
+#define PIC32MK_ICCON_ICBNE     (1u << 3)   /* Buffer not empty */
+#define PIC32MK_ICCON_ICM_MASK  0x0007u     /* Capture mode [2:0] */
+
+/* IC IRQ numbers (Table 8-3, DS60001519E) — paired: error IRQ, capture IRQ */
+#define PIC32MK_IRQ_IC1E        5
+#define PIC32MK_IRQ_IC1         6
+#define PIC32MK_IRQ_IC2E        10
+#define PIC32MK_IRQ_IC2         11
+#define PIC32MK_IRQ_IC3E        15
+#define PIC32MK_IRQ_IC3         16
+#define PIC32MK_IRQ_IC4E        20
+#define PIC32MK_IRQ_IC4         21
+#define PIC32MK_IRQ_IC5E        25
+#define PIC32MK_IRQ_IC5         26
+#define PIC32MK_IRQ_IC6E        77
+#define PIC32MK_IRQ_IC6         78
+#define PIC32MK_IRQ_IC7E        81
+#define PIC32MK_IRQ_IC7         82
+#define PIC32MK_IRQ_IC8E        85
+#define PIC32MK_IRQ_IC8         86
+#define PIC32MK_IRQ_IC9E        89
+#define PIC32MK_IRQ_IC9         90
+#define PIC32MK_IRQ_IC10E       197
+#define PIC32MK_IRQ_IC10        198
+#define PIC32MK_IRQ_IC11E       200
+#define PIC32MK_IRQ_IC11        201
+#define PIC32MK_IRQ_IC12E       203
+#define PIC32MK_IRQ_IC12        204
+#define PIC32MK_IRQ_IC13E       206
+#define PIC32MK_IRQ_IC13        207
+#define PIC32MK_IRQ_IC14E       209
+#define PIC32MK_IRQ_IC14        210
+#define PIC32MK_IRQ_IC15E       212
+#define PIC32MK_IRQ_IC15        213
+#define PIC32MK_IRQ_IC16E       215
+#define PIC32MK_IRQ_IC16        216
+
+/* SPI1-6 IRQ numbers (Table 8-3, DS60001519E) */
+#define PIC32MK_IRQ_SPI1_FAULT  35
+#define PIC32MK_IRQ_SPI1_RX     36
+#define PIC32MK_IRQ_SPI1_TX     37
+#define PIC32MK_IRQ_SPI2_FAULT  53
+#define PIC32MK_IRQ_SPI2_RX     54
+#define PIC32MK_IRQ_SPI2_TX     55
+#define PIC32MK_IRQ_SPI3_FAULT  154
+#define PIC32MK_IRQ_SPI3_RX     155
+#define PIC32MK_IRQ_SPI3_TX     156
+#define PIC32MK_IRQ_SPI4_FAULT  166
+#define PIC32MK_IRQ_SPI4_RX     167
+#define PIC32MK_IRQ_SPI4_TX     168
+#define PIC32MK_IRQ_SPI5_FAULT  169
+#define PIC32MK_IRQ_SPI5_RX     170
+#define PIC32MK_IRQ_SPI5_TX     171
+#define PIC32MK_IRQ_SPI6_FAULT  172
+#define PIC32MK_IRQ_SPI6_RX     173
+#define PIC32MK_IRQ_SPI6_TX     174
+
+/* -----------------------------------------------------------------------
  * UART2–6 register base offsets from SFR base
  * UART1 is already defined as PIC32MK_UART1_OFFSET = 0x028000
  * TODO: verify exact offsets against DS60001519E Table 4-2.
@@ -429,10 +579,10 @@
  * TODO: verify exact base offsets.
  * ----------------------------------------------------------------------- */
 
-#define PIC32MK_I2C1_OFFSET     0x022000u
-#define PIC32MK_I2C2_OFFSET     0x022200u
-#define PIC32MK_I2C3_OFFSET     0x040000u
-#define PIC32MK_I2C4_OFFSET     0x040200u   /* NOTE: may conflict with UART3 */
+#define PIC32MK_I2C1_OFFSET     0x026000u   /* 0xBF826000 — §24, Table 4-2 */
+#define PIC32MK_I2C2_OFFSET     0x026200u   /* 0xBF826200 */
+#define PIC32MK_I2C3_OFFSET     0x046400u   /* 0xBF846400 (PER2 bank) */
+#define PIC32MK_I2C4_OFFSET     0x046600u   /* 0xBF846600 */
 #define PIC32MK_I2C_BLOCK_SIZE  0x200u
 
 /* I2C register offsets within block */
@@ -650,5 +800,109 @@ void pic32mk_gpio_set_chardev(DeviceState *dev, Chardev *chr);
 /* DATA1..DATA27 = 107..133, DATA33..41 = 139..147, DATA45..53 = 151..159 */
 #define PIC32MK_IRQ_ADC_DC3     245  /* Digital comparator 3 */
 #define PIC32MK_IRQ_ADC_DC4     246  /* Digital comparator 4 */
+
+/* -----------------------------------------------------------------------
+ * NVM / Flash Controller (§10, DS60001519E)
+ * Base: 0xBF800A00 (SFR offset 0x000A00)
+ * Register block: NVMCON, NVMKEY, NVMADDR, NVMDATA0–3, NVMSRCADDR,
+ * NVMPWP, NVMBWP, NVMCON2 (each 0x10 stride with SET/CLR/INV aliases,
+ * except NVMKEY which is write-only, no aliases).
+ * ----------------------------------------------------------------------- */
+
+#define PIC32MK_NVM_OFFSET      0x000A00u   /* 0xBF800A00 */
+#define PIC32MK_NVM_SIZE        0x0000B0u   /* NVMCON..NVMCON2+INV inclusive */
+
+/* Register offsets within the NVM block */
+#define PIC32MK_NVMCON          0x00u       /* +CLR/SET/INV at +4/+8/+C */
+#define PIC32MK_NVMKEY          0x10u
+#define PIC32MK_NVMADDR         0x20u       /* +CLR/SET/INV */
+#define PIC32MK_NVMDATA0        0x30u       /* +CLR/SET/INV */
+#define PIC32MK_NVMDATA1        0x40u
+#define PIC32MK_NVMDATA2        0x50u
+#define PIC32MK_NVMDATA3        0x60u
+#define PIC32MK_NVMSRCADDR      0x70u       /* +CLR/SET/INV */
+#define PIC32MK_NVMPWP          0x80u
+#define PIC32MK_NVMBWP          0x90u
+#define PIC32MK_NVMCON2         0xA0u
+
+/* NVMCON bits */
+#define PIC32MK_NVMCON_NVMOP_MASK  0x000Fu  /* bits [3:0] */
+#define PIC32MK_NVMCON_BFSWAP     (1u << 6)
+#define PIC32MK_NVMCON_PFSWAP     (1u << 7)
+#define PIC32MK_NVMCON_LVDERR     (1u << 12)
+#define PIC32MK_NVMCON_WRERR      (1u << 13)
+#define PIC32MK_NVMCON_WREN       (1u << 14)
+#define PIC32MK_NVMCON_WR         (1u << 15)
+
+/* NVM operation codes (NVMOP field, bits [3:0]) */
+#define PIC32MK_NVMOP_NOP              0x0u
+#define PIC32MK_NVMOP_WORD_PROG        0x1u
+#define PIC32MK_NVMOP_QUAD_WORD_PROG   0x2u
+#define PIC32MK_NVMOP_ROW_PROG         0x3u
+#define PIC32MK_NVMOP_PAGE_ERASE       0x4u
+#define PIC32MK_NVMOP_LOWER_PFM_ERASE  0x5u
+#define PIC32MK_NVMOP_UPPER_PFM_ERASE  0x6u
+#define PIC32MK_NVMOP_PFM_ERASE        0x7u
+
+/* Unlock keys (written sequentially to NVMKEY) */
+#define PIC32MK_NVMKEY1         0xAA996655u
+#define PIC32MK_NVMKEY2         0x556699AAu
+
+/* Flash geometry */
+#define PIC32MK_NVM_PAGE_SIZE   4096u       /* erase granularity */
+#define PIC32MK_NVM_ROW_SIZE    512u        /* write-row granularity */
+
+/* Interrupt — Flash Control Error vector 31 */
+#define PIC32MK_IRQ_FCE         31
+
+/* -----------------------------------------------------------------------
+ * Data EEPROM (§11, DS60001519E)
+ * Base: 0xBF829000 (SFR offset 0x029000)
+ * Register block: EECON, EEKEY, EEADDR, EEDATA (each 0x10 stride with
+ * SET/CLR/INV aliases, except EEKEY which is write-only, no aliases).
+ * ----------------------------------------------------------------------- */
+
+#define PIC32MK_DATAEE_OFFSET   0x029000u   /* 0xBF829000 */
+#define PIC32MK_DATAEE_SIZE     0x000040u   /* EECON..EEDATA+INV inclusive */
+
+/* Register offsets within the DATAEE block */
+#define PIC32MK_EECON           0x00u
+#define PIC32MK_EEKEY           0x10u
+#define PIC32MK_EEADDR          0x20u
+#define PIC32MK_EEDATA_REG      0x30u       /* "_REG" avoids clash with EEDATA macro */
+
+/* EECON bits (p32mk1024mcm100.h) */
+#define PIC32MK_EECON_CMD_MASK  0x00000007u /* bits [2:0] */
+#define PIC32MK_EECON_CMD_SHIFT 0
+#define PIC32MK_EECON_ILW       (1u << 3)
+#define PIC32MK_EECON_ERR_MASK  0x00000030u /* bits [5:4] */
+#define PIC32MK_EECON_ERR_SHIFT 4
+#define PIC32MK_EECON_WREN      (1u << 6)
+#define PIC32MK_EECON_RW        (1u << 7)
+#define PIC32MK_EECON_ABORT     (1u << 12)
+#define PIC32MK_EECON_SIDL      (1u << 13)
+#define PIC32MK_EECON_RDY       (1u << 14)
+#define PIC32MK_EECON_ON        (1u << 15)
+
+/* EEADDR valid bits — 14-bit, word-aligned */
+#define PIC32MK_EEADDR_MASK     0x00003FFCu
+
+/* EEPROM storage geometry */
+#define PIC32MK_DATAEE_WORDS        1024    /* 4 KB = 1024 × 32-bit words */
+#define PIC32MK_DATAEE_PAGE_WORDS   32      /* 128-byte page */
+
+/* Unlock keys (written sequentially to EEKEY) */
+#define PIC32MK_EEKEY1          0xEDB7u
+#define PIC32MK_EEKEY2          0x1248u
+
+/* EECON CMD field values */
+#define PIC32MK_EECMD_WORD_READ     0
+#define PIC32MK_EECMD_WORD_WRITE    1
+#define PIC32MK_EECMD_PAGE_ERASE    2
+#define PIC32MK_EECMD_BULK_ERASE    3
+#define PIC32MK_EECMD_CONFIG_WRITE  4
+
+/* Interrupt — Data EEPROM vector 186 */
+#define PIC32MK_IRQ_DATAEE      186
 
 #endif /* HW_MIPS_PIC32MK_H */
