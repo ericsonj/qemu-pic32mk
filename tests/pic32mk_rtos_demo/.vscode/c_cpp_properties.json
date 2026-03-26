@@ -45,20 +45,20 @@
             ],
             "browse": {
                 "path": [
-                    "firmware",
-                    "firmware/src/config/default/driver/usb/usbfs",
-                    "firmware/src/config/default",
+                    "firmware/src/config/default/peripheral",
+                    "firmware/src/config/default/driver/usb",
                     "firmware/src/third_party/rtos/FreeRTOS/Source",
                     "firmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB",
-                    "firmware/src/config/default/system",
                     "/usr/mipsel-linux-gnu",
-                    "firmware/src/config",
-                    "firmware/src/config/default/driver",
-                    "firmware/src/config/default/driver/usb",
-                    "firmware/src/config/default/peripheral",
+                    "firmware",
                     "firmware/src/config/default/driver/usb/usbfs/src",
+                    "firmware/src/config/default/system",
+                    "/usr/lib/gcc-cross/mipsel-linux-gnu/14",
+                    "firmware/src/config/default/driver",
                     "firmware/src/config/default/usb",
-                    "/usr/lib/gcc-cross/mipsel-linux-gnu/14"
+                    "firmware/src/config/default/driver/usb/usbfs",
+                    "firmware/src/config",
+                    "firmware/src/config/default"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db"

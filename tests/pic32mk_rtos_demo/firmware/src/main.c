@@ -8,8 +8,18 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+#include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
+
+#ifdef snprintf
+#undef snprintf
+#endif
+
+#ifdef vsnprintf
+#undef vsnprintf
+#endif
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -37,14 +47,6 @@
  * UART1 TX helpers — thin wrappers around plib UART1_Write()
  * ----------------------------------------------------------------------- */
 
-static inline size_t uart_strlen(const char *s)
-{
-    const char *p = s;
-    while (*p)
-        p++;
-    return (size_t)(p - s);
-}
-
 static void uart1_putc(char c)
 {
     uint8_t byte = (uint8_t)c;
@@ -54,15 +56,45 @@ static void uart1_putc(char c)
     UART1_Write(&byte, 1);
 }
 
-static void uart1_puts(const char *s)
+static void uart1_write_all(const char *buf, size_t len)
 {
-    size_t len = uart_strlen(s);
     while (len > 0U)
     {
-        size_t n = UART1_Write((uint8_t *)(uintptr_t)s, len);
-        s += n;
+        size_t n = UART1_Write((uint8_t *)(uintptr_t)buf, len);
+        buf += n;
         len -= n;
     }
+}
+
+static void uart1_puts(const char *s)
+{
+    uart1_write_all(s, strlen(s));
+}
+
+int printf(const char *format, ...)
+{
+    char buf[192];
+    int written;
+    size_t len;
+    va_list args;
+
+    va_start(args, format);
+    written = vsnprintf(buf, sizeof(buf), format, args);
+    va_end(args);
+
+    if (written < 0)
+    {
+        return written;
+    }
+
+    len = (size_t)written;
+    if (len >= sizeof(buf))
+    {
+        len = sizeof(buf) - 1U;
+    }
+
+    uart1_write_all(buf, len);
+    return written;
 }
 
 
@@ -101,37 +133,6 @@ void vApplicationIdleHook(void)
  * Hello World task
  * ----------------------------------------------------------------------- */
 
-static void uart1_putu(uint32_t val)
-{
-    char buf[11];
-    int i = 0;
-    if (val == 0)
-    {
-        uart1_putc('0');
-        return;
-    }
-    while (val)
-    {
-        buf[i++] = '0' + (val % 10);
-        val /= 10;
-    }
-    /* Reverse and send in one UART1_Write call */
-    {
-        uint8_t out[11];
-        int j = 0;
-        while (i > 0)
-            out[j++] = (uint8_t)buf[--i];
-        size_t len = (size_t)j;
-        uint8_t *p = out;
-        while (len > 0U)
-        {
-            size_t n = UART1_Write(p, len);
-            p += n;
-            len -= n;
-        }
-    }
-}
-
 static void vHelloTask(void *pvParam)
 {
     (void)pvParam;
@@ -143,19 +144,10 @@ static void vHelloTask(void *pvParam)
         s %= 60;
         uint32_t h = m / 60;
         m %= 60;
-        uart1_putc('[');
-        if (h < 10)
-            uart1_putc('0');
-        uart1_putu(h);
-        uart1_putc(':');
-        if (m < 10)
-            uart1_putc('0');
-        uart1_putu(m);
-        uart1_putc(':');
-        if (s < 10)
-            uart1_putc('0');
-        uart1_putu(s);
-        uart1_puts("] Hello from FreeRTOS!\r\n");
+        printf("[%02lu:%02lu:%02lu] Hello from FreeRTOS!\r\n",
+               (unsigned long)h,
+               (unsigned long)m,
+               (unsigned long)s);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -183,9 +175,8 @@ static void vCanTxTask(void *pvParam)
     {
         vTaskDelay(pdMS_TO_TICKS(3000));
         count++;
-        uart1_puts("[CAN] TX #");
-        uart1_putu(count);
-        uart1_puts(" id=0x100 data='hello'\r\n");
+         printf("[CAN] TX #%lu id=0x100 data='hello'\r\n",
+             (unsigned long)count);
         bool ok = CAN1_MessageTransmit(
             0x100U, 5U, (uint8_t *)(uintptr_t)hello_payload,
             0U,                /* TX Queue (fifoQueueNum=0) */
@@ -197,8 +188,6 @@ static void vCanTxTask(void *pvParam)
         }
     }
 }
-
-static void uart1_puthex(uint8_t v); /* defined below with UART2 consumer */
 
 /* -----------------------------------------------------------------------
  * CAN2 RX task — interrupt-driven receive via FreeRTOS queue
@@ -266,19 +255,14 @@ static void vCan1RxTask(void *pvParam)
         if (xQueueReceive(xCan1RxQueue, &frame, portMAX_DELAY) == pdTRUE)
         {
             uint8_t i;
-            uart1_puts("[CAN1 RX] id=0x");
-            uart1_puthex((uint8_t)(frame.id >> 24));
-            uart1_puthex((uint8_t)(frame.id >> 16));
-            uart1_puthex((uint8_t)(frame.id >> 8));
-            uart1_puthex((uint8_t)(frame.id));
-            uart1_puts(" len=");
-            uart1_putc('0' + frame.length);
-            uart1_puts(" data=");
+            printf("[CAN1 RX] id=0x%08lX len=%u data=",
+                   (unsigned long)frame.id,
+                   (unsigned int)frame.length);
             for (i = 0; i < frame.length && i < 8U; i++)
             {
-                uart1_puthex(frame.data[i]);
+                printf("%02X", (unsigned int)frame.data[i]);
             }
-            uart1_puts("\r\n");
+            printf("\r\n");
         }
     }
 }
@@ -319,17 +303,14 @@ static void vCan2RxTask(void *pvParam)
         if (xQueueReceive(xCan2RxQueue, &frame, portMAX_DELAY) == pdTRUE)
         {
             uint8_t i;
-            uart1_puts("[CAN2 RX] id=0x");
-            uart1_puthex((uint8_t)(frame.id >> 8));
-            uart1_puthex((uint8_t)(frame.id));
-            uart1_puts(" len=");
-            uart1_putc('0' + frame.length);
-            uart1_puts(" data='");
+            printf("[CAN2 RX] id=0x%lX len=%u data='",
+                   (unsigned long)frame.id,
+                   (unsigned int)frame.length);
             for (i = 0; i < frame.length && i < 8U; i++)
             {
                 uart1_putc((char)frame.data[i]);
             }
-            uart1_puts("'\r\n");
+            printf("'\r\n");
         }
     }
 }
@@ -371,13 +352,6 @@ static void uart2_rx_callback(UART_EVENT event, uintptr_t context)
  * as: "[U2] <hex> '<ch>'\r\n"
  * ----------------------------------------------------------------------- */
 
-static void uart1_puthex(uint8_t v)
-{
-    const char hex[] = "0123456789ABCDEF";
-    uart1_putc(hex[v >> 4]);
-    uart1_putc(hex[v & 0xFu]);
-}
-
 static void vUart2ConsumerTask(void *pvParam)
 {
     (void)pvParam;
@@ -386,11 +360,9 @@ static void vUart2ConsumerTask(void *pvParam)
         uint8_t byte;
         if (xQueueReceive(xUart2RxQueue, &byte, portMAX_DELAY) == pdTRUE)
         {
-            uart1_puts("[U2] 0x");
-            uart1_puthex(byte);
-            uart1_puts(" '");
-            uart1_putc((char)byte);
-            uart1_puts("'\r\n");
+            printf("[U2] 0x%02X '%c'\r\n",
+                   (unsigned int)byte,
+                   (char)byte);
         }
     }
 }
@@ -413,59 +385,23 @@ static void vUsbCdcTask(void *pvParam)
 
     for (;;)
     {
-        const char prefix[] = "[CDC] Hello #";
-        const char suffix[] = "\r\n";
-        uint8_t tmp[12];
-        uint32_t val;
-        int n;
+        int len;
 
         count++;
 
-        /* Build message manually — no printf/snprintf available */
-        uint8_t *p = s_buf;
-        const char *c;
-        for (c = prefix; *c; c++)
-            *p++ = (uint8_t)*c;
-
-        /* Decimal count */
-        val = count;
-        n = 0;
-        if (val == 0U)
-        {
-            tmp[n++] = '0';
-        }
-        else
-        {
-            while (val)
-            {
-                tmp[n++] = (uint8_t)('0' + val % 10);
-                val /= 10;
-            }
-            /* reverse */
-            {
-                int l = 0, r = n - 1;
-                while (l < r)
-                {
-                    uint8_t t = tmp[l];
-                    tmp[l] = tmp[r];
-                    tmp[r] = t;
-                    l++;
-                    r--;
-                }
-            }
-        }
-        {
-            int i;
-            for (i = 0; i < n; i++)
-                *p++ = tmp[i];
-        }
-        for (c = suffix; *c; c++)
-            *p++ = (uint8_t)*c;
+        len = snprintf((char *)s_buf, sizeof(s_buf),
+                       "[CDC] Hello #%lu\r\n",
+                       (unsigned long)count);
 
         /* Retry until accepted (USB may still be busy from previous TX) */
+        if (len > 0)
         {
-            size_t len = (size_t)(p - s_buf);
-            while (!USB_SendFrame(s_buf, len))
+            size_t tx_len = (size_t)len;
+            if (tx_len >= sizeof(s_buf))
+            {
+                tx_len = sizeof(s_buf) - 1U;
+            }
+            while (!USB_SendFrame(s_buf, tx_len))
             {
                 vTaskDelay(pdMS_TO_TICKS(10));
             }
@@ -587,9 +523,7 @@ static void vAdcMonitorTask(void *pvParam)
         if (ADCHS_ChannelResultIsReady(ADCHS_CH15))
         {
             uint32_t result = ADCHS_ChannelResultGet(ADCHS_CH15);
-            uart1_puts("[ADC] CH15 = ");
-            uart1_putu(result);
-            uart1_puts("\r\n");
+            printf("[ADC] CH15 = %lu\r\n", (unsigned long)result);
         }
 
         vTaskDelay(pdMS_TO_TICKS(10000));
@@ -603,14 +537,6 @@ static void vAdcMonitorTask(void *pvParam)
  *           verify erased -> bulk erase -> done.
  * Prints PASS/FAIL for each step.
  * ----------------------------------------------------------------------- */
-
-static void uart1_puthex32(uint32_t v)
-{
-    int i;
-    for (i = 28; i >= 0; i -= 4) {
-        uart1_puthex((uint8_t)((v >> i) & 0xFu));
-    }
-}
 
 static void vEepromTestTask(void *pvParam)
 {
@@ -627,17 +553,15 @@ static void vEepromTestTask(void *pvParam)
     for (i = 0; i < 4; i++) {
         ok = EEPROM_WordWrite(test_addr[i], test_data[i]);
         if (!ok) {
-            uart1_puts("[EE] FAIL: WordWrite addr=0x");
-            uart1_puthex32(test_addr[i]);
-            uart1_puts("\r\n");
+            printf("[EE] FAIL: WordWrite addr=0x%08lX\r\n",
+                   (unsigned long)test_addr[i]);
         }
     }
 
     EEPROM_ERROR err = EEPROM_ErrorGet();
     if (err != EEPROM_ERROR_NONE) {
-        uart1_puts("[EE] FAIL: ErrorGet after writes = 0x");
-        uart1_puthex32(err);
-        uart1_puts("\r\n");
+        printf("[EE] FAIL: ErrorGet after writes = 0x%08lX\r\n",
+               (unsigned long)err);
     }
 
     /* --- Read back and verify --- */
@@ -646,24 +570,18 @@ static void vEepromTestTask(void *pvParam)
         uint32_t readback = 0;
         ok = EEPROM_WordRead(test_addr[i], &readback);
         if (!ok) {
-            uart1_puts("[EE] FAIL: WordRead addr=0x");
-            uart1_puthex32(test_addr[i]);
-            uart1_puts("\r\n");
+            printf("[EE] FAIL: WordRead addr=0x%08lX\r\n",
+                   (unsigned long)test_addr[i]);
         } else if (readback != test_data[i]) {
-            uart1_puts("[EE] FAIL: addr=0x");
-            uart1_puthex32(test_addr[i]);
-            uart1_puts(" expected=0x");
-            uart1_puthex32(test_data[i]);
-            uart1_puts(" got=0x");
-            uart1_puthex32(readback);
-            uart1_puts("\r\n");
+            printf("[EE] FAIL: addr=0x%08lX expected=0x%08lX got=0x%08lX\r\n",
+                   (unsigned long)test_addr[i],
+                   (unsigned long)test_data[i],
+                   (unsigned long)readback);
         } else {
             pass_count++;
         }
     }
-    uart1_puts("[EE] Write/Read: ");
-    uart1_putu(pass_count);
-    uart1_puts("/4 PASS\r\n");
+    printf("[EE] Write/Read: %lu/4 PASS\r\n", (unsigned long)pass_count);
 
 
     /* --- Page erase (page 0 = addresses 0x000..0x07C) --- */
@@ -679,16 +597,12 @@ static void vEepromTestTask(void *pvParam)
         if (ok && readback == 0xFFFFFFFFu) {
             pass_count++;
         } else {
-            uart1_puts("[EE] FAIL: post-erase addr=0x");
-            uart1_puthex32(test_addr[i]);
-            uart1_puts(" got=0x");
-            uart1_puthex32(readback);
-            uart1_puts("\r\n");
+            printf("[EE] FAIL: post-erase addr=0x%08lX got=0x%08lX\r\n",
+                   (unsigned long)test_addr[i],
+                   (unsigned long)readback);
         }
     }
-    uart1_puts("[EE] PageErase: ");
-    uart1_putu(pass_count);
-    uart1_puts("/4 PASS\r\n");
+    printf("[EE] PageErase: %lu/4 PASS\r\n", (unsigned long)pass_count);
 
     /* --- Bulk erase test: write one word, bulk erase, verify --- */
     EEPROM_WordWrite(0x100, 0xBAADF00Du);
@@ -702,9 +616,8 @@ static void vEepromTestTask(void *pvParam)
         if (readback == 0xFFFFFFFFu) {
             uart1_puts("[EE] BulkErase: PASS\r\n");
         } else {
-            uart1_puts("[EE] BulkErase: FAIL got=0x");
-            uart1_puthex32(readback);
-            uart1_puts("\r\n");
+            printf("[EE] BulkErase: FAIL got=0x%08lX\r\n",
+                   (unsigned long)readback);
         }
     }
 
@@ -747,9 +660,8 @@ static void vNvmTestTask(void *pvParam)
     }
 
     if (NVM_ErrorGet() != NVM_ERROR_NONE) {
-        uart1_puts("[NVM] FAIL: error after writes = 0x");
-        uart1_puthex32(NVM_ErrorGet());
-        uart1_puts("\r\n");
+        printf("[NVM] FAIL: error after writes = 0x%08lX\r\n",
+               (unsigned long)NVM_ErrorGet());
     }
 
     /* --- Read back via NVM_Read and verify --- */
@@ -759,20 +671,15 @@ static void vNvmTestTask(void *pvParam)
     uint32_t pass_count = 0;
     for (i = 0; i < 4; i++) {
         if (rbuf[i] != test_data[i]) {
-            uart1_puts("[NVM] FAIL: word[");
-            uart1_putu(i);
-            uart1_puts("] expected=0x");
-            uart1_puthex32(test_data[i]);
-            uart1_puts(" got=0x");
-            uart1_puthex32(rbuf[i]);
-            uart1_puts("\r\n");
+            printf("[NVM] FAIL: word[%lu] expected=0x%08lX got=0x%08lX\r\n",
+                   (unsigned long)i,
+                   (unsigned long)test_data[i],
+                   (unsigned long)rbuf[i]);
         } else {
             pass_count++;
         }
     }
-    uart1_puts("[NVM] Write/Read: ");
-    uart1_putu(pass_count);
-    uart1_puts("/4 PASS\r\n");
+    printf("[NVM] Write/Read: %lu/4 PASS\r\n", (unsigned long)pass_count);
 
     /* --- Quad-word write at offset 0x10 (16-byte aligned) --- */
     {
@@ -789,15 +696,11 @@ static void vNvmTestTask(void *pvParam)
             qbuf[2] == qw_data[2] && qbuf[3] == qw_data[3]) {
             uart1_puts("[NVM] QuadWord: PASS\r\n");
         } else {
-            uart1_puts("[NVM] QuadWord: FAIL got=0x");
-            uart1_puthex32(qbuf[0]);
-            uart1_puts(" 0x");
-            uart1_puthex32(qbuf[1]);
-            uart1_puts(" 0x");
-            uart1_puthex32(qbuf[2]);
-            uart1_puts(" 0x");
-            uart1_puthex32(qbuf[3]);
-            uart1_puts("\r\n");
+            printf("[NVM] QuadWord: FAIL got=0x%08lX 0x%08lX 0x%08lX 0x%08lX\r\n",
+                   (unsigned long)qbuf[0],
+                   (unsigned long)qbuf[1],
+                   (unsigned long)qbuf[2],
+                   (unsigned long)qbuf[3]);
         }
     }
 
@@ -813,16 +716,12 @@ static void vNvmTestTask(void *pvParam)
         if (rbuf[i] == 0xFFFFFFFFu) {
             pass_count++;
         } else {
-            uart1_puts("[NVM] FAIL: post-erase word[");
-            uart1_putu(i);
-            uart1_puts("] got=0x");
-            uart1_puthex32(rbuf[i]);
-            uart1_puts("\r\n");
+            printf("[NVM] FAIL: post-erase word[%lu] got=0x%08lX\r\n",
+                   (unsigned long)i,
+                   (unsigned long)rbuf[i]);
         }
     }
-    uart1_puts("[NVM] PageErase: ");
-    uart1_putu(pass_count);
-    uart1_puts("/4 PASS\r\n");
+    printf("[NVM] PageErase: %lu/4 PASS\r\n", (unsigned long)pass_count);
 
     uart1_puts("[NVM] NVM test complete.\r\n");
 
@@ -918,10 +817,7 @@ static void vIcapDemoTask(void *pvParam)
     {
         xSemaphoreTake(xIc2Semaphore, portMAX_DELAY);
         uint16_t val = ic2_last_capture;
-        uart1_puts("[ICAP] IC2 captured 0x");
-        uart1_puthex((uint8_t)(val >> 8));
-        uart1_puthex((uint8_t)(val));
-        uart1_puts("\r\n");
+        printf("[ICAP] IC2 captured 0x%04X\r\n", (unsigned int)val);
     }
 }
 
@@ -950,12 +846,12 @@ static void vSpi5SlaveTask(void *pvParam)
                 count = sizeof(buf);
             }
             (void)SPI5_Read(buf, count);
-            uart1_puts("[SPI5] RX '");
+            printf("[SPI5] RX '");
             for (size_t i = 0; i < count; i++)
             {
                 uart1_putc((char)buf[i]);
             }
-            uart1_puts("'\r\n");
+            printf("'\r\n");
 
             /* Refill reply buffer after each transfer */
             (void)SPI5_Write((void *)(uintptr_t)reply, sizeof(reply) - 1U);

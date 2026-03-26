@@ -34,8 +34,8 @@ INCS += -Ifirmware/src/third_party/rtos/FreeRTOS/Source/include
 CSRC += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MemMang/heap_1.c
 CSRC += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MK/port.c
 
-SRC_DIRS += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MemMang
 SRC_DIRS += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MK
+SRC_DIRS += firmware/src/third_party/rtos/FreeRTOS/Source/portable/MemMang
 
 INCS += -Ifirmware/src/third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MK
 
@@ -87,24 +87,24 @@ CSRC += firmware/src/config/default/usb/src/usb_device_cdc.c
 ASSRC += firmware/src/config/default/crt0.S
 ASSRC += firmware/src/config/default/port_asm_patched.S
 
-SRC_DIRS += firmware/src/config/default/peripheral/adchs
-SRC_DIRS += firmware/src/config/default/peripheral/eeprom
-SRC_DIRS += firmware/src/config/default/peripheral/spi
-SRC_DIRS += firmware/src/config/default/driver/usb/usbfs/src
 SRC_DIRS += firmware/src/config/default/peripheral/tmr
-SRC_DIRS += firmware/src/config/default/peripheral/evic
-SRC_DIRS += firmware/src/config/default
-SRC_DIRS += firmware/src/config/default/peripheral/tmr1
-SRC_DIRS += firmware/src/config/default/peripheral/gpio
-SRC_DIRS += firmware/src/config/default/peripheral/ocmp
-SRC_DIRS += firmware/src/config/default/peripheral/wdt
-SRC_DIRS += firmware/src/config/default/peripheral/canfd
+SRC_DIRS += firmware/src/config/default/peripheral/adchs
 SRC_DIRS += firmware/src/config/default/osal
+SRC_DIRS += firmware/src/config/default/peripheral/canfd
 SRC_DIRS += firmware/src/config/default/usb/src
 SRC_DIRS += firmware/src/config/default/peripheral/uart
-SRC_DIRS += firmware/src/config/default/peripheral/nvm
-SRC_DIRS += firmware/src/config/default/peripheral/clk
+SRC_DIRS += firmware/src/config/default/driver/usb/usbfs/src
+SRC_DIRS += firmware/src/config/default/peripheral/spi
+SRC_DIRS += firmware/src/config/default/peripheral/wdt
 SRC_DIRS += firmware/src/config/default/peripheral/icap
+SRC_DIRS += firmware/src/config/default/peripheral/evic
+SRC_DIRS += firmware/src/config/default/peripheral/ocmp
+SRC_DIRS += firmware/src/config/default/peripheral/clk
+SRC_DIRS += firmware/src/config/default/peripheral/eeprom
+SRC_DIRS += firmware/src/config/default/peripheral/gpio
+SRC_DIRS += firmware/src/config/default/peripheral/nvm
+SRC_DIRS += firmware/src/config/default
+SRC_DIRS += firmware/src/config/default/peripheral/tmr1
 
 INCS += -Ifirmware/src/config/default
 INCS += -Ifirmware/src/config/default/driver
