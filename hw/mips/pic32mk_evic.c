@@ -147,6 +147,7 @@ static void evic_set_irq(void *opaque, int irq, int level)
     uint32_t mask = 1u << (irq & 31);
 
     /* Track the current hardware level of this source */
+
     if (level) {
         s->irq_level[word] |= mask;
         s->ifsreg[word]    |= mask;

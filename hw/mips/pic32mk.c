@@ -60,6 +60,7 @@ typedef struct {
     MemoryRegion    bflash2;
     MemoryRegion    sfr;
     MemoryRegion    sfr_unimpl;
+    MemoryRegion    pps_stub;   /* PPS input/output regs 0xBF801400-0xBF8017FF */
 
     DeviceState    *evic;
 } PIC32MKState;
@@ -92,6 +93,27 @@ static const MemoryRegionOps sfr_unimpl_ops = {
     .endianness = DEVICE_LITTLE_ENDIAN,
     .valid = {
         .min_access_size = 1,
+        .max_access_size = 4,
+    },
+};
+
+/* Silent stub — used for PPS and other write-only config registers that
+ * need no emulation but should not generate unimplemented warnings. */
+static uint64_t sfr_ignore_read(void *opaque, hwaddr addr, unsigned size)
+{
+    return 0;
+}
+static void sfr_ignore_write(void *opaque, hwaddr addr, uint64_t val,
+                             unsigned size)
+{
+    /* silently accept */
+}
+static const MemoryRegionOps sfr_ignore_ops = {
+    .read       = sfr_ignore_read,
+    .write      = sfr_ignore_write,
+    .endianness = DEVICE_LITTLE_ENDIAN,
+    .valid = {
+        .min_access_size = 4,
         .max_access_size = 4,
     },
 };
@@ -170,6 +192,12 @@ static void pic32mk_memory_init(PIC32MKState *s, MachineState *machine)
     memory_region_init_io(&s->sfr_unimpl, NULL, &sfr_unimpl_ops, s,
                           "pic32mk.sfr-unimpl", PIC32MK_SFR_SIZE);
     memory_region_add_subregion_overlap(&s->sfr, 0, &s->sfr_unimpl, 0);
+
+    /* PPS (Peripheral Pin Select) 0xBF801400–0xBF8017FF — silent stub */
+    memory_region_init_io(&s->pps_stub, NULL, &sfr_ignore_ops, NULL,
+                          "pic32mk.pps", PIC32MK_PPS_SIZE);
+    memory_region_add_subregion_overlap(&s->sfr, PIC32MK_PPS_OFFSET,
+                                        &s->pps_stub, 1);
 }
 
 /* -----------------------------------------------------------------------
@@ -465,10 +493,12 @@ static void pic32mk_canfd_create(PIC32MKState *s,
                                  hwaddr sfr_offset,
                                  hwaddr msgram_phys_base,
                                  int irq_src,
-                                 CanBusState *canbus)
+                                 CanBusState *canbus,
+                                 uint32_t instance_id)
 {
     DeviceState *dev = qdev_new(TYPE_PIC32MK_CANFD);
     qdev_prop_set_uint32(dev, "msg-ram-base", (uint32_t)msgram_phys_base);
+    qdev_prop_set_uint32(dev, "instance-id", instance_id);
     if (canbus) {
         object_property_set_link(OBJECT(dev), "canbus",
                                  OBJECT(canbus), &error_fatal);
@@ -696,16 +726,16 @@ static void pic32mk_machine_init(MachineState *machine)
     /* CAN FD 1–4 */
     pic32mk_canfd_create(s, PIC32MK_CAN1_OFFSET,
                          PIC32MK_CAN1_MSGRAM_BASE, PIC32MK_IRQ_CAN1,
-                         pic32mk_find_canbus(0));
+                         pic32mk_find_canbus(0), 0);
     pic32mk_canfd_create(s, PIC32MK_CAN2_OFFSET,
                          PIC32MK_CAN2_MSGRAM_BASE, PIC32MK_IRQ_CAN2,
-                         pic32mk_find_canbus(1));
+                         pic32mk_find_canbus(1), 1);
     pic32mk_canfd_create(s, PIC32MK_CAN3_OFFSET,
                          PIC32MK_CAN3_MSGRAM_BASE, PIC32MK_IRQ_CAN3,
-                         pic32mk_find_canbus(2));
+                         pic32mk_find_canbus(2), 2);
     pic32mk_canfd_create(s, PIC32MK_CAN4_OFFSET,
                          PIC32MK_CAN4_MSGRAM_BASE, PIC32MK_IRQ_CAN4,
-                         pic32mk_find_canbus(3));
+                         pic32mk_find_canbus(3), 3);
 
     /* USB OTG 1–2 (Phase 4A — register-file stub) */
     pic32mk_usb_create(s, PIC32MK_USB1_OFFSET, PIC32MK_IRQ_USB1, "usbcdc");

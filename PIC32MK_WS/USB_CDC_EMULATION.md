@@ -28,7 +28,7 @@ The firmware side runs the unmodified Microchip Harmony 3 USB stack
 │  │  MIPS CPU model  │────▶│  pic32mk_usb.c  (USB emulator)   │ │
 │  │  (FreeRTOS +     │     │                                  │ │
 │  │   Harmony stack) │◀────│  • SFR MMIO (4 KB, read/write)   │ │
-│  └──────────────────┘     │  • QEMUTimer  (5 ms poll)        │ │
+│  └──────────────────┘     │  • QEMUTimer  (1 ms poll)        │ │
 │         ▲    │            │  • EP0 state machine             │ │
 │         │    │            │  • BDT read/write via            │ │
 │         │    ▼            │    cpu_physical_memory_*()       │ │
@@ -216,8 +216,9 @@ WAIT_CONFIG ──────────────────────�
  │  Set s->configured = true                                        │
  ▼
 DONE ─────────────────────────────────────────────────────────────
-    Poll usb_check_cdc_bdt() every 5 ms
-    Advance frame counter (UxFRML/H) by 5 per tick
+    Poll usb_check_cdc_bdt() every 1 ms
+    Advance frame counter (UxFRML/H) by 1 per tick
+    (Also: opportunistic TX drain on every TRNIF W1C clear)
 ```
 
 ### Ping-pong handling
@@ -275,7 +276,7 @@ scheduler starts) always returns `USB_DEVICE_HANDLE_INVALID`.
 ## CDC TX Data Path
 
 Once enumeration reaches `EP0_SIM_DONE`, `usb_check_cdc_bdt()` is called
-every 5 ms:
+every 1 ms (timer) and also opportunistically on every TRNIF W1C clear:
 
 ```
 FreeRTOS vUsbCdcTask
@@ -290,7 +291,7 @@ FreeRTOS vUsbCdcTask
                     ▼
               [BDT at RAM offset 0x50 or 0x58 from BDT base]
 
-QEMU 5 ms timer tick
+QEMU 1 ms timer tick  (+ opportunistic call on TRNIF clear)
   │
   └─▶ usb_check_cdc_bdt()
         │  reads EP2-IN-even/odd: find UOWN=1
@@ -532,6 +533,96 @@ The BDT offset for EP2-IN-even is `BDT + 0x50`, not `BDT + 0x30`.
 **Fix:** `usb_check_cdc_bdt()` uses offset `0x50` and sets
 `UxSTAT = 0x28` (EP=2, DIR=IN, PPBI=0).
 
+### 7 — Missing USTAT FIFO caused write stalls (Phase 4B+)
+
+Real PIC32MK hardware has a **4-deep USTAT FIFO** (DS60001519E §25.3.3).
+Each completed USB transaction pushes a USTAT value onto the FIFO and
+asserts TRNIF.  When firmware W1C-clears TRNIF, the FIFO pops; if more
+entries remain, TRNIF is immediately re-asserted with the next USTAT value.
+
+The original Phase 4B implementation used a single `s->ustat` register.
+When two transactions completed in quick succession (e.g. `usb_chr_receive`
+firing for EP2-OUT RX, then the timer draining EP2-IN TX), the second
+overwrite destroyed the first USTAT value.  The firmware ISR processed
+only the second transaction, permanently missing the first.  If the missed
+transaction was a TX completion, the firmware stayed stuck in
+`WAIT_FOR_WRITE_COMPLETE` — stalling all further protocol communication.
+
+**Root cause:** Missing USTAT FIFO → lost transactions → write deadlock.
+
+**Fix (`pic32mk_usb.h` + `pic32mk_usb.c`):**
+
+Added a 4-entry circular FIFO to `PIC32MKUSBState`:
+
+```c
+/* pic32mk_usb.h */
+uint32_t stat_fifo[4];
+int      stat_fifo_head;
+int      stat_fifo_tail;
+int      stat_fifo_count;
+```
+
+Two helper functions manage the FIFO:
+
+- `usb_stat_fifo_push(s, stat_val)` — pushes a USTAT value, exposes the
+  front via `s->ustat`, and asserts `TRNIF`.  Logs overflow if FIFO full.
+- `usb_stat_fifo_pop(s)` — called when firmware W1C-clears TRNIF.  Advances
+  the tail.  If entries remain, re-exposes the next value and re-asserts
+  TRNIF.
+
+All direct `s->ustat = ...; s->uir |= TRNIF;` assignments were replaced
+with `usb_stat_fifo_push()` calls across all 6 sites:
+`usb_inject_setup`, `usb_accept_ep0_in`, `usb_send_status_out`,
+`usb_chr_receive`, `usb_check_cdc_bdt` (EP1-IN + EP2-IN).
+
+The UIR W1C handler now calls `usb_stat_fifo_pop(s)` when TRNIF is cleared:
+
+```c
+case PIC32MK_UxIR:
+    if (v & USB_IR_TRNIF) {
+        usb_stat_fifo_pop(s);
+    }
+    apply_w1c(&s->uir, v, sub);
+    /* + opportunistic CDC TX check (see bug #8) */
+    ...
+```
+
+The FIFO is reset to zero in both `pic32mk_usb_reset()` and
+`pic32mk_usb_init()`.
+
+### 8 — 5 ms TX poll too slow for bootloader throughput
+
+`EP0_SIM_DONE` polled `usb_check_cdc_bdt()` every 5 ms and drained only
+one EP2-IN packet per tick.  This limited throughput to ~200 commands/second
+and added up to 5 ms latency per response — enough to cause host-side
+timeouts during rapid bootloader WRITE sequences.
+
+**Fix:**
+
+1. **Timer reduced from 5 ms to 1 ms** — polling `usb_check_cdc_bdt()` 5×
+   faster.  Frame counter now increments by 1 per tick (matching real USB
+   full-speed SOF rate of 1 ms).
+
+2. **Opportunistic TX drain on TRNIF clear** — when firmware W1C-clears
+   TRNIF in the UIR write handler (meaning it just finished processing a
+   transaction), we immediately call `usb_check_cdc_bdt()`.  If the firmware
+   armed EP2-IN (response data) during that transaction's processing, the
+   response is drained instantly rather than waiting up to 1 ms for the next
+   timer tick.  This gives near-zero TX latency for the common case.
+
+```c
+case PIC32MK_UxIR:
+    if (v & USB_IR_TRNIF) {
+        usb_stat_fifo_pop(s);
+    }
+    apply_w1c(&s->uir, v, sub);
+    if (s->configured) {
+        usb_check_cdc_bdt(s);  /* opportunistic drain */
+    }
+    usb_update_irq(s);
+    return;
+```
+
 ---
 
 ## Limitations and Future Work
@@ -540,7 +631,7 @@ The BDT offset for EP2-IN-even is `BDT + 0x50`, not `BDT + 0x30`.
 |---|---|
 | CDC RX (host→device) not implemented | `usb_check_cdc_bdt` only drains TX. RX would require reading host input from the chardev and injecting it into EP2-OUT BDT entries. |
 | EP1 interrupt IN not drained | CDC ACM notifications (EP1-IN) are ignored. The firmware will stall if it queues them without a TRNIF ack, but in practice Harmony only sends them on line-state changes which don't happen in this test. |
-| Frame counter increments by 5 per 5 ms | Good enough for CDC throughput but not SOF-accurate. Harmony does not currently use the frame counter in device mode for any critical timing. |
+| Frame counter increments by 1 per 1 ms | Matches real USB full-speed SOF rate. Harmony does not currently use the frame counter in device mode for any critical timing. |
 | USB2 instance has no chardev | `pic32mk_usb_create(s, PIC32MK_USB2_OFFSET, PIC32MK_IRQ_USB2, NULL)` — USB2 is a pure SFR stub. |
 | No suspend/resume emulation | `USB_PWRC_USUSPND` writes are accepted but ignored. |
 | No host-mode support | `USB_CON_HOSTEN` is stored but has no effect. |

@@ -351,6 +351,14 @@ typedef union {
 #define _IFS1_T9IF_MASK         (1u << 8)   /* Timer9 = EVIC source 40 */
 #define _IEC1_T9IE_MASK         (1u << 8)
 
+/* UART2 interrupt bits in IFS1/IEC1: U2E=bit24, U2RX=bit25, U2TX=bit26 */
+#define _IFS1_U2EIF_MASK        0x01000000u  /* source 56 */
+#define _IFS1_U2RXIF_MASK       0x02000000u  /* source 57 */
+#define _IFS1_U2TXIF_MASK       0x04000000u  /* source 58 */
+#define _IEC1_U2EIE_MASK        0x01000000u
+#define _IEC1_U2RXIE_MASK       0x02000000u
+#define _IEC1_U2TXIE_MASK       0x04000000u
+
 #define _IFS0_CS0IF_MASK        (1u << 1)   /* CoreSW0 = EVIC source 1 */
 #define _IEC0_CS0IE_MASK        (1u << 1)
 #define _IEC0_CS0IE_POSITION    1
@@ -538,6 +546,138 @@ typedef union {
 #define _OC3CON_ON_MASK     (1u << 15)
 #define _OC3CON_ON_POSITION 15
 
+/* OC4–OC9: 0xBF824600–0xBF825000, 0x200 stride */
+#define _OC4_BASE   0xBF824600u
+#define OC4CON      (*(volatile uint32_t *)(_OC4_BASE + 0x000u))
+#define OC4CONCLR   (*(volatile uint32_t *)(_OC4_BASE + 0x004u))
+#define OC4CONSET   (*(volatile uint32_t *)(_OC4_BASE + 0x008u))
+#define OC4CONINV   (*(volatile uint32_t *)(_OC4_BASE + 0x00Cu))
+#define OC4R        (*(volatile uint32_t *)(_OC4_BASE + 0x010u))
+#define OC4RS       (*(volatile uint32_t *)(_OC4_BASE + 0x020u))
+#define _OC4CON_ON_MASK     (1u << 15)
+#define _OC4CON_ON_POSITION 15
+
+#define _OC5_BASE   0xBF824800u
+#define OC5CON      (*(volatile uint32_t *)(_OC5_BASE + 0x000u))
+#define OC5CONCLR   (*(volatile uint32_t *)(_OC5_BASE + 0x004u))
+#define OC5CONSET   (*(volatile uint32_t *)(_OC5_BASE + 0x008u))
+#define OC5CONINV   (*(volatile uint32_t *)(_OC5_BASE + 0x00Cu))
+#define OC5R        (*(volatile uint32_t *)(_OC5_BASE + 0x010u))
+#define OC5RS       (*(volatile uint32_t *)(_OC5_BASE + 0x020u))
+#define _OC5CON_ON_MASK     (1u << 15)
+#define _OC5CON_ON_POSITION 15
+
+#define _OC6_BASE   0xBF824A00u
+#define OC6CON      (*(volatile uint32_t *)(_OC6_BASE + 0x000u))
+#define OC6CONCLR   (*(volatile uint32_t *)(_OC6_BASE + 0x004u))
+#define OC6CONSET   (*(volatile uint32_t *)(_OC6_BASE + 0x008u))
+#define OC6CONINV   (*(volatile uint32_t *)(_OC6_BASE + 0x00Cu))
+#define OC6R        (*(volatile uint32_t *)(_OC6_BASE + 0x010u))
+#define OC6RS       (*(volatile uint32_t *)(_OC6_BASE + 0x020u))
+#define _OC6CON_ON_MASK     (1u << 15)
+#define _OC6CON_ON_POSITION 15
+
+#define _OC7_BASE   0xBF824C00u
+#define OC7CON      (*(volatile uint32_t *)(_OC7_BASE + 0x000u))
+#define OC7CONCLR   (*(volatile uint32_t *)(_OC7_BASE + 0x004u))
+#define OC7CONSET   (*(volatile uint32_t *)(_OC7_BASE + 0x008u))
+#define OC7CONINV   (*(volatile uint32_t *)(_OC7_BASE + 0x00Cu))
+#define OC7R        (*(volatile uint32_t *)(_OC7_BASE + 0x010u))
+#define OC7RS       (*(volatile uint32_t *)(_OC7_BASE + 0x020u))
+#define _OC7CON_ON_MASK     (1u << 15)
+#define _OC7CON_ON_POSITION 15
+
+#define _OC8_BASE   0xBF824E00u
+#define OC8CON      (*(volatile uint32_t *)(_OC8_BASE + 0x000u))
+#define OC8CONCLR   (*(volatile uint32_t *)(_OC8_BASE + 0x004u))
+#define OC8CONSET   (*(volatile uint32_t *)(_OC8_BASE + 0x008u))
+#define OC8CONINV   (*(volatile uint32_t *)(_OC8_BASE + 0x00Cu))
+#define OC8R        (*(volatile uint32_t *)(_OC8_BASE + 0x010u))
+#define OC8RS       (*(volatile uint32_t *)(_OC8_BASE + 0x020u))
+#define _OC8CON_ON_MASK     (1u << 15)
+#define _OC8CON_ON_POSITION 15
+
+#define _OC9_BASE   0xBF825000u
+#define OC9CON      (*(volatile uint32_t *)(_OC9_BASE + 0x000u))
+#define OC9CONCLR   (*(volatile uint32_t *)(_OC9_BASE + 0x004u))
+#define OC9CONSET   (*(volatile uint32_t *)(_OC9_BASE + 0x008u))
+#define OC9CONINV   (*(volatile uint32_t *)(_OC9_BASE + 0x00Cu))
+#define OC9R        (*(volatile uint32_t *)(_OC9_BASE + 0x010u))
+#define OC9RS       (*(volatile uint32_t *)(_OC9_BASE + 0x020u))
+#define _OC9CON_ON_MASK     (1u << 15)
+#define _OC9CON_ON_POSITION 15
+
+/* OC10–OC16: base 0xBF845200, 0x200 stride (second SFR bank) */
+#define _OC10_BASE  0xBF845200u
+#define OC10CON     (*(volatile uint32_t *)(_OC10_BASE + 0x000u))
+#define OC10CONCLR  (*(volatile uint32_t *)(_OC10_BASE + 0x004u))
+#define OC10CONSET  (*(volatile uint32_t *)(_OC10_BASE + 0x008u))
+#define OC10CONINV  (*(volatile uint32_t *)(_OC10_BASE + 0x00Cu))
+#define OC10R       (*(volatile uint32_t *)(_OC10_BASE + 0x010u))
+#define OC10RS      (*(volatile uint32_t *)(_OC10_BASE + 0x020u))
+#define _OC10CON_ON_MASK     (1u << 15)
+#define _OC10CON_ON_POSITION 15
+
+#define _OC11_BASE  0xBF845400u
+#define OC11CON     (*(volatile uint32_t *)(_OC11_BASE + 0x000u))
+#define OC11CONCLR  (*(volatile uint32_t *)(_OC11_BASE + 0x004u))
+#define OC11CONSET  (*(volatile uint32_t *)(_OC11_BASE + 0x008u))
+#define OC11CONINV  (*(volatile uint32_t *)(_OC11_BASE + 0x00Cu))
+#define OC11R       (*(volatile uint32_t *)(_OC11_BASE + 0x010u))
+#define OC11RS      (*(volatile uint32_t *)(_OC11_BASE + 0x020u))
+#define _OC11CON_ON_MASK     (1u << 15)
+#define _OC11CON_ON_POSITION 15
+
+#define _OC12_BASE  0xBF845600u
+#define OC12CON     (*(volatile uint32_t *)(_OC12_BASE + 0x000u))
+#define OC12CONCLR  (*(volatile uint32_t *)(_OC12_BASE + 0x004u))
+#define OC12CONSET  (*(volatile uint32_t *)(_OC12_BASE + 0x008u))
+#define OC12CONINV  (*(volatile uint32_t *)(_OC12_BASE + 0x00Cu))
+#define OC12R       (*(volatile uint32_t *)(_OC12_BASE + 0x010u))
+#define OC12RS      (*(volatile uint32_t *)(_OC12_BASE + 0x020u))
+#define _OC12CON_ON_MASK     (1u << 15)
+#define _OC12CON_ON_POSITION 15
+
+#define _OC13_BASE  0xBF845800u
+#define OC13CON     (*(volatile uint32_t *)(_OC13_BASE + 0x000u))
+#define OC13CONCLR  (*(volatile uint32_t *)(_OC13_BASE + 0x004u))
+#define OC13CONSET  (*(volatile uint32_t *)(_OC13_BASE + 0x008u))
+#define OC13CONINV  (*(volatile uint32_t *)(_OC13_BASE + 0x00Cu))
+#define OC13R       (*(volatile uint32_t *)(_OC13_BASE + 0x010u))
+#define OC13RS      (*(volatile uint32_t *)(_OC13_BASE + 0x020u))
+#define _OC13CON_ON_MASK     (1u << 15)
+#define _OC13CON_ON_POSITION 15
+
+#define _OC14_BASE  0xBF845A00u
+#define OC14CON     (*(volatile uint32_t *)(_OC14_BASE + 0x000u))
+#define OC14CONCLR  (*(volatile uint32_t *)(_OC14_BASE + 0x004u))
+#define OC14CONSET  (*(volatile uint32_t *)(_OC14_BASE + 0x008u))
+#define OC14CONINV  (*(volatile uint32_t *)(_OC14_BASE + 0x00Cu))
+#define OC14R       (*(volatile uint32_t *)(_OC14_BASE + 0x010u))
+#define OC14RS      (*(volatile uint32_t *)(_OC14_BASE + 0x020u))
+#define _OC14CON_ON_MASK     (1u << 15)
+#define _OC14CON_ON_POSITION 15
+
+#define _OC15_BASE  0xBF845C00u
+#define OC15CON     (*(volatile uint32_t *)(_OC15_BASE + 0x000u))
+#define OC15CONCLR  (*(volatile uint32_t *)(_OC15_BASE + 0x004u))
+#define OC15CONSET  (*(volatile uint32_t *)(_OC15_BASE + 0x008u))
+#define OC15CONINV  (*(volatile uint32_t *)(_OC15_BASE + 0x00Cu))
+#define OC15R       (*(volatile uint32_t *)(_OC15_BASE + 0x010u))
+#define OC15RS      (*(volatile uint32_t *)(_OC15_BASE + 0x020u))
+#define _OC15CON_ON_MASK     (1u << 15)
+#define _OC15CON_ON_POSITION 15
+
+#define _OC16_BASE  0xBF845E00u
+#define OC16CON     (*(volatile uint32_t *)(_OC16_BASE + 0x000u))
+#define OC16CONCLR  (*(volatile uint32_t *)(_OC16_BASE + 0x004u))
+#define OC16CONSET  (*(volatile uint32_t *)(_OC16_BASE + 0x008u))
+#define OC16CONINV  (*(volatile uint32_t *)(_OC16_BASE + 0x00Cu))
+#define OC16R       (*(volatile uint32_t *)(_OC16_BASE + 0x010u))
+#define OC16RS      (*(volatile uint32_t *)(_OC16_BASE + 0x020u))
+#define _OC16CON_ON_MASK     (1u << 15)
+#define _OC16CON_ON_POSITION 15
+
 /* -----------------------------------------------------------------------
  * WDT registers  (base 0xBF800C00, DS60001519E §17, Register 17-1)
  * WDTCON layout:
@@ -667,6 +807,29 @@ typedef union {
 #define UPLLCONCLR      (*(volatile uint32_t *)(_CRU_BASE + 0x34u))
 #define UPLLCONSET      (*(volatile uint32_t *)(_CRU_BASE + 0x38u))
 #define UPLLCONINV      (*(volatile uint32_t *)(_CRU_BASE + 0x3Cu))
+
+/* RCON / RSWRST / RNMICON / PWRCON — Reset control */
+#define RCON            (*(volatile uint32_t *)(_CRU_BASE + 0x40u))
+#define RCONCLR         (*(volatile uint32_t *)(_CRU_BASE + 0x44u))
+#define RCONSET         (*(volatile uint32_t *)(_CRU_BASE + 0x48u))
+#define RCONINV         (*(volatile uint32_t *)(_CRU_BASE + 0x4Cu))
+
+#define RSWRST          (*(volatile uint32_t *)(_CRU_BASE + 0x50u))
+#define RSWRSTCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x54u))
+#define RSWRSTSET       (*(volatile uint32_t *)(_CRU_BASE + 0x58u))
+#define RSWRSTINV       (*(volatile uint32_t *)(_CRU_BASE + 0x5Cu))
+
+#define RNMICON         (*(volatile uint32_t *)(_CRU_BASE + 0x60u))
+#define RNMICONCLR      (*(volatile uint32_t *)(_CRU_BASE + 0x64u))
+#define RNMICONSET      (*(volatile uint32_t *)(_CRU_BASE + 0x68u))
+#define RNMICONINV      (*(volatile uint32_t *)(_CRU_BASE + 0x6Cu))
+
+#define PWRCON          (*(volatile uint32_t *)(_CRU_BASE + 0x70u))
+#define PWRCONCLR       (*(volatile uint32_t *)(_CRU_BASE + 0x74u))
+#define PWRCONSET       (*(volatile uint32_t *)(_CRU_BASE + 0x78u))
+#define PWRCONINV       (*(volatile uint32_t *)(_CRU_BASE + 0x7Cu))
+
+#define _RSWRST_SWRST_MASK      0x00000001u
 
 /* REFO1CON / REFO1TRIM — Reference Clock Output 1 */
 #define REFO1CON        (*(volatile uint32_t *)(_CRU_BASE + 0x80u))
@@ -990,6 +1153,69 @@ typedef union {
 #define _U2STA_URXEN_MASK       0x00001000u
 #define _U2STA_UTXISEL0_MASK    0x00004000u
 #define _U2STA_UTXISEL1_MASK    0x00008000u
+
+/* Compatibility aliases for upstream HAL debug UART wiring. */
+#define U6MODECLR               U2MODECLR
+#define U6MODESET               U2MODESET
+#define _U6MODE_ON_MASK         _U2MODE_ON_MASK
+
+/* -----------------------------------------------------------------------
+ * UART4 registers  (base 0xBF848600)
+ * ----------------------------------------------------------------------- */
+
+#define _U4_BASE        0xBF848600u
+
+#define U4MODE          (*(volatile uint32_t *)(_U4_BASE + 0x000u))
+#define U4MODECLR       (*(volatile uint32_t *)(_U4_BASE + 0x004u))
+#define U4MODESET       (*(volatile uint32_t *)(_U4_BASE + 0x008u))
+#define U4MODEINV       (*(volatile uint32_t *)(_U4_BASE + 0x00Cu))
+#define U4STA           (*(volatile uint32_t *)(_U4_BASE + 0x010u))
+#define U4STACLR        (*(volatile uint32_t *)(_U4_BASE + 0x014u))
+#define U4STASET        (*(volatile uint32_t *)(_U4_BASE + 0x018u))
+#define U4STAINV        (*(volatile uint32_t *)(_U4_BASE + 0x01Cu))
+#define U4TXREG         (*(volatile uint32_t *)(_U4_BASE + 0x020u))
+#define U4RXREG         (*(volatile uint32_t *)(_U4_BASE + 0x030u))
+#define U4BRG           (*(volatile uint32_t *)(_U4_BASE + 0x040u))
+#define U4BRGCLR        (*(volatile uint32_t *)(_U4_BASE + 0x044u))
+#define U4BRGSET        (*(volatile uint32_t *)(_U4_BASE + 0x048u))
+#define U4BRGINV        (*(volatile uint32_t *)(_U4_BASE + 0x04Cu))
+
+/* U4MODE bit masks (same field layout as U1MODE) */
+#define _U4MODE_STSEL_MASK      0x00000001u
+#define _U4MODE_PDSEL0_MASK     0x00000002u
+#define _U4MODE_PDSEL1_MASK     0x00000004u
+#define _U4MODE_PDSEL_MASK      0x00000006u
+#define _U4MODE_BRGH_MASK       0x00000008u
+#define _U4MODE_RXINV_MASK      0x00000010u
+#define _U4MODE_ABAUD_MASK      0x00000020u
+#define _U4MODE_LPBACK_MASK     0x00000040u
+#define _U4MODE_WAKE_MASK       0x00000080u
+#define _U4MODE_SIDL_MASK       0x00002000u
+#define _U4MODE_ON_MASK         0x00008000u
+
+/* U4STA bit masks (same field layout as U1STA) */
+#define _U4STA_URXDA_MASK       0x00000001u
+#define _U4STA_OERR_MASK        0x00000002u
+#define _U4STA_FERR_MASK        0x00000004u
+#define _U4STA_PERR_MASK        0x00000008u
+#define _U4STA_RIDLE_MASK       0x00000010u
+#define _U4STA_ADDEN_MASK       0x00000020u
+#define _U4STA_TRMT_MASK        0x00000100u
+#define _U4STA_UTXBF_MASK       0x00000200u
+#define _U4STA_UTXEN_MASK       0x00000400u
+#define _U4STA_UTXBRK_MASK      0x00000800u
+#define _U4STA_URXEN_MASK       0x00001000u
+#define _U4STA_UTXISEL0_MASK    0x00004000u
+#define _U4STA_UTXISEL1_MASK    0x00008000u
+
+/* UART4 interrupt bit masks in IFS2 / IEC2 (EVIC sources 65–67)
+ * U4E = bit 1, U4RX = bit 2, U4TX = bit 3 */
+#define _IFS2_U4EIF_MASK        0x00000002u
+#define _IFS2_U4RXIF_MASK       0x00000004u
+#define _IFS2_U4TXIF_MASK       0x00000008u
+#define _IEC2_U4EIE_MASK        0x00000002u
+#define _IEC2_U4RXIE_MASK       0x00000004u
+#define _IEC2_U4TXIE_MASK       0x00000008u
 
 /* -----------------------------------------------------------------------
  * IFS4 / IFS5  (sources 128–159, 160–191)
@@ -1396,6 +1622,402 @@ typedef union {
 /* CiMASK0 */
 #define CFD2MASK0       (*(volatile uint32_t *)(_CFD2_BASE + 0x7D0u))
 #define _CFD2MASK0_MIDE_MASK         0x20000000u
+
+#define _IFS5_CAN3IF_MASK   0x08000000u
+#define _IEC5_CAN3IE_MASK   0x08000000u
+
+/* -----------------------------------------------------------------------
+ * CAN3 (CFD3*) SFR registers — base 0xBF884000
+ * Same layout as CFD1; only the base address differs.
+ * ----------------------------------------------------------------------- */
+
+#define _CFD3_BASE      0xBF884000u
+
+/* CiCON */
+#define CFD3CON         (*(volatile uint32_t *)(_CFD3_BASE + 0x000u))
+#define CFD3CONSET      (*(volatile uint32_t *)(_CFD3_BASE + 0x004u))
+#define CFD3CONCLR      (*(volatile uint32_t *)(_CFD3_BASE + 0x008u))
+#define CFD3CONINV      (*(volatile uint32_t *)(_CFD3_BASE + 0x00Cu))
+
+#define _CFD3CON_CLKSEL0_POSITION   7
+#define _CFD3CON_CLKSEL0_MASK       0x00000080u
+#define _CFD3CON_ON_MASK            0x00008000u
+#define _CFD3CON_STEF_POSITION      19
+#define _CFD3CON_STEF_MASK          0x00080000u
+#define _CFD3CON_TXQEN_POSITION     20
+#define _CFD3CON_TXQEN_MASK         0x00100000u
+#define _CFD3CON_OPMOD_POSITION     21
+#define _CFD3CON_OPMOD_MASK         0x00E00000u
+#define _CFD3CON_REQOP_POSITION     24
+#define _CFD3CON_REQOP_MASK         0x07000000u
+
+/* CiNBTCFG */
+#define CFD3NBTCFG      (*(volatile uint32_t *)(_CFD3_BASE + 0x010u))
+
+#define _CFD3NBTCFG_SJW_POSITION    0
+#define _CFD3NBTCFG_SJW_MASK        0x0000007Fu
+#define _CFD3NBTCFG_TSEG2_POSITION  8
+#define _CFD3NBTCFG_TSEG2_MASK      0x00007F00u
+#define _CFD3NBTCFG_TSEG1_POSITION  16
+#define _CFD3NBTCFG_TSEG1_MASK      0x00FF0000u
+#define _CFD3NBTCFG_BRP_POSITION    24
+#define _CFD3NBTCFG_BRP_MASK        0xFF000000u
+
+/* CiDBTCFG */
+#define CFD3DBTCFG      (*(volatile uint32_t *)(_CFD3_BASE + 0x020u))
+
+#define _CFD3DBTCFG_SJW_POSITION    0
+#define _CFD3DBTCFG_SJW_MASK        0x0000000Fu
+#define _CFD3DBTCFG_TSEG2_POSITION  8
+#define _CFD3DBTCFG_TSEG2_MASK      0x00000F00u
+#define _CFD3DBTCFG_TSEG1_POSITION  16
+#define _CFD3DBTCFG_TSEG1_MASK      0x001F0000u
+#define _CFD3DBTCFG_BRP_POSITION    24
+#define _CFD3DBTCFG_BRP_MASK        0xFF000000u
+
+/* CiTBC */
+#define CFD3TBC         (*(volatile uint32_t *)(_CFD3_BASE + 0x040u))
+
+/* CiVEC */
+#define CFD3VEC         (*(volatile uint32_t *)(_CFD3_BASE + 0x060u))
+#define _CFD3VEC_ICODE_MASK         0x0000007Fu
+
+/* CiINT */
+#define CFD3INT         (*(volatile uint32_t *)(_CFD3_BASE + 0x070u))
+#define CFD3INTSET      (*(volatile uint32_t *)(_CFD3_BASE + 0x074u))
+#define CFD3INTCLR      (*(volatile uint32_t *)(_CFD3_BASE + 0x078u))
+
+#define _CFD3INT_TXIF_MASK          0x00000001u
+#define _CFD3INT_RXIF_MASK          0x00000002u
+#define _CFD3INT_MODIF_MASK         0x00000008u
+#define _CFD3INT_SERRIF_MASK        0x00001000u
+#define _CFD3INT_CERRIF_MASK        0x00002000u
+#define _CFD3INT_IVMIF_MASK         0x00008000u
+#define _CFD3INT_TXIE_MASK          0x00010000u
+#define _CFD3INT_RXIE_MASK          0x00020000u
+#define _CFD3INT_MODIE_MASK         0x00080000u
+#define _CFD3INT_SERRIE_MASK        0x10000000u
+#define _CFD3INT_CERRIE_MASK        0x20000000u
+#define _CFD3INT_IVMIE_MASK         0x80000000u
+
+/* CiRXIF / CiTXIF / CiRXOVIF / CiTXATIF */
+#define CFD3RXIF        (*(volatile uint32_t *)(_CFD3_BASE + 0x080u))
+#define CFD3TXIF        (*(volatile uint32_t *)(_CFD3_BASE + 0x090u))
+#define CFD3RXOVIF      (*(volatile uint32_t *)(_CFD3_BASE + 0x0A0u))
+#define CFD3TXATIF      (*(volatile uint32_t *)(_CFD3_BASE + 0x0B0u))
+
+/* CiTREC */
+#define CFD3TREC        (*(volatile uint32_t *)(_CFD3_BASE + 0x0D0u))
+
+#define _CFD3TREC_TERRCNT_POSITION  0
+#define _CFD3TREC_TERRCNT_MASK      0x000000FFu
+#define _CFD3TREC_RERRCNT_MASK      0x0000FF00u
+#define _CFD3TREC_EWARN_MASK        0x00010000u
+#define _CFD3TREC_RXWARN_MASK       0x00020000u
+#define _CFD3TREC_TXWARN_MASK       0x00040000u
+#define _CFD3TREC_RXBP_MASK         0x00080000u
+#define _CFD3TREC_TXBP_MASK         0x00100000u
+#define _CFD3TREC_TXBO_MASK         0x00200000u
+
+/* CiTEFCON */
+#define CFD3TEFCON      (*(volatile uint32_t *)(_CFD3_BASE + 0x100u))
+#define CFD3TEFCONSET   (*(volatile uint32_t *)(_CFD3_BASE + 0x104u))
+#define CFD3TEFCONCLR   (*(volatile uint32_t *)(_CFD3_BASE + 0x108u))
+
+#define _CFD3TEFCON_UINC_MASK       0x00000100u
+#define _CFD3TEFCON_FSIZE_POSITION  24
+#define _CFD3TEFCON_FSIZE_MASK      0x1F000000u
+
+/* CiTEFSTA */
+#define CFD3TEFSTA      (*(volatile uint32_t *)(_CFD3_BASE + 0x110u))
+#define _CFD3TEFSTA_TEFNEIF_MASK    0x00000001u
+
+/* CiTEFUA */
+#define CFD3TEFUA       (*(volatile uint32_t *)(_CFD3_BASE + 0x120u))
+
+/* CiFIFOBA */
+#define CFD3FIFOBA      (*(volatile uint32_t *)(_CFD3_BASE + 0x130u))
+
+/* CiTXQCON */
+#define CFD3TXQCON      (*(volatile uint32_t *)(_CFD3_BASE + 0x140u))
+#define CFD3TXQCONSET   (*(volatile uint32_t *)(_CFD3_BASE + 0x144u))
+#define CFD3TXQCONCLR   (*(volatile uint32_t *)(_CFD3_BASE + 0x148u))
+
+#define _CFD3TXQCON_TXQEIE_MASK     0x00000010u
+#define _CFD3TXQCON_UINC_MASK       0x00000100u
+#define _CFD3TXQCON_TXREQ_MASK      0x00000200u
+#define _CFD3TXQCON_TXPRI_POSITION  16
+#define _CFD3TXQCON_TXPRI_MASK      0x001F0000u
+#define _CFD3TXQCON_FSIZE_POSITION  24
+#define _CFD3TXQCON_FSIZE_MASK      0x1F000000u
+#define _CFD3TXQCON_PLSIZE_POSITION 29
+#define _CFD3TXQCON_PLSIZE_MASK     0xE0000000u
+
+/* CiTXQSTA */
+#define CFD3TXQSTA      (*(volatile uint32_t *)(_CFD3_BASE + 0x150u))
+#define _CFD3TXQSTA_TXQNIF_MASK     0x00000001u
+
+/* CiTXQUA */
+#define CFD3TXQUA       (*(volatile uint32_t *)(_CFD3_BASE + 0x160u))
+
+/* CiFIFOCON1 */
+#define CFD3FIFOCON1    (*(volatile uint32_t *)(_CFD3_BASE + 0x170u))
+#define CFD3FIFOCON1SET (*(volatile uint32_t *)(_CFD3_BASE + 0x174u))
+#define CFD3FIFOCON1CLR (*(volatile uint32_t *)(_CFD3_BASE + 0x178u))
+
+#define _CFD3FIFOCON1_TFNRFNIE_MASK  0x00000001u
+#define _CFD3FIFOCON1_TFERFFIE_MASK  0x00000010u
+#define _CFD3FIFOCON1_RTREN_POSITION 6
+#define _CFD3FIFOCON1_RTREN_MASK     0x00000040u
+#define _CFD3FIFOCON1_TXEN_MASK      0x00000080u
+#define _CFD3FIFOCON1_UINC_MASK      0x00000100u
+#define _CFD3FIFOCON1_TXREQ_MASK     0x00000200u
+#define _CFD3FIFOCON1_TXPRI_POSITION 16
+#define _CFD3FIFOCON1_TXPRI_MASK     0x001F0000u
+#define _CFD3FIFOCON1_FSIZE_POSITION 24
+#define _CFD3FIFOCON1_FSIZE_MASK     0x1F000000u
+#define _CFD3FIFOCON1_PLSIZE_POSITION 29
+#define _CFD3FIFOCON1_PLSIZE_MASK    0xE0000000u
+
+/* CiFIFOSTA1 */
+#define CFD3FIFOSTA1    (*(volatile uint32_t *)(_CFD3_BASE + 0x180u))
+#define _CFD3FIFOSTA1_TFNRFNIF_MASK  0x00000001u
+#define _CFD3FIFOSTA1_TXATIF_MASK    0x00000010u
+
+/* CiFIFOUA1 */
+#define CFD3FIFOUA1     (*(volatile uint32_t *)(_CFD3_BASE + 0x190u))
+
+/* CiFIFOCON2 (FIFO2 = RX FIFO) */
+#define CFD3FIFOCON2    (*(volatile uint32_t *)(_CFD3_BASE + 0x1A0u))
+#define CFD3FIFOCON2SET (*(volatile uint32_t *)(_CFD3_BASE + 0x1A4u))
+#define CFD3FIFOCON2CLR (*(volatile uint32_t *)(_CFD3_BASE + 0x1A8u))
+
+#define _CFD3FIFOCON2_FSIZE_POSITION 24
+#define _CFD3FIFOCON2_FSIZE_MASK     0x1F000000u
+#define _CFD3FIFOCON2_PLSIZE_POSITION 29
+#define _CFD3FIFOCON2_PLSIZE_MASK    0xE0000000u
+
+/* CiFIFOSTA2 */
+#define CFD3FIFOSTA2    (*(volatile uint32_t *)(_CFD3_BASE + 0x1B0u))
+#define _CFD3FIFOSTA2_TFNRFNIF_MASK  0x00000001u
+
+/* CiFIFOUA2 */
+#define CFD3FIFOUA2     (*(volatile uint32_t *)(_CFD3_BASE + 0x1C0u))
+
+/* CiFLTCON0 */
+#define CFD3FLTCON0     (*(volatile uint32_t *)(_CFD3_BASE + 0x740u))
+#define CFD3FLTCON0SET  (*(volatile uint32_t *)(_CFD3_BASE + 0x744u))
+
+#define _CFD3FLTCON0_F0BP_POSITION   0
+#define _CFD3FLTCON0_F0BP_MASK       0x0000001Fu
+#define _CFD3FLTCON0_FLTEN0_POSITION 7
+#define _CFD3FLTCON0_FLTEN0_MASK     0x00000080u
+
+/* CiFLTOBJ0 */
+#define CFD3FLTOBJ0     (*(volatile uint32_t *)(_CFD3_BASE + 0x7C0u))
+#define _CFD3FLTOBJ0_EXIDE_MASK      0x20000000u
+
+/* CiMASK0 */
+#define CFD3MASK0       (*(volatile uint32_t *)(_CFD3_BASE + 0x7D0u))
+#define _CFD3MASK0_MIDE_MASK         0x20000000u
+
+#define _IFS5_CAN4IF_MASK   0x10000000u
+#define _IEC5_CAN4IE_MASK   0x10000000u
+
+/* -----------------------------------------------------------------------
+ * CAN4 (CFD4*) SFR registers — base 0xBF885000
+ * Same layout as CFD1; only the base address differs.
+ * ----------------------------------------------------------------------- */
+
+#define _CFD4_BASE      0xBF885000u
+
+/* CiCON */
+#define CFD4CON         (*(volatile uint32_t *)(_CFD4_BASE + 0x000u))
+#define CFD4CONSET      (*(volatile uint32_t *)(_CFD4_BASE + 0x004u))
+#define CFD4CONCLR      (*(volatile uint32_t *)(_CFD4_BASE + 0x008u))
+#define CFD4CONINV      (*(volatile uint32_t *)(_CFD4_BASE + 0x00Cu))
+
+#define _CFD4CON_CLKSEL0_POSITION   7
+#define _CFD4CON_CLKSEL0_MASK       0x00000080u
+#define _CFD4CON_ON_MASK            0x00008000u
+#define _CFD4CON_STEF_POSITION      19
+#define _CFD4CON_STEF_MASK          0x00080000u
+#define _CFD4CON_TXQEN_POSITION     20
+#define _CFD4CON_TXQEN_MASK         0x00100000u
+#define _CFD4CON_OPMOD_POSITION     21
+#define _CFD4CON_OPMOD_MASK         0x00E00000u
+#define _CFD4CON_REQOP_POSITION     24
+#define _CFD4CON_REQOP_MASK         0x07000000u
+
+/* CiNBTCFG */
+#define CFD4NBTCFG      (*(volatile uint32_t *)(_CFD4_BASE + 0x010u))
+
+#define _CFD4NBTCFG_SJW_POSITION    0
+#define _CFD4NBTCFG_SJW_MASK        0x0000007Fu
+#define _CFD4NBTCFG_TSEG2_POSITION  8
+#define _CFD4NBTCFG_TSEG2_MASK      0x00007F00u
+#define _CFD4NBTCFG_TSEG1_POSITION  16
+#define _CFD4NBTCFG_TSEG1_MASK      0x00FF0000u
+#define _CFD4NBTCFG_BRP_POSITION    24
+#define _CFD4NBTCFG_BRP_MASK        0xFF000000u
+
+/* CiDBTCFG */
+#define CFD4DBTCFG      (*(volatile uint32_t *)(_CFD4_BASE + 0x020u))
+
+#define _CFD4DBTCFG_SJW_POSITION    0
+#define _CFD4DBTCFG_SJW_MASK        0x0000000Fu
+#define _CFD4DBTCFG_TSEG2_POSITION  8
+#define _CFD4DBTCFG_TSEG2_MASK      0x00000F00u
+#define _CFD4DBTCFG_TSEG1_POSITION  16
+#define _CFD4DBTCFG_TSEG1_MASK      0x001F0000u
+#define _CFD4DBTCFG_BRP_POSITION    24
+#define _CFD4DBTCFG_BRP_MASK        0xFF000000u
+
+/* CiTBC */
+#define CFD4TBC         (*(volatile uint32_t *)(_CFD4_BASE + 0x040u))
+
+/* CiVEC */
+#define CFD4VEC         (*(volatile uint32_t *)(_CFD4_BASE + 0x060u))
+#define _CFD4VEC_ICODE_MASK         0x0000007Fu
+
+/* CiINT */
+#define CFD4INT         (*(volatile uint32_t *)(_CFD4_BASE + 0x070u))
+#define CFD4INTSET      (*(volatile uint32_t *)(_CFD4_BASE + 0x074u))
+#define CFD4INTCLR      (*(volatile uint32_t *)(_CFD4_BASE + 0x078u))
+
+#define _CFD4INT_TXIF_MASK          0x00000001u
+#define _CFD4INT_RXIF_MASK          0x00000002u
+#define _CFD4INT_MODIF_MASK         0x00000008u
+#define _CFD4INT_SERRIF_MASK        0x00001000u
+#define _CFD4INT_CERRIF_MASK        0x00002000u
+#define _CFD4INT_IVMIF_MASK         0x00008000u
+#define _CFD4INT_TXIE_MASK          0x00010000u
+#define _CFD4INT_RXIE_MASK          0x00020000u
+#define _CFD4INT_MODIE_MASK         0x00080000u
+#define _CFD4INT_SERRIE_MASK        0x10000000u
+#define _CFD4INT_CERRIE_MASK        0x20000000u
+#define _CFD4INT_IVMIE_MASK         0x80000000u
+
+/* CiRXIF / CiTXIF / CiRXOVIF / CiTXATIF */
+#define CFD4RXIF        (*(volatile uint32_t *)(_CFD4_BASE + 0x080u))
+#define CFD4TXIF        (*(volatile uint32_t *)(_CFD4_BASE + 0x090u))
+#define CFD4RXOVIF      (*(volatile uint32_t *)(_CFD4_BASE + 0x0A0u))
+#define CFD4TXATIF      (*(volatile uint32_t *)(_CFD4_BASE + 0x0B0u))
+
+/* CiTREC */
+#define CFD4TREC        (*(volatile uint32_t *)(_CFD4_BASE + 0x0D0u))
+
+#define _CFD4TREC_TERRCNT_POSITION  0
+#define _CFD4TREC_TERRCNT_MASK      0x000000FFu
+#define _CFD4TREC_RERRCNT_MASK      0x0000FF00u
+#define _CFD4TREC_EWARN_MASK        0x00010000u
+#define _CFD4TREC_RXWARN_MASK       0x00020000u
+#define _CFD4TREC_TXWARN_MASK       0x00040000u
+#define _CFD4TREC_RXBP_MASK         0x00080000u
+#define _CFD4TREC_TXBP_MASK         0x00100000u
+#define _CFD4TREC_TXBO_MASK         0x00200000u
+
+/* CiTEFCON */
+#define CFD4TEFCON      (*(volatile uint32_t *)(_CFD4_BASE + 0x100u))
+#define CFD4TEFCONSET   (*(volatile uint32_t *)(_CFD4_BASE + 0x104u))
+#define CFD4TEFCONCLR   (*(volatile uint32_t *)(_CFD4_BASE + 0x108u))
+
+#define _CFD4TEFCON_UINC_MASK       0x00000100u
+#define _CFD4TEFCON_FSIZE_POSITION  24
+#define _CFD4TEFCON_FSIZE_MASK      0x1F000000u
+
+/* CiTEFSTA */
+#define CFD4TEFSTA      (*(volatile uint32_t *)(_CFD4_BASE + 0x110u))
+#define _CFD4TEFSTA_TEFNEIF_MASK    0x00000001u
+
+/* CiTEFUA */
+#define CFD4TEFUA       (*(volatile uint32_t *)(_CFD4_BASE + 0x120u))
+
+/* CiFIFOBA */
+#define CFD4FIFOBA      (*(volatile uint32_t *)(_CFD4_BASE + 0x130u))
+
+/* CiTXQCON */
+#define CFD4TXQCON      (*(volatile uint32_t *)(_CFD4_BASE + 0x140u))
+#define CFD4TXQCONSET   (*(volatile uint32_t *)(_CFD4_BASE + 0x144u))
+#define CFD4TXQCONCLR   (*(volatile uint32_t *)(_CFD4_BASE + 0x148u))
+
+#define _CFD4TXQCON_TXQEIE_MASK     0x00000010u
+#define _CFD4TXQCON_UINC_MASK       0x00000100u
+#define _CFD4TXQCON_TXREQ_MASK      0x00000200u
+#define _CFD4TXQCON_TXPRI_POSITION  16
+#define _CFD4TXQCON_TXPRI_MASK      0x001F0000u
+#define _CFD4TXQCON_FSIZE_POSITION  24
+#define _CFD4TXQCON_FSIZE_MASK      0x1F000000u
+#define _CFD4TXQCON_PLSIZE_POSITION 29
+#define _CFD4TXQCON_PLSIZE_MASK     0xE0000000u
+
+/* CiTXQSTA */
+#define CFD4TXQSTA      (*(volatile uint32_t *)(_CFD4_BASE + 0x150u))
+#define _CFD4TXQSTA_TXQNIF_MASK     0x00000001u
+
+/* CiTXQUA */
+#define CFD4TXQUA       (*(volatile uint32_t *)(_CFD4_BASE + 0x160u))
+
+/* CiFIFOCON1 */
+#define CFD4FIFOCON1    (*(volatile uint32_t *)(_CFD4_BASE + 0x170u))
+#define CFD4FIFOCON1SET (*(volatile uint32_t *)(_CFD4_BASE + 0x174u))
+#define CFD4FIFOCON1CLR (*(volatile uint32_t *)(_CFD4_BASE + 0x178u))
+
+#define _CFD4FIFOCON1_TFNRFNIE_MASK  0x00000001u
+#define _CFD4FIFOCON1_TFERFFIE_MASK  0x00000010u
+#define _CFD4FIFOCON1_RTREN_POSITION 6
+#define _CFD4FIFOCON1_RTREN_MASK     0x00000040u
+#define _CFD4FIFOCON1_TXEN_MASK      0x00000080u
+#define _CFD4FIFOCON1_UINC_MASK      0x00000100u
+#define _CFD4FIFOCON1_TXREQ_MASK     0x00000200u
+#define _CFD4FIFOCON1_TXPRI_POSITION 16
+#define _CFD4FIFOCON1_TXPRI_MASK     0x001F0000u
+#define _CFD4FIFOCON1_FSIZE_POSITION 24
+#define _CFD4FIFOCON1_FSIZE_MASK     0x1F000000u
+#define _CFD4FIFOCON1_PLSIZE_POSITION 29
+#define _CFD4FIFOCON1_PLSIZE_MASK    0xE0000000u
+
+/* CiFIFOSTA1 */
+#define CFD4FIFOSTA1    (*(volatile uint32_t *)(_CFD4_BASE + 0x180u))
+#define _CFD4FIFOSTA1_TFNRFNIF_MASK  0x00000001u
+#define _CFD4FIFOSTA1_TXATIF_MASK    0x00000010u
+
+/* CiFIFOUA1 */
+#define CFD4FIFOUA1     (*(volatile uint32_t *)(_CFD4_BASE + 0x190u))
+
+/* CiFIFOCON2 (FIFO2 = RX FIFO) */
+#define CFD4FIFOCON2    (*(volatile uint32_t *)(_CFD4_BASE + 0x1A0u))
+#define CFD4FIFOCON2SET (*(volatile uint32_t *)(_CFD4_BASE + 0x1A4u))
+#define CFD4FIFOCON2CLR (*(volatile uint32_t *)(_CFD4_BASE + 0x1A8u))
+
+#define _CFD4FIFOCON2_FSIZE_POSITION 24
+#define _CFD4FIFOCON2_FSIZE_MASK     0x1F000000u
+#define _CFD4FIFOCON2_PLSIZE_POSITION 29
+#define _CFD4FIFOCON2_PLSIZE_MASK    0xE0000000u
+
+/* CiFIFOSTA2 */
+#define CFD4FIFOSTA2    (*(volatile uint32_t *)(_CFD4_BASE + 0x1B0u))
+#define _CFD4FIFOSTA2_TFNRFNIF_MASK  0x00000001u
+
+/* CiFIFOUA2 */
+#define CFD4FIFOUA2     (*(volatile uint32_t *)(_CFD4_BASE + 0x1C0u))
+
+/* CiFLTCON0 */
+#define CFD4FLTCON0     (*(volatile uint32_t *)(_CFD4_BASE + 0x740u))
+#define CFD4FLTCON0SET  (*(volatile uint32_t *)(_CFD4_BASE + 0x744u))
+
+#define _CFD4FLTCON0_F0BP_POSITION   0
+#define _CFD4FLTCON0_F0BP_MASK       0x0000001Fu
+#define _CFD4FLTCON0_FLTEN0_POSITION 7
+#define _CFD4FLTCON0_FLTEN0_MASK     0x00000080u
+
+/* CiFLTOBJ0 */
+#define CFD4FLTOBJ0     (*(volatile uint32_t *)(_CFD4_BASE + 0x7C0u))
+#define _CFD4FLTOBJ0_EXIDE_MASK      0x20000000u
+
+/* CiMASK0 */
+#define CFD4MASK0       (*(volatile uint32_t *)(_CFD4_BASE + 0x7D0u))
+#define _CFD4MASK0_MIDE_MASK         0x20000000u
 
 /* -----------------------------------------------------------------------
  * IFS7 / IEC7  (sources 224–255)

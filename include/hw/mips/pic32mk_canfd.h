@@ -108,6 +108,7 @@ OBJECT_DECLARE_SIMPLE_TYPE(PIC32MKCANFDState, PIC32MK_CANFD)
 #define CANFD_FIFO_PLSIZE_MASK  (0x7u << CANFD_FIFO_PLSIZE_SHIFT)
 #define CANFD_FIFO_FSIZE_SHIFT  24u
 #define CANFD_FIFO_FSIZE_MASK   (0x1Fu << CANFD_FIFO_FSIZE_SHIFT)
+#define CANFD_FIFO_TFNRFNIE     (1u << 0u)   /* RX: FIFO Not Empty interrupt enable */
 #define CANFD_FIFO_TXEN         (1u << 7u)   /* TX enable (1=TX FIFO, 0=RX FIFO) */
 #define CANFD_FIFO_UINC         (1u << 8u)   /* User increment (pulse bit) */
 #define CANFD_FIFO_TXREQ        (1u << 9u)   /* TX request (pulse bit) */
@@ -174,12 +175,29 @@ struct PIC32MKCANFDState {
     uint8_t  *msg_ram_buf;
     uint32_t  msg_ram_phys;  /* physical base (injected via property) */
 
+    /* Instance index (0–3 for CAN1–4) */
+    uint32_t  instance_id;
+
     /* Single IRQ line to EVIC */
     qemu_irq irq;
 
     /* SocketCAN virtual bus (Phase 3B) */
     CanBusClientState bus_client;
     CanBusState      *canbus;   /* linked can-bus object, or NULL */
+
+    /* Bus-side software ring buffer — decouples SocketCAN delivery timing
+     * from the guest CPU.  Frames land here when the target RX FIFO is full;
+     * canfd_bus_buf_drain() moves them into the FIFO after each UINC. */
+    uint32_t bus_buf_id[64];
+    bool     bus_buf_xtd[64];
+    bool     bus_buf_fdf[64];
+    uint8_t  bus_buf_dlc[64];
+    uint8_t  bus_buf_data[64][64];
+    int      bus_buf_len[64];
+    int      bus_buf_dest[64];
+    int      bus_buf_head;
+    int      bus_buf_tail;
+    int      bus_buf_count;
 };
 
 #endif /* HW_MIPS_PIC32MK_CANFD_H */

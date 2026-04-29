@@ -210,6 +210,20 @@ _int_handler:
     bnez    $27, _can2_int
     nop
 
+    /* --- Check CAN3 interrupt in IFS5/IEC5 ---
+     * CAN3 = EVIC source 187 = IFS5 bit 27 = 0x08000000 */
+    lui     $27, 0x0800             /* bit 27 = 0x08000000 */
+    and     $27, $26, $27
+    bnez    $27, _can3_int
+    nop
+
+    /* --- Check CAN4 interrupt in IFS5/IEC5 ---
+     * CAN4 = EVIC source 188 = IFS5 bit 28 = 0x10000000 */
+    lui     $27, 0x1000             /* bit 28 = 0x10000000 */
+    and     $27, $26, $27
+    bnez    $27, _can4_int
+    nop
+
     /* --- Check IC2 capture/error interrupts in IFS0/IEC0 ---
      * IC2E = EVIC source 10 = IFS0 bit 10 = 0x400
      * IC2  = EVIC source 11 = IFS0 bit 11 = 0x800 */
@@ -314,6 +328,18 @@ _can1_int:
 _can2_int:
     .extern vCAN2InterruptWrapper
     la      $26, vCAN2InterruptWrapper
+    jr      $26
+    nop
+
+_can3_int:
+    .extern vCAN3InterruptWrapper
+    la      $26, vCAN3InterruptWrapper
+    jr      $26
+    nop
+
+_can4_int:
+    .extern vCAN4InterruptWrapper
+    la      $26, vCAN4InterruptWrapper
     jr      $26
     nop
 

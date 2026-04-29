@@ -31,6 +31,8 @@
 #include "plib_uart2.h"
 #include "plib_canfd1.h"
 #include "plib_canfd2.h"
+#include "plib_canfd3.h"
+#include "plib_canfd4.h"
 #include "plib_clk.h"
 #include "usb_init.h"
 #include "plib_gpio.h"
@@ -190,10 +192,10 @@ static void vCanTxTask(void *pvParam)
 }
 
 /* -----------------------------------------------------------------------
- * CAN2 RX task — interrupt-driven receive via FreeRTOS queue
+ * CAN4 RX task — interrupt-driven receive via FreeRTOS queue
  *
- * plib_canfd2 uses FIFO2 for RX.  can2_rx_callback() is called from
- * CAN2_InterruptHandler (ISR context) after the plib fills the static
+ * plib_canfd4 uses FIFO2 for RX.  can4_rx_callback() is called from
+ * CAN4_InterruptHandler (ISR context) after the plib fills the static
  * receive buffer.  We copy the frame into the queue and re-arm the plib.
  * ----------------------------------------------------------------------- */
 
@@ -202,7 +204,7 @@ typedef struct
     uint32_t id;
     uint8_t length;
     uint8_t data[8];
-} CAN2Frame_t;
+} CAN4Frame_t;
 
 /* -----------------------------------------------------------------------
  * CAN1 RX task — interrupt-driven receive via FreeRTOS queue
@@ -267,43 +269,43 @@ static void vCan1RxTask(void *pvParam)
     }
 }
 
-static QueueHandle_t xCan2RxQueue;
+static QueueHandle_t xCan4RxQueue;
 
-static uint32_t can2_rx_id;
-static uint8_t can2_rx_len;
-static uint8_t can2_rx_data[8];
-static uint32_t can2_rx_ts;
-static CANFD_MSG_RX_ATTRIBUTE can2_rx_attr;
+static uint32_t can4_rx_id;
+static uint8_t can4_rx_len;
+static uint8_t can4_rx_data[8];
+static uint32_t can4_rx_ts;
+static CANFD_MSG_RX_ATTRIBUTE can4_rx_attr;
 
-static void can2_rx_callback(uintptr_t context)
+static void can4_rx_callback(uintptr_t context)
 {
     (void)context;
-    CAN2Frame_t frame;
+    CAN4Frame_t frame;
     uint8_t i;
-    frame.id = can2_rx_id;
-    frame.length = can2_rx_len;
-    for (i = 0; i < can2_rx_len && i < 8U; i++)
+    frame.id = can4_rx_id;
+    frame.length = can4_rx_len;
+    for (i = 0; i < can4_rx_len && i < 8U; i++)
     {
-        frame.data[i] = can2_rx_data[i];
+        frame.data[i] = can4_rx_data[i];
     }
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xQueueSendToBackFromISR(xCan2RxQueue, &frame, &xHigherPriorityTaskWoken);
+    xQueueSendToBackFromISR(xCan4RxQueue, &frame, &xHigherPriorityTaskWoken);
     /* Re-arm: register buffer for the next incoming frame */
-    CAN2_MessageReceive(&can2_rx_id, &can2_rx_len, can2_rx_data,
-                        &can2_rx_ts, 2U, &can2_rx_attr);
-    /* Yield handled by portRESTORE_CONTEXT in vCAN2InterruptWrapper */
+    CAN4_MessageReceive(&can4_rx_id, &can4_rx_len, can4_rx_data,
+                        &can4_rx_ts, 2U, &can4_rx_attr);
+    /* Yield handled by portRESTORE_CONTEXT in vCAN4InterruptWrapper */
 }
 
-static void vCan2RxTask(void *pvParam)
+static void vCan4RxTask(void *pvParam)
 {
     (void)pvParam;
-    CAN2Frame_t frame;
+    CAN4Frame_t frame;
     for (;;)
     {
-        if (xQueueReceive(xCan2RxQueue, &frame, portMAX_DELAY) == pdTRUE)
+        if (xQueueReceive(xCan4RxQueue, &frame, portMAX_DELAY) == pdTRUE)
         {
             uint8_t i;
-            printf("[CAN2 RX] id=0x%lX len=%u data='",
+            printf("[CAN4 RX] id=0x%lX len=%u data='",
                    (unsigned long)frame.id,
                    (unsigned int)frame.length);
             for (i = 0; i < frame.length && i < 8U; i++)
@@ -871,7 +873,7 @@ int main(void)
     UART1_Initialize();
     UART2_Initialize();
     CAN1_Initialize();
-    CAN2_Initialize();
+    CAN4_Initialize();
     USB1_Initialize();
     GPIO_Initialize();
     ADCHS_Initialize();
@@ -890,11 +892,11 @@ int main(void)
     CAN1_MessageReceive(&can1_rx_id, &can1_rx_len, can1_rx_data,
                         &can1_rx_ts, 2U, &can1_rx_attr);
 
-    /* Queue for CAN2 RX frames (depth = 16) */
-    xCan2RxQueue = xQueueCreate(16, sizeof(CAN2Frame_t));
-    CAN2_CallbackRegister(can2_rx_callback, 0, 2U); /* FIFO2 = RX */
-    CAN2_MessageReceive(&can2_rx_id, &can2_rx_len, can2_rx_data,
-                        &can2_rx_ts, 2U, &can2_rx_attr);
+    /* Queue for CAN4 RX frames (depth = 16) */
+    xCan4RxQueue = xQueueCreate(16, sizeof(CAN4Frame_t));
+    CAN4_CallbackRegister(can4_rx_callback, 0, 2U); /* FIFO2 = RX */
+    CAN4_MessageReceive(&can4_rx_id, &can4_rx_len, can4_rx_data,
+                        &can4_rx_ts, 2U, &can4_rx_attr);
 
     /* Queue for bytes received on UART2 (depth = 64 bytes) */
     xUart2RxQueue = xQueueCreate(64, sizeof(uint8_t));
@@ -914,7 +916,7 @@ int main(void)
                 NULL, tskIDLE_PRIORITY + 1, NULL);
     xTaskCreate(vCan1RxTask, "C1Rx", configMINIMAL_STACK_SIZE,
                 NULL, tskIDLE_PRIORITY + 2, NULL);
-    xTaskCreate(vCan2RxTask, "C2Rx", configMINIMAL_STACK_SIZE,
+    xTaskCreate(vCan4RxTask, "C4Rx", configMINIMAL_STACK_SIZE,
                 NULL, tskIDLE_PRIORITY + 2, NULL);
     xTaskCreate(vUsbDeviceTask, "USB", 512,
                 NULL, tskIDLE_PRIORITY + 1, NULL);

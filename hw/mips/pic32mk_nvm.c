@@ -24,6 +24,9 @@
 #include "hw/mips/pic32mk.h"
 #include "system/dma.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+
 #define TYPE_PIC32MK_NVM "pic32mk-nvm"
 OBJECT_DECLARE_SIMPLE_TYPE(PIC32MKNVMState, PIC32MK_NVM)
 
@@ -51,6 +54,10 @@ struct PIC32MKNVMState {
 
     /* IRQ output → EVIC vector 31 (_FLASH_CONTROL_VECTOR) */
     qemu_irq irq;
+
+    /* Host backing file for flash persistence */
+    char    *filename;          /* qdev string property */
+    int      backing_fd;
 };
 
 /* -----------------------------------------------------------------------
@@ -91,6 +98,48 @@ static uint8_t *nvm_flash_ptr(PIC32MKNVMState *s)
         return NULL;
     }
     return memory_region_get_ram_ptr(s->pflash_mr);
+}
+
+/* -----------------------------------------------------------------------
+ * Backing file helpers
+ * ----------------------------------------------------------------------- */
+
+static void nvm_load_backing(PIC32MKNVMState *s)
+{
+    if (s->backing_fd < 0 || !s->pflash_mr) {
+        return;
+    }
+    uint8_t *flash = nvm_flash_ptr(s);
+    if (!flash) {
+        return;
+    }
+    lseek(s->backing_fd, 0, SEEK_SET);
+    ssize_t n = read(s->backing_fd, flash, PIC32MK_PFLASH_SIZE);
+    if (n < 0) {
+        qemu_log_mask(LOG_GUEST_ERROR,
+                      "pic32mk_nvm: backing file read error\n");
+    } else if ((size_t)n < PIC32MK_PFLASH_SIZE) {
+        /* Short read — pad with 0xFF (erased flash) */
+        memset(flash + n, 0xFF, PIC32MK_PFLASH_SIZE - (size_t)n);
+    }
+}
+
+static void nvm_flush_backing(PIC32MKNVMState *s)
+{
+    if (s->backing_fd < 0 || !s->pflash_mr) {
+        return;
+    }
+    uint8_t *flash = nvm_flash_ptr(s);
+    if (!flash) {
+        return;
+    }
+    lseek(s->backing_fd, 0, SEEK_SET);
+    ssize_t n = write(s->backing_fd, flash, PIC32MK_PFLASH_SIZE);
+    if (n < 0) {
+        qemu_log_mask(LOG_GUEST_ERROR,
+                      "pic32mk_nvm: backing file write error\n");
+    }
+    fdatasync(s->backing_fd);
 }
 
 /* -----------------------------------------------------------------------
@@ -238,6 +287,12 @@ done:
 
     /* Pulse IRQ to signal completion */
     qemu_irq_pulse(s->irq);
+
+    /* Flush to backing file after any successful write/erase */
+    if (op != PIC32MK_NVMOP_NOP &&
+        !(s->nvmcon & (PIC32MK_NVMCON_WRERR | PIC32MK_NVMCON_LVDERR))) {
+        nvm_flush_backing(s);
+    }
 }
 
 /* -----------------------------------------------------------------------
@@ -395,6 +450,57 @@ static void pic32mk_nvm_realize(DeviceState *dev, Error **errp)
         error_setg(errp, "pic32mk_nvm: 'pflash' link property not set");
         return;
     }
+
+    s->backing_fd = -1;
+
+    if (s->filename && s->filename[0] != '\0') {
+        s->backing_fd = open(s->filename, O_RDWR | O_CREAT, 0644);
+        if (s->backing_fd < 0) {
+            error_setg_errno(errp, errno,
+                             "pic32mk_nvm: cannot open '%s'",
+                             s->filename);
+            return;
+        }
+
+        /*
+         * If the file is new or undersized, initialize it with 0xFF
+         * (erased flash state).
+         */
+        off_t fsize = lseek(s->backing_fd, 0, SEEK_END);
+        if (fsize < (off_t)PIC32MK_PFLASH_SIZE) {
+            /* Extend with 0xFF in chunks */
+            uint8_t ff_buf[4096];
+            memset(ff_buf, 0xFF, sizeof(ff_buf));
+            lseek(s->backing_fd, (fsize > 0) ? fsize : 0, SEEK_SET);
+            size_t remaining = PIC32MK_PFLASH_SIZE - (size_t)((fsize > 0) ? fsize : 0);
+            while (remaining > 0) {
+                size_t chunk = (remaining < sizeof(ff_buf)) ? remaining : sizeof(ff_buf);
+                if (write(s->backing_fd, ff_buf, chunk) < 0) {
+                    qemu_log_mask(LOG_GUEST_ERROR,
+                                  "pic32mk_nvm: cannot init '%s'\n",
+                                  s->filename);
+                    break;
+                }
+                remaining -= chunk;
+            }
+            fdatasync(s->backing_fd);
+        }
+
+        /* Load backing file into pflash RAM */
+        nvm_load_backing(s);
+    }
+}
+
+static void pic32mk_nvm_unrealize(DeviceState *dev)
+{
+    PIC32MKNVMState *s = PIC32MK_NVM(dev);
+
+    nvm_flush_backing(s);
+
+    if (s->backing_fd >= 0) {
+        close(s->backing_fd);
+        s->backing_fd = -1;
+    }
 }
 
 static void pic32mk_nvm_init(Object *obj)
@@ -410,13 +516,15 @@ static void pic32mk_nvm_init(Object *obj)
 static const Property pic32mk_nvm_props[] = {
     DEFINE_PROP_LINK("pflash", PIC32MKNVMState, pflash_mr,
                      TYPE_MEMORY_REGION, MemoryRegion *),
+    DEFINE_PROP_STRING("filename", PIC32MKNVMState, filename),
 };
 
 static void pic32mk_nvm_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 
-    dc->realize = pic32mk_nvm_realize;
+    dc->realize   = pic32mk_nvm_realize;
+    dc->unrealize = pic32mk_nvm_unrealize;
     device_class_set_legacy_reset(dc, pic32mk_nvm_reset);
     device_class_set_props(dc, pic32mk_nvm_props);
 }

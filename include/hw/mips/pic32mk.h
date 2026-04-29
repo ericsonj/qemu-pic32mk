@@ -45,11 +45,15 @@
 
 /* CFG / PMD block (0xBF800000)                                           */
 #define PIC32MK_CFG_OFFSET      0x000000u
-#define PIC32MK_CFG_SIZE        0x000120u   /* CFGCON..CFGCON2+INV inclusive */
+#define PIC32MK_CFG_SIZE        0x000900u   /* CFGCON..CFGCON2+INV + CHECON@0x800 */
 
 /* CRU — Clock Reference Unit (0xBF801200)                                 */
 #define PIC32MK_CRU_OFFSET      0x001200u
 #define PIC32MK_CRU_SIZE        0x0001A0u   /* OSCCON..CLKSTAT+INV inclusive */
+
+/* PPS (Peripheral Pin Select) input/output registers (0xBF801400–0xBF8017FF) */
+#define PIC32MK_PPS_OFFSET      0x001400u
+#define PIC32MK_PPS_SIZE        0x000400u
 
 /* WDT register block (0xBF800C00) */
 #define PIC32MK_WDT_OFFSET      0x000C00u
@@ -73,11 +77,15 @@
 /* CAN1-4 / ADC                                 0xBF880000 */
 #define PIC32MK_CAN_OFFSET      0x080000u
 
-/* CAN1–4 SFR offsets from SFR base (0xBF880000–0xBF883FFF) */
+/* CAN1–4 SFR offsets from SFR base
+ * Verified against DS60001519E / p32mk1024mcm100.h:
+ *   CFD1CON @ 0xBF880000, CFD2CON @ 0xBF881000,
+ *   CFD3CON @ 0xBF884000, CFD4CON @ 0xBF885000
+ */
 #define PIC32MK_CAN1_OFFSET     0x080000u   /* physical 0x1F880000 */
-#define PIC32MK_CAN2_OFFSET     0x081000u
-#define PIC32MK_CAN3_OFFSET     0x082000u
-#define PIC32MK_CAN4_OFFSET     0x083000u
+#define PIC32MK_CAN2_OFFSET     0x081000u   /* physical 0x1F881000 */
+#define PIC32MK_CAN3_OFFSET     0x084000u   /* physical 0x1F884000 */
+#define PIC32MK_CAN4_OFFSET     0x085000u   /* physical 0x1F885000 */
 #define PIC32MK_CAN_SFR_SIZE    0x1000u     /* 4 KB SFR block per instance */
 
 /*
@@ -92,11 +100,13 @@
 #define PIC32MK_CAN4_MSGRAM_BASE 0x1F939000u
 #define PIC32MK_CAN_MSGRAM_SIZE  (75u * 1024u)  /* max 74 KB, rounded up */
 
-/* USB OTG 1                                   0xBF889000 */
+/* USB OTG 1   _USB_BASE_ADDRESS = 0xBF889040 (p32mk1024mcm100.h / xc.h)
+ * struct usb_registers_t pointer starts at 0xBF889040 (= device_base + 0x040).
+ * Device MMIO window starts at 0xBF889000 so UxOTGIR lands at offset 0x040. */
 #define PIC32MK_USB1_OFFSET     0x089000u
 #define PIC32MK_USB_OFFSET      PIC32MK_USB1_OFFSET   /* legacy alias */
 
-/* USB OTG 2                                   0xBF88A000 */
+/* USB OTG 2   _USB2_BASE_ADDRESS = 0xBF88A040 */
 #define PIC32MK_USB2_OFFSET     0x08A000u
 
 /* RTCC                                         0xBF8C0000 */
@@ -129,6 +139,7 @@
 #define PIC32MK_PMD6            0x0090u
 #define PIC32MK_PMD7            0x00A0u
 #define PIC32MK_CFGCON2         0x0110u     /* Extended configuration control */
+#define PIC32MK_CHECON          0x0800u     /* Prefetch Cache Control (CHECON) */
 
 /* CFGCON bits */
 #define PIC32MK_CFGCON_PGLOCK   (1u << 28)  /* Permission-group lock */
@@ -563,7 +574,7 @@
 #define PIC32MK_SPI2_OFFSET     0x021A00u
 #define PIC32MK_SPI3_OFFSET     0x040800u
 #define PIC32MK_SPI4_OFFSET     0x040A00u
-#define PIC32MK_SPI5_OFFSET     0x040C00u
+#define PIC32MK_SPI5_OFFSET     0x047800u   /* 0xBF847800 — verified against p32mk1024mcm100.h */
 #define PIC32MK_SPI6_OFFSET     0x040E00u
 #define PIC32MK_SPI_BLOCK_SIZE  0x200u
 

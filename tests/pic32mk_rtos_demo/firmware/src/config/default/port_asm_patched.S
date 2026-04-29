@@ -894,6 +894,28 @@ vCAN2InterruptWrapper:
     portRESTORE_CONTEXT
     .end    vCAN2InterruptWrapper
 
+    .extern CAN3_InterruptHandler
+
+    .global vCAN3InterruptWrapper
+    .ent    vCAN3InterruptWrapper
+vCAN3InterruptWrapper:
+    portSAVE_CONTEXT
+    jal     CAN3_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vCAN3InterruptWrapper
+
+    .extern CAN4_InterruptHandler
+
+    .global vCAN4InterruptWrapper
+    .ent    vCAN4InterruptWrapper
+vCAN4InterruptWrapper:
+    portSAVE_CONTEXT
+    jal     CAN4_InterruptHandler
+    nop
+    portRESTORE_CONTEXT
+    .end    vCAN4InterruptWrapper
+
     /* Change Notice A interrupt wrapper (source 44, IFS1 bit 12) */
     .extern CHANGE_NOTICE_A_InterruptHandler
 

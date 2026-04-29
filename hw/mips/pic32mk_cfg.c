@@ -41,6 +41,7 @@ typedef struct PIC32MKCFGState {
 
     uint32_t cfgcon;
     uint32_t cfgcon2;
+    uint32_t checon;                    /* Prefetch Cache Control */
     uint32_t pmd[PIC32MK_PMD_COUNT];    /* PMD1–PMD7 */
     uint8_t  syskey_state;              /* SYSKEY unlock FSM */
 } PIC32MKCFGState;
@@ -83,6 +84,9 @@ static uint64_t pic32mk_cfg_read(void *opaque, hwaddr addr, unsigned size)
 
     case PIC32MK_CFGCON2:
         return s->cfgcon2;
+
+    case PIC32MK_CHECON:
+        return s->checon;
 
     default:
         qemu_log_mask(LOG_UNIMP,
@@ -137,6 +141,10 @@ static void pic32mk_cfg_write(void *opaque, hwaddr addr, uint64_t val,
         s->cfgcon2 = apply_sci(s->cfgcon2, v32, sub);
         break;
 
+    case PIC32MK_CHECON:
+        s->checon = apply_sci(s->checon, v32, sub);
+        break;
+
     /* PMD1–PMD7: gated by PMDLOCK */
     case PIC32MK_PMD1: case PIC32MK_PMD2: case PIC32MK_PMD3:
     case PIC32MK_PMD4: case PIC32MK_PMD5: case PIC32MK_PMD6:
@@ -185,6 +193,7 @@ static void pic32mk_cfg_reset_hold(Object *obj, ResetType type)
     PIC32MKCFGState *s = PIC32MK_CFG(obj);
     s->cfgcon  = 0;
     s->cfgcon2 = 0;
+    s->checon  = 0;
     s->syskey_state = SYSKEY_LOCKED;
     for (int i = 0; i < PIC32MK_PMD_COUNT; i++) {
         s->pmd[i] = 0;

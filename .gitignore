@@ -25,3 +25,7 @@ GTAGS
 /tests/pic32mk_rtos_demo/.vscode/browse.vc.db
 /tests/pic32mk_rtos_demo/.vscode/browse.vc.db-shm
 /tests/pic32mk_rtos_demo/.vscode/browse.vc.db-wal
+
+/tests/**/Release/Objects/
+/tests/**/.cache/
+/tests/PRG-IDU/

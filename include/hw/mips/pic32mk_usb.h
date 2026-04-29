@@ -164,6 +164,15 @@ struct PIC32MKUSBState {
     CharFrontend chr;           /* virtual serial port for CDC data */
     EP0SimState  ep0_sim;       /* enumeration state machine */
     bool         configured;    /* SET_CONFIGURATION accepted */
+    bool         sesvd_edge_latched; /* SESSION_VALID edge latch for IRQ */
+    bool         sesvd_acked;        /* firmware has W1C-cleared SESVDIF at least once */
+    int          sesvd_retry_count;  /* fallback re-fire counter */
+
+    /* ---- USTAT FIFO (PIC32MK has a 4-deep hardware FIFO) ---- */
+    uint32_t stat_fifo[4];      /* circular buffer of pending USTAT values */
+    int      stat_fifo_head;    /* next write position */
+    int      stat_fifo_tail;    /* next read position */
+    int      stat_fifo_count;   /* number of entries in FIFO */
 };
 
 #endif /* HW_MIPS_PIC32MK_USB_H */

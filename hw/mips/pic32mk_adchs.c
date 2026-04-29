@@ -401,6 +401,7 @@ static void adchs_prop_ch_set(Object *obj, Visitor *v, const char *name,
         return;
     }
     s->analog_input[ch] = (uint16_t)val;
+    s->adcdata[ch]      = (uint16_t)(val & 0xFFF);
 }
 
 static void adchs_prop_data_get(Object *obj, Visitor *v, const char *name,

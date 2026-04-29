@@ -786,6 +786,58 @@ The `UA` register contains an **absolute physical RAM address**, not an offset. 
 
 When `CiCON.ABAT` is written 1, all pending TX requests across all FIFOs and TXQ must be cancelled. Set `TXATIF` in each active FIFO status, clear all `CiTXREQ` bits, then clear the `ABAT` bit in `CiCON`.
 
+### TX IDE bit is in T1, not T0 — 29-bit IDs transmitted as 11-bit (2026-03-27)
+
+**Symptom:** Extended CAN frames sent by firmware appear on the SocketCAN bus (vcan) with a
+truncated 11-bit ID instead of the full 29-bit ID. For example, ID `0x18FE0909` shows up as `0x63F`.
+
+**Root cause:** The TX message object layout has an asymmetry between T0 and T1:
+
+| Word | Field | Bits |
+|------|-------|------|
+| T0   | SID[10:0] | [10:0] |
+| T0   | EID[17:0] | [28:11] |
+| T0   | *(no IDE here)* | — |
+| T1   | DLC | [3:0] |
+| **T1** | **IDE** | **[4]** ← extended frame flag |
+| T1   | RTR, BRS, FDF, ESI | [5:8] |
+
+The plib (`CAN4_MessageTransmit`) correctly sets `t1 |= CANFD_MSG_IDE_MASK` (`0x10`) to signal an
+extended frame. The QEMU emulator was incorrectly reading the IDE bit from `t0[30]`:
+
+```c
+/* WRONG — t0 bit 30 is always 0; CANFD_MSG_EID_MASK only covers bits [28:0] */
+bool xtd = (t0 >> 30) & 1u;
+```
+
+Because `t0[30]` is never set by the plib, QEMU always treated TX frames as standard 11-bit, and
+decoded only the SID portion: `t0 & 0x7FF`.
+
+For `id = 0x18FE0909`, the SID portion packed into `t0[10:0]` is:
+```
+(0x18FE0909 & CANFD_MSG_TX_EXT_SID_MASK) >> 18
+= (0x18FE0909 & 0x1FFC0000) >> 18
+= 0x18FC0000 >> 18
+= 0x63F          ← exactly the wrong ID seen on the bus
+```
+
+**Fix applied** (`hw/mips/pic32mk_canfd.c`):
+
+```c
+/* Before (wrong): */
+bool xtd = (t0 >> 30) & 1u;
+
+/* After (correct): IDE is in T1[4] per DS60001507 §3.1 */
+bool xtd = (t1 >> 4) & 1u;
+```
+
+**RX path is unaffected.** The RX message object (R0/R1) does carry `EXIDE` in both `r0[30]` and
+`r1[4]`. QEMU sets both fields, and the plib ISR reads `r1[4]` (`rxMessage->r1 & CANFD_MSG_IDE_MASK`),
+so the RX decode was already correct.
+
+**Where to look if this symptom reappears:** `canfd_process_tx()` in `hw/mips/pic32mk_canfd.c`, at
+the point where `t0` and `t1` are read from the Message RAM TX slot.
+
 ---
 
 ## 13. Useful References
