@@ -228,7 +228,7 @@ T0 word (R0) is identical to TX. R1 differs:
 | Word 1 (R1) | ESI | 8 | Sender was in error passive state |
 | Word 1 (R1) | FILHIT | 15:11 | **Filter index that matched** (0–31). Emulator must fill this. |
 | Word 1 (R1) | RXTS | 31:16 | RX timestamp (from `CiTBC` if `CiTSCON` enabled) |
-| Words 2–N | DATA | — | Received payload |
+| Words 2–N | DATA | — | Received payload bytes (starts at obj+8; no separate timestamp word in RAM — RXTS is in R1[31:16]) |
 
 ### 5.4 DLC → Byte Count Mapping
 

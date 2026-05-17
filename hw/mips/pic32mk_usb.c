@@ -74,9 +74,14 @@ static void usb_update_irq(PIC32MKUSBState *s)
      * in the IRQ level calculation while the edge latch is active.
      */
     uint32_t otg_pending = s->otgir & s->otgie;
-    if (!s->sesvd_edge_latched) {
-        otg_pending &= ~USB_OTG_IR_SESSION_VALID;
-    }
+    /*
+     * SESSION_VALID (SESVDIF) is dispatched via a one-shot pulse in the
+     * PIC32MK_UxOTGIE write handler, not via a persistent level here.
+     * Always exclude it so repeated usb_update_irq() calls (e.g. from
+     * register writes inside the ISR) don't re-assert a persistent IRQ
+     * level after the pulse has already cleared irq_level in the EVIC.
+     */
+    otg_pending &= ~USB_OTG_IR_SESSION_VALID;
 
     bool fire = ((s->uir  & s->uie)  != 0)
              || ((s->ueir & s->ueie) != 0)
@@ -716,7 +721,18 @@ static void usb_write(void *opaque, hwaddr addr, uint64_t val, unsigned size)
             !s->sesvd_acked) {
             s->otgir |= USB_OTG_IR_SESSION_VALID;
             s->sesvd_edge_latched = true;
-            fprintf(stderr, "pic32mk_usb: SESSION_VALID latched → IRQ (persistent)\n");
+            /*
+             * Pulse IRQ: assert then immediately deassert so EVIC sets
+             * ifsreg[34]=1 but leaves irq_level[34]=0.
+             *
+             * Without this, irq_level stays 1 and the firmware's IFSxCLR
+             * write (line ~460 in drv_usbfs.c, before SESVDIF is cleared)
+             * is immediately re-latched by EVIC's irq_level → IFS re-set →
+             * ISR fires a spurious second time.
+             */
+            fprintf(stderr, "pic32mk_usb: SESSION_VALID latched → IRQ pulse\n");
+            qemu_set_irq(s->irq, 1);   /* EVIC: irq_level[34]=1, ifsreg[34]=1 */
+            qemu_set_irq(s->irq, 0);   /* EVIC: irq_level[34]=0; ifsreg[34] stays 1 */
         }
         usb_update_irq(s);
         return;

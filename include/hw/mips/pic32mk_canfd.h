@@ -17,6 +17,14 @@
 #define TYPE_PIC32MK_CANFD  "pic32mk-canfd"
 OBJECT_DECLARE_SIMPLE_TYPE(PIC32MKCANFDState, PIC32MK_CANFD)
 
+#define CANFD_NUM_FIFOS          31u
+#define CANFD_FIFO_FIRST         1u
+#define CANFD_FIFO_LAST          CANFD_NUM_FIFOS
+#define CANFD_FIFO_STORAGE       (CANFD_NUM_FIFOS + 1u) /* index 0 is TXQ/unused */
+#define CANFD_NUM_FILTERS        32u
+#define CANFD_FILTERS_PER_REG    4u
+#define CANFD_NUM_FILTER_REGS    (CANFD_NUM_FILTERS / CANFD_FILTERS_PER_REG)
+
 /* -----------------------------------------------------------------------
  * CAN FD SFR register offsets (from instance base).
  *
@@ -48,11 +56,11 @@ OBJECT_DECLARE_SIMPLE_TYPE(PIC32MKCANFDState, PIC32MK_CANFD)
 #define CANFD_CiTXQCON      0x140u  /* TX Queue control */
 #define CANFD_CiTXQSTA      0x150u  /* TX Queue status */
 #define CANFD_CiTXQUA       0x160u  /* TX Queue user address */
-/* FIFO n (n=1..31): stride 0x30 (3 registers × 0x10 each) */
+/* FIFO n (n=1..CANFD_NUM_FIFOS): stride 0x30 (3 registers x 0x10 each) */
 #define CANFD_CiFIFOCON(n)  (0x170u + ((n) - 1u) * 0x30u)
 #define CANFD_CiFIFOSTA(n)  (0x180u + ((n) - 1u) * 0x30u)
 #define CANFD_CiFIFOUA(n)   (0x190u + ((n) - 1u) * 0x30u)
-/* Filter control: stride 0x10 per register, 8 registers */
+/* Filter control: stride 0x10 per register */
 #define CANFD_CiFLTCON(r)   (0x740u + (r) * 0x10u)
 /* Filter object/mask pairs: stride 0x20 per pair */
 #define CANFD_CiFLTOBJ(n)   (0x7C0u + (n) * 0x20u)
@@ -109,6 +117,7 @@ OBJECT_DECLARE_SIMPLE_TYPE(PIC32MKCANFDState, PIC32MK_CANFD)
 #define CANFD_FIFO_FSIZE_SHIFT  24u
 #define CANFD_FIFO_FSIZE_MASK   (0x1Fu << CANFD_FIFO_FSIZE_SHIFT)
 #define CANFD_FIFO_TFNRFNIE     (1u << 0u)   /* RX: FIFO Not Empty interrupt enable */
+#define CANFD_FIFO_RXTSEN       (1u << 5u)   /* RX: prepend 4-byte timestamp before payload */
 #define CANFD_FIFO_TXEN         (1u << 7u)   /* TX enable (1=TX FIFO, 0=RX FIFO) */
 #define CANFD_FIFO_UINC         (1u << 8u)   /* User increment (pulse bit) */
 #define CANFD_FIFO_TXREQ        (1u << 9u)   /* TX request (pulse bit) */
@@ -158,22 +167,23 @@ struct PIC32MKCANFDState {
     uint32_t tefsta;
     uint32_t tefua;
 
-    /* Per-FIFO state (index 1–31; [0] unused) */
-    uint32_t fifocon[32];
-    uint32_t fifosta[32];
-    uint32_t fifoua[32];
-    uint8_t  fifo_head[32];
-    uint8_t  fifo_tail[32];
-    uint8_t  fifo_count[32];
+    /* Per-FIFO state (index 1..CANFD_NUM_FIFOS; [0] unused) */
+    uint32_t fifocon[CANFD_FIFO_STORAGE];
+    uint32_t fifosta[CANFD_FIFO_STORAGE];
+    uint32_t fifoua[CANFD_FIFO_STORAGE];
+    uint8_t  fifo_head[CANFD_FIFO_STORAGE];
+    uint8_t  fifo_tail[CANFD_FIFO_STORAGE];
+    uint8_t  fifo_count[CANFD_FIFO_STORAGE];
 
     /* Acceptance filters */
-    uint32_t fltcon[8];      /* 4 filters per reg × 8 = 32 filters */
-    uint32_t fltobj[32];
-    uint32_t mask[32];
+    uint32_t fltcon[CANFD_NUM_FILTER_REGS];
+    uint32_t fltobj[CANFD_NUM_FILTERS];
+    uint32_t mask[CANFD_NUM_FILTERS];
 
     /* Message RAM backing store */
     uint8_t  *msg_ram_buf;
     uint32_t  msg_ram_phys;  /* physical base (injected via property) */
+    uint32_t  fifoba;        /* CiFIFOBA: firmware-supplied message RAM base (physical) */
 
     /* Instance index (0–3 for CAN1–4) */
     uint32_t  instance_id;

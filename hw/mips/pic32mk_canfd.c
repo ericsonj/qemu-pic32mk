@@ -6,7 +6,7 @@
  * Implements:
  *  - Two MemoryRegions per instance: SFR block + Message RAM
  *  - Operating mode transitions (Config / Normal / Internal Loopback / others)
- *  - TX Queue (TXQ) and up to 31 configurable FIFOs
+ *  - TX Queue (TXQ) and all configurable FIFOs exposed by the device header
  *  - UINC pointer-advance protocol (head/tail management)
  *  - Internal loopback: TX → acceptance filter → RX FIFO
  *  - CiINT two-level interrupt aggregator → single EVIC IRQ line
@@ -32,6 +32,7 @@
 #include "hw/core/irq.h"
 #include "hw/mips/pic32mk.h"
 #include "hw/mips/pic32mk_canfd.h"
+#include "exec/cpu-common.h"    /* cpu_physical_memory_read/write */
 
 /* -----------------------------------------------------------------------
  * DLC / PLSIZE helpers
@@ -64,18 +65,67 @@ static uint32_t canfd_obj_size(uint32_t fifocon)
  * Layout (sequential from msg_ram_phys):
  *   [TXQ  region] if TXQEN
  *   [TEF  region] if STEF
- *   [FIFO 1..31]
+ *   [FIFO 1..CANFD_NUM_FIFOS]
  *
  * For simplicity we pre-allocate the maximum per region and compute
  * offsets statically from the FIFO configuration registers.
  * ----------------------------------------------------------------------- */
 
-#define CANFD_MAX_OBJ_SIZE  72u   /* 8 header + 64 payload */
+#define CANFD_RX_TIMESTAMP_SIZE 4u
+#define CANFD_MAX_OBJ_SIZE  76u   /* 8 header + 4 timestamp + 64 payload */
 #define CANFD_MAX_DEPTH     32u   /* FSIZE+1 max */
+
+static bool canfd_fifo_index_valid(int n)
+{
+    return n >= (int)CANFD_FIFO_FIRST && n <= (int)CANFD_FIFO_LAST;
+}
+
+static uint32_t canfd_fifo_bit(int n)
+{
+    return 1u << (uint32_t)n;
+}
+
+static uint32_t canfd_fifo_depth(PIC32MKCANFDState *s, int n)
+{
+    return ((s->fifocon[n] >> CANFD_FIFO_FSIZE_SHIFT) & 0x1Fu) + 1u;
+}
+
+static int canfd_first_pending_fifo(uint32_t flags, bool include_txq)
+{
+    int first = include_txq ? 0 : (int)CANFD_FIFO_FIRST;
+
+    for (int i = first; i <= (int)CANFD_FIFO_LAST; i++) {
+        if (flags & (1u << (uint32_t)i)) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+static uint32_t canfd_fifo_obj_size(PIC32MKCANFDState *s, int n)
+{
+    uint32_t size = canfd_obj_size(s->fifocon[n]);
+
+    if (!(s->fifocon[n] & CANFD_FIFO_TXEN) &&
+        (s->fifocon[n] & CANFD_FIFO_RXTSEN)) {
+        size += CANFD_RX_TIMESTAMP_SIZE;
+    }
+
+    return size;
+}
+
+/* Base of the message RAM as seen by the firmware: CiFIFOBA when set by
+ * firmware (Harmony3 plib allocates SRAM and writes KVA_TO_PA(buf) here),
+ * otherwise fall back to the fixed peripheral address. */
+static uint32_t canfd_ram_base(PIC32MKCANFDState *s)
+{
+    return s->fifoba ? s->fifoba : s->msg_ram_phys;
+}
 
 static uint32_t canfd_txq_ram_base(PIC32MKCANFDState *s)
 {
-    return s->msg_ram_phys;
+    return canfd_ram_base(s);
 }
 
 static uint32_t canfd_txq_obj_size(PIC32MKCANFDState *s)
@@ -101,17 +151,17 @@ static uint32_t canfd_fifo_ram_base(PIC32MKCANFDState *s, int n)
         uint32_t tef_depth = ((s->tefcon >> CANFD_FIFO_FSIZE_SHIFT) & 0x1Fu) + 1u;
         off += 8u * tef_depth;
     }
-    /* FIFOs 1..n-1 */
-    for (int i = 1; i < n; i++) {
-        uint32_t depth = ((s->fifocon[i] >> CANFD_FIFO_FSIZE_SHIFT) & 0x1Fu) + 1u;
-        off += canfd_obj_size(s->fifocon[i]) * depth;
+    /* FIFOs before n */
+    for (int i = CANFD_FIFO_FIRST; i < n; i++) {
+        uint32_t depth = canfd_fifo_depth(s, i);
+        off += canfd_fifo_obj_size(s, i) * depth;
     }
-    return s->msg_ram_phys + off;
+    return canfd_ram_base(s) + off;
 }
 
 static uint32_t canfd_fifo_slot_ua(PIC32MKCANFDState *s, int n, uint8_t slot)
 {
-    return canfd_fifo_ram_base(s, n) + (uint32_t)slot * canfd_obj_size(s->fifocon[n]);
+    return canfd_fifo_ram_base(s, n) + (uint32_t)slot * canfd_fifo_obj_size(s, n);
 }
 
 static uint32_t canfd_txq_slot_ua(PIC32MKCANFDState *s, uint8_t slot)
@@ -126,12 +176,14 @@ static uint32_t canfd_txq_slot_ua(PIC32MKCANFDState *s, uint8_t slot)
 static void canfd_update_irq(PIC32MKCANFDState *s)
 {
     bool fire = false;
+    int vec = -1;
 
     /* RXIF: any RX FIFO has data */
     if (s->cint & CANFD_INT_RXIE) {
         if (s->rxif) {
             s->cint |= CANFD_INT_RXIF;
             fire = true;
+            vec = canfd_first_pending_fifo(s->rxif, false);
         } else {
             s->cint &= ~CANFD_INT_RXIF;
         }
@@ -142,9 +194,16 @@ static void canfd_update_irq(PIC32MKCANFDState *s)
         if (s->txif) {
             s->cint |= CANFD_INT_TXIF;
             fire = true;
+            if (vec < 0) {
+                vec = canfd_first_pending_fifo(s->txif, true);
+            }
         } else {
             s->cint &= ~CANFD_INT_TXIF;
         }
+    }
+
+    if (vec >= 0) {
+        s->vec = (uint32_t)vec & 0x7Fu;
     }
 
     /* MODIF: mode changed and MODIE enabled */
@@ -167,9 +226,10 @@ static void canfd_update_irq(PIC32MKCANFDState *s)
 
 static int canfd_find_fifo(PIC32MKCANFDState *s, uint32_t id, bool xtd)
 {
-    for (int n = 0; n < 32; n++) {
+    for (int n = 0; n < CANFD_NUM_FILTERS; n++) {
         /* Each CiFLTCON register holds 4 filter bytes */
-        uint8_t fltcon_byte = (s->fltcon[n / 4] >> ((n % 4) * 8)) & 0xFFu;
+        uint8_t fltcon_byte = (s->fltcon[n / CANFD_FILTERS_PER_REG] >>
+                               ((n % CANFD_FILTERS_PER_REG) * 8)) & 0xFFu;
         if (!(fltcon_byte & 0x80u)) {
             continue;   /* FLTEN = 0 */
         }
@@ -194,7 +254,11 @@ static int canfd_find_fifo(PIC32MKCANFDState *s, uint32_t id, bool xtd)
             continue;
         }
 
-        return fltcon_byte & 0x1Fu;   /* destination FIFO */
+        int dest = fltcon_byte & 0x1Fu;   /* destination FIFO */
+        if (!canfd_fifo_index_valid(dest)) {
+            continue;
+        }
+        return dest;
     }
     return -1;
 }
@@ -209,24 +273,35 @@ static void canfd_rx_deliver(PIC32MKCANFDState *s,
                              int filter_hit)
 {
     int dest = filter_hit;
-    if (dest < 1 || dest > 31) {
+    if (!canfd_fifo_index_valid(dest)) {
         return;
     }
 
-    uint32_t depth = ((s->fifocon[dest] >> CANFD_FIFO_FSIZE_SHIFT) & 0x1Fu) + 1u;
+    uint32_t depth = canfd_fifo_depth(s, dest);
     if (s->fifo_count[dest] >= (uint8_t)depth) {
         /* Overflow */
-        s->rxovif |= (1u << dest);
+        s->rxovif |= canfd_fifo_bit(dest);
         s->cint   |= CANFD_INT_RXOVIF;
         canfd_update_irq(s);
         return;
     }
 
-    /* Write message object to tail slot */
+    /* Build message object into a local buffer, then write to guest physical
+     * memory at the tail slot address.  Using cpu_physical_memory_write lets
+     * us support CiFIFOBA-relocated buffers (Harmony3 plib puts the message
+     * RAM in SRAM and writes KVA_TO_PA(buf) to CiFIFOBA; the UA returned by
+     * canfd_fifo_slot_ua is then relative to that SRAM address, not to the
+     * fixed peripheral address). */
     uint32_t ua = canfd_fifo_slot_ua(s, dest, s->fifo_tail[dest]);
-    uint32_t ram_off = ua - s->msg_ram_phys;
-    uint8_t *obj = s->msg_ram_buf + ram_off;
-    uint32_t payload_cap = canfd_obj_size(s->fifocon[dest]) - 8u;
+    uint32_t obj_size = canfd_fifo_obj_size(s, dest);
+    uint8_t  obj[CANFD_MAX_OBJ_SIZE];
+    memset(obj, 0, obj_size);
+
+    bool rxtsen = (s->fifocon[dest] & CANFD_FIFO_RXTSEN) != 0u;
+    /* When RXTSEN=1 hardware prepends a 4-byte timestamp before the payload;
+     * plib_canfd ISR skips those 4 bytes (dataIndex=4) to reach the payload. */
+    uint32_t data_off = rxtsen ? 12u : 8u;
+    uint32_t payload_cap = obj_size - data_off;
     uint8_t dlc_len = canfd_dlc_bytes(dlc, fdf);
     uint8_t copy_len = (uint8_t)MIN((uint32_t)MAX(len, 0), payload_cap);
     if (copy_len > dlc_len) {
@@ -252,27 +327,24 @@ static void canfd_rx_deliver(PIC32MKCANFDState *s,
     }
     *(uint32_t *)(obj + 0) = r0;
 
-    /* R1: DLC, flags, FILHIT, RXTS=0 */
+    /* R1: DLC, flags, FILHIT, RXTS in bits[31:16] (DS60001507 Table 38-2) */
     uint32_t r1 = (uint32_t)dlc
                 | (xtd ? (1u << 4) : 0u)
                 | (fdf ? (1u << 7) : 0u)
-                | ((uint32_t)(filter_hit & 0x1F) << 11);
+                | ((uint32_t)(filter_hit & 0x1F) << 11)
+                | ((s->tbc & 0xFFFFu) << 16);
     *(uint32_t *)(obj + 4) = r1;
 
-    /*
-     * RX message data area layout (DS60001507 Figure 3-2):
-     *   data[0..3] : RXMSGTS — 32-bit receive timestamp (always present when
-     *                RXTSEN=1 in FIFOCONn; firmware expects this field)
-     *   data[4..]  : Payload bytes
-     *
-     * Harmony3 plib_canfd always reads payload from data[4] onwards, so we
-     * must write a timestamp (even if 0) before the payload.
-     */
-    memset(obj + 8, 0, payload_cap);           /* Clear timestamp + payload */
-    *(uint32_t *)(obj + 8) = s->tbc;           /* Write timestamp at data[0..3] */
-    if (copy_len > 0 && data) {
-        memcpy(obj + 12, data, copy_len);      /* Payload starts at data[4] */
+    /* When RXTSEN=1: obj+8 holds 4-byte timestamp, payload starts at obj+12.
+     * When RXTSEN=0: payload starts directly at obj+8. */
+    if (rxtsen) {
+        *(uint32_t *)(obj + 8) = s->tbc;
     }
+    if (copy_len > 0 && data) {
+        memcpy(obj + data_off, data, copy_len);
+    }
+
+    cpu_physical_memory_write(ua, obj, obj_size);
 
     /* Advance tail */
     s->fifo_tail[dest] = (s->fifo_tail[dest] + 1u) % (uint8_t)depth;
@@ -281,18 +353,20 @@ static void canfd_rx_deliver(PIC32MKCANFDState *s,
     /* Set interrupt flags — TFNRFNIF signals data present.
      * Only assert RXIF if TFNRFNIE (per-FIFO RX interrupt enable) is set;
      * otherwise the frame waits silently until firmware arms reception
-     * via CAN_MessageReceive() which re-enables TFNRFNIE. */
+     * via CAN_MessageReceive() which re-enables TFNRFNIE.
+     * CiVEC.ICODE must be updated together with RXIF so the ISR reads the
+     * correct FIFO number.  Do NOT update vec when TFNRFNIE is disabled —
+     * a subsequent TX completion sets vec=0 and the RX IRQ hasn't fired yet;
+     * vec will be corrected when TFNRFNIE is (re-)enabled below. */
     s->fifosta[dest] |= CANFD_FIFOSTA_TFNRFNIF;
     if (s->fifocon[dest] & CANFD_FIFO_TFNRFNIE) {
-        s->rxif |= (1u << dest);
+        s->rxif |= canfd_fifo_bit(dest);
+        s->vec   = (uint32_t)dest & 0x7Fu;
     }
 
     /* Update UA to point at new tail (next write slot is not applicable for RX,
        but keep it consistent — head slot for next firmware read) */
     s->fifoua[dest] = canfd_fifo_slot_ua(s, dest, s->fifo_head[dest]);
-
-    /* CiVEC.ICODE — firmware RX ISR reads this to learn which FIFO fired */
-    s->vec = (uint32_t)dest & 0x7Fu;
 
     canfd_update_irq(s);
 }
@@ -312,14 +386,11 @@ static void canfd_process_tx(PIC32MKCANFDState *s, int fifo)
         ua = canfd_fifo_slot_ua(s, fifo, s->fifo_head[fifo]);
     }
 
-    uint32_t ram_off = ua - s->msg_ram_phys;
-    if (ram_off >= PIC32MK_CAN_MSGRAM_SIZE) {
-        qemu_log_mask(LOG_GUEST_ERROR,
-                      "pic32mk-canfd: TX UA 0x%08x out of message RAM\n", ua);
-        return;
-    }
+    uint8_t  obj[CANFD_MAX_OBJ_SIZE];
+    uint32_t obj_size = (fifo == 0) ? canfd_txq_obj_size(s)
+                                    : canfd_fifo_obj_size(s, fifo);
+    cpu_physical_memory_read(ua, obj, obj_size);
 
-    const uint8_t *obj = s->msg_ram_buf + ram_off;
     uint32_t t0  = *(const uint32_t *)(obj + 0);
     uint32_t t1  = *(const uint32_t *)(obj + 4);
     uint8_t  dlc = t1 & 0xFu;
@@ -365,7 +436,7 @@ static void canfd_process_tx(PIC32MKCANFDState *s, int fifo)
         s->txif    |= 1u;          /* bit 0 = TXQ */
         s->vec      = 0u;          /* ICODE=0 for TXQ */
     } else {
-        uint32_t depth = ((s->fifocon[fifo] >> CANFD_FIFO_FSIZE_SHIFT) & 0x1Fu) + 1u;
+        uint32_t depth = canfd_fifo_depth(s, fifo);
         s->fifo_head[fifo] = (s->fifo_head[fifo] + 1u) % (uint8_t)depth;
         if (s->fifo_count[fifo] > 0) {
             s->fifo_count[fifo]--;
@@ -374,7 +445,7 @@ static void canfd_process_tx(PIC32MKCANFDState *s, int fifo)
         s->fifosta[fifo] |= CANFD_FIFOSTA_TXATIF;
         /* TX slot freed — TX FIFO is no longer full */
         s->fifosta[fifo] |= CANFD_FIFOSTA_TFNRFNIF;
-        s->txif |= (1u << fifo);
+        s->txif |= canfd_fifo_bit(fifo);
         s->vec   = (uint32_t)fifo & 0x7Fu;  /* ICODE = FIFO number */
     }
 
@@ -391,7 +462,7 @@ static void canfd_bus_buf_drain(PIC32MKCANFDState *s);
 static void canfd_uinc_fifo(PIC32MKCANFDState *s, int n)
 {
     bool is_tx = (s->fifocon[n] & CANFD_FIFO_TXEN) != 0u;
-    uint32_t depth = ((s->fifocon[n] >> CANFD_FIFO_FSIZE_SHIFT) & 0x1Fu) + 1u;
+    uint32_t depth = canfd_fifo_depth(s, n);
 
     if (is_tx) {
         /* Firmware finished writing a TX object — advance tail */
@@ -411,7 +482,7 @@ static void canfd_uinc_fifo(PIC32MKCANFDState *s, int n)
         s->fifoua[n] = canfd_fifo_slot_ua(s, n, s->fifo_head[n]);
 
         if (s->fifo_count[n] == 0) {
-            s->rxif     &= ~(1u << n);
+            s->rxif     &= ~canfd_fifo_bit(n);
             s->fifosta[n] &= ~CANFD_FIFOSTA_TFNRFNIF;
         }
         canfd_update_irq(s);
@@ -444,8 +515,8 @@ static void canfd_freset_fifo(PIC32MKCANFDState *s, int n)
     s->fifo_head[n]  = 0;
     s->fifo_tail[n]  = 0;
     s->fifo_count[n] = 0;
-    s->rxif         &= ~(1u << n);
-    s->txif         &= ~(1u << n);
+    s->rxif         &= ~canfd_fifo_bit(n);
+    s->txif         &= ~canfd_fifo_bit(n);
     s->fifosta[n]    = 0;
     /* TX FIFO: empty after reset means "not full" → TFNRFNIF = 1 */
     if (s->fifocon[n] & CANFD_FIFO_TXEN) {
@@ -466,11 +537,11 @@ static void canfd_abort_all_tx(PIC32MKCANFDState *s)
     s->txqsta  |= CANFD_TXQSTA_TXQNIF;
 
     /* TX FIFOs */
-    for (int i = 1; i < 32; i++) {
+    for (int i = CANFD_FIFO_FIRST; i <= (int)CANFD_FIFO_LAST; i++) {
         if (s->fifocon[i] & CANFD_FIFO_TXEN) {
             s->fifocon[i] &= ~CANFD_FIFO_TXREQ;
             s->fifosta[i] |= CANFD_FIFOSTA_TXATIF;
-            s->txif |= (1u << i);
+            s->txif |= canfd_fifo_bit(i);
         }
     }
     canfd_update_irq(s);
@@ -510,7 +581,7 @@ static void canfd_bus_buf_drain(PIC32MKCANFDState *s)
     while (s->bus_buf_count > 0) {
         int n = s->bus_buf_head;
         int dest = s->bus_buf_dest[n];
-        uint32_t depth = ((s->fifocon[dest] >> CANFD_FIFO_FSIZE_SHIFT) & 0x1Fu) + 1u;
+        uint32_t depth = canfd_fifo_depth(s, dest);
         if (s->fifo_count[dest] >= (uint8_t)depth) {
             break;  /* target FIFO still full — wait for next UINC */
         }
@@ -544,7 +615,7 @@ static ssize_t canfd_receive(CanBusClientState *client,
             continue;  /* no filter match */
         }
 
-        uint32_t depth = ((s->fifocon[dest] >> CANFD_FIFO_FSIZE_SHIFT) & 0x1Fu) + 1u;
+        uint32_t depth = canfd_fifo_depth(s, dest);
         if (s->fifo_count[dest] < (uint8_t)depth) {
             /* FIFO has space — deliver directly */
             canfd_rx_deliver(s, id, xtd, fdf, dlc, f->data, rx_len, dest);
@@ -562,7 +633,7 @@ static ssize_t canfd_receive(CanBusClientState *client,
             s->bus_buf_count++;
         } else {
             /* Software buffer also full — real bus overflow */
-            s->rxovif |= (1u << dest);
+            s->rxovif |= canfd_fifo_bit(dest);
             s->cint   |= CANFD_INT_RXOVIF;
             canfd_update_irq(s);
         }
@@ -606,7 +677,7 @@ static uint64_t canfd_sfr_read(void *opaque, hwaddr offset, unsigned size)
     case CANFD_CiTEFCON: return s->tefcon;
     case CANFD_CiTEFSTA: return s->tefsta;
     case CANFD_CiTEFUA:  return s->tefua;
-    case CANFD_CiFIFOBA: return 0;
+    case CANFD_CiFIFOBA: return s->fifoba;
     case CANFD_CiTXQCON: return s->txqcon;
     case CANFD_CiTXQSTA: return s->txqsta;
     case CANFD_CiTXQUA:  return s->txqua;
@@ -614,30 +685,35 @@ static uint64_t canfd_sfr_read(void *opaque, hwaddr offset, unsigned size)
         break;
     }
 
-    /* FIFO registers: base 0x170, stride 0x30 per FIFO (n=1..31)
+    /* FIFO registers: base 0x170, stride 0x30 per FIFO
      *   +0x00: CiFIFOCONn, +0x10: CiFIFOSTAn, +0x20: CiFIFOUAn */
-    if (base_off >= CANFD_CiFIFOCON(1) && base_off <= CANFD_CiFIFOCON(31) + 0x20u) {
+    if (base_off >= CANFD_CiFIFOCON(CANFD_FIFO_FIRST) &&
+        base_off <= CANFD_CiFIFOCON(CANFD_FIFO_LAST) + 0x20u) {
         int idx = (int)((base_off - 0x170u) / 0x30u) + 1;
         int sub = (int)((base_off - 0x170u) % 0x30u);
-        if (idx >= 1 && idx <= 31) {
+        if (canfd_fifo_index_valid(idx)) {
             if (sub == 0x00) { return s->fifocon[idx]; }
             if (sub == 0x10) { return s->fifosta[idx]; }
             if (sub == 0x20) { return s->fifoua[idx];  }
         }
     }
 
-    /* Filter control: stride 0x10 per register (r=0..7) */
-    if (base_off >= CANFD_CiFLTCON(0) && base_off <= CANFD_CiFLTCON(7)) {
+    /* Filter control: stride 0x10 per register */
+    if (base_off >= CANFD_CiFLTCON(0) &&
+        base_off <= CANFD_CiFLTCON(CANFD_NUM_FILTER_REGS - 1u)) {
         return s->fltcon[(base_off - 0x740u) / 0x10u];
     }
 
-    /* Filter obj/mask: stride 0x20 per pair (n=0..31) */
-    if (base_off >= CANFD_CiFLTOBJ(0) && base_off <= CANFD_CiMASK(31)) {
-        if (base_off >= 0x7C0u && base_off < 0x7C0u + 32u * 0x20u) {
+    /* Filter obj/mask: stride 0x20 per pair */
+    if (base_off >= CANFD_CiFLTOBJ(0) &&
+        base_off <= CANFD_CiMASK(CANFD_NUM_FILTERS - 1u)) {
+        if (base_off >= 0x7C0u &&
+            base_off < 0x7C0u + CANFD_NUM_FILTERS * 0x20u) {
             int fn = (int)((base_off - 0x7C0u) / 0x20u);
             return s->fltobj[fn];
         }
-        if (base_off >= 0x7D0u && base_off < 0x7D0u + 32u * 0x20u) {
+        if (base_off >= 0x7D0u &&
+            base_off < 0x7D0u + CANFD_NUM_FILTERS * 0x20u) {
             int fn = (int)((base_off - 0x7D0u) / 0x20u);
             return s->mask[fn];
         }
@@ -756,8 +832,8 @@ static void canfd_sfr_write(void *opaque, hwaddr offset, uint64_t val,
         uint32_t new_req = apply_sci(s->txreq, v32, sub);
         uint32_t newly   = new_req & ~s->txreq;
         s->txreq = new_req;
-        for (int i = 1; i < 32; i++) {
-            if (newly & (1u << i)) {
+        for (int i = CANFD_FIFO_FIRST; i <= (int)CANFD_FIFO_LAST; i++) {
+            if (newly & canfd_fifo_bit(i)) {
                 canfd_process_tx(s, i);
             }
         }
@@ -796,13 +872,17 @@ static void canfd_sfr_write(void *opaque, hwaddr offset, uint64_t val,
     case CANFD_CiTEFSTA: s->tefsta = apply_sci(s->tefsta, v32, sub); return;
     case CANFD_CiTEFUA:  return;
 
-    /* ---- CiFIFOBA — Phase 3C stub: log and ignore ---- */
+    /* ---- CiFIFOBA — firmware-supplied message RAM base (physical address) ---- */
     case CANFD_CiFIFOBA:
         if (sub == 0) {
-            qemu_log_mask(LOG_UNIMP,
-                "pic32mk-canfd: CiFIFOBA write 0x%08x (Phase 3C stub, "
-                "using fixed msg RAM base 0x%08x)\n",
-                v32, s->msg_ram_phys);
+            s->fifoba = v32;
+            /* CiCON reset value has TXQEN=1, so txqua was initialised on the
+             * first CiCON write when fifoba was still 0 (defaulting to
+             * msg_ram_phys).  Recompute it now that the correct base is known.
+             * canfd_txq_slot_ua(s, txq_tail) is always fifoba + 0 for the
+             * initial single-slot TXQ (depth=1, tail=0), so this is safe even
+             * before CiTXQCON is written with the final PLSIZE/FSIZE. */
+            s->txqua = canfd_txq_slot_ua(s, s->txq_tail);
         }
         return;
 
@@ -810,12 +890,13 @@ static void canfd_sfr_write(void *opaque, hwaddr offset, uint64_t val,
         break;
     }
 
-    /* ---- FIFO registers: base 0x170, stride 0x30 per FIFO (n=1..31)
+    /* ---- FIFO registers: base 0x170, stride 0x30 per FIFO
      *   +0x00: CiFIFOCONn, +0x10: CiFIFOSTAn, +0x20: CiFIFOUAn ---- */
-    if (base_off >= CANFD_CiFIFOCON(1) && base_off <= CANFD_CiFIFOCON(31) + 0x20u) {
+    if (base_off >= CANFD_CiFIFOCON(CANFD_FIFO_FIRST) &&
+        base_off <= CANFD_CiFIFOCON(CANFD_FIFO_LAST) + 0x20u) {
         int idx      = (int)((base_off - 0x170u) / 0x30u) + 1;
         int field    = (int)((base_off - 0x170u) % 0x30u);
-        if (idx < 1 || idx > 31) {
+        if (!canfd_fifo_index_valid(idx)) {
             return;
         }
 
@@ -845,7 +926,7 @@ static void canfd_sfr_write(void *opaque, hwaddr offset, uint64_t val,
             /* Clearing TFERFFIE (bit 4) acknowledges TX completion for this
              * FIFO — deassert its txif source bit. */
             if (!(s->fifocon[idx] & (1u << 4u))) {
-                s->txif &= ~(1u << idx);
+                s->txif &= ~canfd_fifo_bit(idx);
                 canfd_update_irq(s);
             }
             if (uinc) {
@@ -858,14 +939,17 @@ static void canfd_sfr_write(void *opaque, hwaddr offset, uint64_t val,
             /* For RX FIFOs, honour TFNRFNIE: if the firmware just toggled it,
              * update rxif to match the real hardware behaviour.
              * Enabling  → IRQ rises  (frame already in FIFO fires interrupt)
-             * Disabling → IRQ falls  (flow-control) */
+             * Disabling → IRQ falls  (flow-control)
+             * Also update CiVEC.ICODE when asserting RXIF so the ISR reads
+             * the correct FIFO number (mirrors the rule in canfd_rx_deliver). */
             if (!(s->fifocon[idx] & CANFD_FIFO_TXEN)) {
                 bool new_ie   = (s->fifocon[idx] & CANFD_FIFO_TFNRFNIE) != 0;
                 bool has_data = (s->fifosta[idx] & CANFD_FIFOSTA_TFNRFNIF) != 0;
                 if (has_data && new_ie) {
-                    s->rxif |= (1u << idx);
+                    s->rxif |= canfd_fifo_bit(idx);
+                    s->vec   = (uint32_t)idx & 0x7Fu;
                 } else {
-                    s->rxif &= ~(1u << idx);
+                    s->rxif &= ~canfd_fifo_bit(idx);
                 }
                 canfd_update_irq(s);
             }
@@ -875,7 +959,7 @@ static void canfd_sfr_write(void *opaque, hwaddr offset, uint64_t val,
             s->fifosta[idx] = apply_sci(s->fifosta[idx], v32, sub);
             if (!(s->fifosta[idx] & CANFD_FIFOSTA_TFNRFNIF)) {
                 if (s->fifo_count[idx] == 0) {
-                    s->rxif &= ~(1u << idx);
+                    s->rxif &= ~canfd_fifo_bit(idx);
                 }
             }
             canfd_update_irq(s);
@@ -884,24 +968,29 @@ static void canfd_sfr_write(void *opaque, hwaddr offset, uint64_t val,
         return;
     }
 
-    /* ---- Filter control: stride 0x10 per register (r=0..7) ---- */
-    if (base_off >= CANFD_CiFLTCON(0) && base_off <= CANFD_CiFLTCON(7)) {
+    /* ---- Filter control: stride 0x10 per register ---- */
+    if (base_off >= CANFD_CiFLTCON(0) &&
+        base_off <= CANFD_CiFLTCON(CANFD_NUM_FILTER_REGS - 1u)) {
         int reg = (int)((base_off - 0x740u) / 0x10u);
         s->fltcon[reg] = apply_sci(s->fltcon[reg], v32, sub);
         return;
     }
 
     /* ---- Filter object / mask — only writable in Config mode ---- */
-    if (base_off >= CANFD_CiFLTOBJ(0) && base_off < 0x7D0u + 32u * 0x20u) {
+    if (base_off >= CANFD_CiFLTOBJ(0) &&
+        base_off < 0x7D0u + CANFD_NUM_FILTERS * 0x20u) {
         if (opmod != CANFD_OPMOD_CONFIG) {
             return;
         }
-        if (base_off >= 0x7C0u && base_off < 0x7C0u + 32u * 0x20u) {
+        if (base_off >= 0x7C0u &&
+            base_off < 0x7C0u + CANFD_NUM_FILTERS * 0x20u) {
             int fn = (int)((base_off - 0x7C0u) / 0x20u);
             s->fltobj[fn] = apply_sci(s->fltobj[fn], v32, sub);
         } else if (base_off >= 0x7D0u) {
             int fn = (int)((base_off - 0x7D0u) / 0x20u);
-            if (fn < 32) { s->mask[fn] = apply_sci(s->mask[fn], v32, sub); }
+            if (fn < (int)CANFD_NUM_FILTERS) {
+                s->mask[fn] = apply_sci(s->mask[fn], v32, sub);
+            }
         }
         return;
     }
@@ -942,6 +1031,7 @@ static void pic32mk_canfd_reset(DeviceState *dev)
     s->rxovif  = 0;
     s->txreq   = 0;
     s->trec    = 0;
+    s->fifoba  = 0;
     s->tefcon  = 0;
     s->tefsta  = 0;
     s->tefua   = 0;
@@ -952,17 +1042,19 @@ static void pic32mk_canfd_reset(DeviceState *dev)
     s->txq_count = 0;
     s->txqua    = 0;          /* will be computed when TXQEN is set */
 
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < CANFD_FIFO_STORAGE; i++) {
         s->fifocon[i]   = 0;
         s->fifosta[i]   = 0;
         s->fifoua[i]    = 0;
         s->fifo_head[i] = 0;
         s->fifo_tail[i] = 0;
         s->fifo_count[i]= 0;
+    }
+    for (int i = 0; i < CANFD_NUM_FILTERS; i++) {
         s->fltobj[i]    = 0;
         s->mask[i]      = 0;
     }
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < CANFD_NUM_FILTER_REGS; i++) {
         s->fltcon[i] = 0;
     }
 

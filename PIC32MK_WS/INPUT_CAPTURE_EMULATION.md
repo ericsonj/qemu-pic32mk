@@ -76,6 +76,26 @@ ICxCON bit fields:
 | `hw/mips/pic32mk.c`          | Board instantiation of all 16 IC devices |
 | `hw/mips/meson.build`        | Build system entry |
 
+### Implementation Status
+
+| Feature | Status |
+|---------|--------|
+| All 16 instances mapped (IC1–IC16) | ✅ |
+| ICxCON R/W with SET/CLR/INV | ✅ |
+| ICxBUF read-only FIFO pop | ✅ |
+| 4-entry × 16-bit circular FIFO | ✅ |
+| C32 mode (two pushes = 32-bit value) | ✅ |
+| Capture IRQ + overflow error IRQ | ✅ |
+| ICBNE / ICOV status bits | ✅ |
+| Chardev injection via `ic-events` | ✅ |
+| ON bit → FIFO reset on enable | ✅ |
+| ICI threshold (IRQ every Nth capture) | ❌ ignored — IRQ fires on every capture |
+| ICM mode filtering (every Nth edge) | ❌ logged only, not enforced |
+| FEDGE (first edge select) | ❌ stored in CON, never used |
+| ICTMR (timer source select) | ❌ no timer wired to IC |
+| GPIO/PPS pin → IC edge input | ❌ chardev-only; no real pin routing |
+| SIDL (stop in idle) | ❌ no effect |
+
 ### Device Model Summary (`pic32mk_ic.c`)
 
 Each IC instance is a `SysBusDevice` with:
@@ -383,3 +403,137 @@ Firmware build adds to `srcs.mk`:
 CSRC += firmware/src/config/default/peripheral/icap/plib_icap2.c
 INCS += -Ifirmware/src/config/default/peripheral/icap
 ```
+
+---
+
+## Pulse Train Injection
+
+### Concept
+
+IC firmware measures edge-to-edge timer counts. The injector sends packets at
+wall-clock intervals matching the desired signal, with `val_lo` set to the
+simulated timer count at each edge.
+
+```
+host script                QEMU                   firmware
+    │──── 8-byte pkt ────▶ ic_chr_receive()         │
+    │                      ic_inject_capture()       │
+    │                      FIFO push + IRQ pulse ──▶ ISR
+    │                                               ICAP2_CaptureBufferRead()
+```
+
+### Timer Count Calculation
+
+`val_lo` must match what the timer would read at that edge on real hardware.
+With 120 MHz Fcy and TMR2 prescaler:
+
+| Prescaler | Timer frequency | Ticks per 1 ms | Max period (16-bit) |
+|-----------|----------------|----------------|---------------------|
+| 1:8       | 15 MHz         | 15 000         | ~4.4 ms → needs C32 |
+| 1:64      | 1.875 MHz      | 1 875          | ~35 ms              |
+| 1:256     | 468 750 Hz     | ~469           | ~140 ms             |
+
+For a 10 ms period (100 Hz, 50 % duty cycle) with 1:64 prescaler:
+
+```
+half_ticks = 1875000 * 0.005 = 9375   (fits in uint16)
+```
+
+### Python Injector — 100 Hz Pulse Train (10 ms period)
+
+```python
+#!/usr/bin/env python3
+"""
+Inject a continuous 100 Hz pulse train (10 ms period, 50 % duty cycle)
+into a single IC instance via the QEMU ic-events Unix socket.
+
+Timer assumption: TMR2 @ 120 MHz / 1:64 prescaler = 1.875 MHz
+  → half-period (5 ms) = 9375 ticks  (fits in 16 bits)
+
+Usage:
+  python3 ic_pulse_train.py          # IC2, /tmp/ic.sock
+  python3 ic_pulse_train.py 1        # IC1
+  python3 ic_pulse_train.py 3 /tmp/ic3.sock
+"""
+import socket, struct, time, sys
+
+SOCK_PATH   = sys.argv[2] if len(sys.argv) > 2 else "/tmp/ic.sock"
+IC_INDEX    = int(sys.argv[1]) if len(sys.argv) > 1 else 2
+
+HALF_TICKS  = 9375          # ticks per 5 ms @ 1.875 MHz
+HALF_PERIOD = 0.005         # wall-clock seconds
+
+def make_packet(ic, flags, val_lo, val_hi=0):
+    # <BBHHH = LE: uint8 uint8 uint16 uint16 uint16
+    return struct.pack('<BBHHH', ic, flags, val_lo & 0xFFFF, val_hi & 0xFFFF, 0)
+
+sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+sock.connect(SOCK_PATH)
+print(f"Connected. Sending 100 Hz pulse train → IC{IC_INDEX}")
+
+timer = 0
+try:
+    while True:
+        # Rising edge
+        sock.sendall(make_packet(IC_INDEX, 0, timer))
+        timer = (timer + HALF_TICKS) & 0xFFFF
+        time.sleep(HALF_PERIOD)
+
+        # Falling edge
+        sock.sendall(make_packet(IC_INDEX, 0, timer))
+        timer = (timer + HALF_TICKS) & 0xFFFF
+        time.sleep(HALF_PERIOD)
+except KeyboardInterrupt:
+    print("\nStopped.")
+finally:
+    sock.close()
+```
+
+### Adjusting for Different Timer Configurations
+
+Change `HALF_TICKS` to match firmware's actual TMR2 configuration:
+
+```python
+FCY        = 120_000_000   # system clock
+PRESCALER  = 64            # TMR2CON prescaler value
+HALF_MS    = 5             # half-period in ms
+
+HALF_TICKS = int((FCY / PRESCALER) * (HALF_MS / 1000))
+```
+
+If `HALF_TICKS > 65535`, enable C32 mode in `ICxCON` (set `C32` bit) and send a
+32-bit capture pair:
+
+```python
+# C32 mode: flags=0x02, val_lo = low 16 bits, val_hi = high 16 bits
+timer32    = timer & 0xFFFFFFFF
+val_lo     = timer32 & 0xFFFF
+val_hi     = (timer32 >> 16) & 0xFFFF
+sock.sendall(make_packet(IC_INDEX, 0x02, val_lo, val_hi))
+```
+
+### Expected Firmware Output (demo task, IC2)
+
+```
+[ICAP] IC2 armed (IRQ mode, ICM=1 every edge)
+[ICAP] IC2 captured 0x0000   ← rising  edge 1
+[ICAP] IC2 captured 0x249F   ← falling edge 1  (9375 = 0x249F)
+[ICAP] IC2 captured 0x493E   ← rising  edge 2
+[ICAP] IC2 captured 0x6DDD   ← falling edge 2
+...
+```
+
+Period measurement from consecutive rising edges:
+```
+delta = (captured[2] - captured[0]) & 0xFFFF   →  18750 ticks
+period_ms = delta / (1_875_000 / 1000)          →  10.0 ms  ✓
+```
+
+### Known Emulation Limitations for Pulse Train Testing
+
+| Limitation | Impact |
+|------------|--------|
+| ICI threshold ignored — IRQ fires on every capture | Firmware using ICI=1 (every 2nd) will see 2× IRQ rate vs real HW |
+| ICM mode not enforced — all edges accepted | Firmware configuring ICM=2 (every 2nd rising) receives both edges |
+| No real timer counter — injector tracks synthetic count | Timer rollover, prescaler changes during run are not reflected |
+| No GPIO/PPS pin routing | Cannot test pin-mux or shared-signal scenarios |
